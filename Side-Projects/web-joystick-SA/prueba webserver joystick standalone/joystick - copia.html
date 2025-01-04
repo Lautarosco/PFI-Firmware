@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f0f0f0;
+    }
+
+    .joystick-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: 1fr 1fr 1fr;
+      gap: 20px;
+      width: 400px;
+    }
+
+    .dpad, .actions, .center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dpad button, .actions button, .center button, .shoulder button {
+      width: 60px;
+      height: 60px;
+      font-size: 18px;
+      margin: 5px;
+      border: none;
+      border-radius: 10px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+
+    .dpad button:active, .actions button:active, 
+    .center button:active, .shoulder button:active {
+      background-color: #0056b3;
+    }
+
+    .shoulder {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+
+    .shoulder button {
+      width: 80px;
+    }
+  </style>
+  <script>
+    function sendButtonAction(button, action) {
+      fetch(`/button`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ button, action })
+      });
+    }
+
+    function onPress(button) {
+      sendButtonAction(button, 'press');
+    }
+
+    function onRelease(button) {
+      sendButtonAction(button, 'release');
+    }
+  </script>
+</head>
+<body>
+  <div class="shoulder">
+    <button onmousedown="onPress('l1')" onmouseup="onRelease('l1')">L1</button>
+    <button onmousedown="onPress('r1')" onmouseup="onRelease('r1')">R1</button>
+  </div>
+
+  <div class="shoulder">
+    <button onmousedown="onPress('l2')" onmouseup="onRelease('l2')">L2</button>
+    <button onmousedown="onPress('r2')" onmouseup="onRelease('r2')">R2</button>
+  </div>
+
+  <div class="joystick-container">
+    <!-- D-Pad -->
+    <div class="dpad">
+      <button onmousedown="onPress('up')" onmouseup="onRelease('up')">↑</button>
+      <div>
+        <button onmousedown="onPress('left')" onmouseup="onRelease('left')">←</button>
+        <button onmousedown="onPress('down')" onmouseup="onRelease('down')">↓</button>
+        <button onmousedown="onPress('right')" onmouseup="onRelease('right')">→</button>
+      </div>
+    </div>
+
+    <!-- Start and Reset -->
+    <div class="center">
+      <button onmousedown="onPress('start')" onmouseup="onRelease('start')">Start</button>
+      <button onmousedown="onPress('reset')" onmouseup="onRelease('reset')">Reset</button>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="actions">
+      <button onmousedown="onPress('triangle')" onmouseup="onRelease('triangle')">▲</button>
+      <div>
+        <button onmousedown="onPress('square')" onmouseup="onRelease('square')">■</button>
+        <button onmousedown="onPress('circle')" onmouseup="onRelease('circle')">○</button>
+        <button onmousedown="onPress('x')" onmouseup="onRelease('x')">X</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f0f0f0;
+    }
+
+    .joystick-container {
+      display: grid;
+      grid-template-areas:
+        "l2 . r2"
+        "l1 . r1"
+        "dpad center actions";
+      grid-template-columns: 1fr auto 1fr;
+      grid-gap: 20px;
+    }
+
+    button {
+      height: 60px;
+      font-size: 18px;
+      margin: 5px;
+      border: none;
+      border-radius: 10px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:active {
+      background-color: #0056b3;
+    }
+
+    /* Shoulder Buttons (Wider Buttons) */
+    .l2, .r2, .l1, .r1 {
+      width: 120px; /* 2:1 width-to-height ratio */
+    }
+
+    .l2 { grid-area: l2; }
+    .r2 { grid-area: r2; }
+    .l1 { grid-area: l1; }
+    .r1 { grid-area: r1; }
+
+    /* D-Pad */
+    .dpad {
+      grid-area: dpad;
+      display: grid;
+      grid-template-areas:
+        ". up ."
+        "left . right"
+        ". down .";
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+
+    .up { grid-area: up; }
+    .down { grid-area: down; }
+    .left { grid-area: left; }
+    .right { grid-area: right; }
+
+    /* Action Buttons */
+    .actions {
+      grid-area: actions;
+      display: grid;
+      grid-template-areas:
+        ". triangle ."
+        "square . circle"
+        ". x .";
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+
+    .triangle { grid-area: triangle; }
+    .square { grid-area: square; }
+    .circle { grid-area: circle; }
+    .x { grid-area: x; }
+
+    /* Center Buttons */
+    .center {
+      grid-area: center;
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      gap: 10px;
+    }
+
+  </style>
+  <script>
+    function sendButtonAction(button, action) {
+      fetch(`/button`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ button, action })
+      });
+    }
+
+    function onPress(button) {
+      sendButtonAction(button, 'press');
+    }
+
+    function onRelease(button) {
+      sendButtonAction(button, 'release');
+    }
+  </script>
+</head>
+<body>
+  <div class="joystick-container">
+    <!-- Shoulder Buttons -->
+    <button class="l2" onmousedown="onPress('l2')" onmouseup="onRelease('l2')">L2</button>
+    <button class="r2" onmousedown="onPress('r2')" onmouseup="onRelease('r2')">R2</button>
+    <button class="l1" onmousedown="onPress('l1')" onmouseup="onRelease('l1')">L1</button>
+    <button class="r1" onmousedown="onPress('r1')" onmouseup="onRelease('r1')">R1</button>
+
+    <!-- D-Pad -->
+    <div class="dpad">
+      <button class="up" onmousedown="onPress('up')" onmouseup="onRelease('up')">↑</button>
+      <button class="down" onmousedown="onPress('down')" onmouseup="onRelease('down')">↓</button>
+      <button class="left" onmousedown="onPress('left')" onmouseup="onRelease('left')">←</button>
+      <button class="right" onmousedown="onPress('right')" onmouseup="onRelease('right')">→</button>
+    </div>
+
+    <!-- Center Buttons -->
+    <div class="center">
+      <button onmousedown="onPress('start')" onmouseup="onRelease('start')">Start</button>
+      <button onmousedown="onPress('reset')" onmouseup="onRelease('reset')">Reset</button>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="actions">
+      <button class="triangle" onmousedown="onPress('triangle')" onmouseup="onRelease('triangle')">▲</button>
+      <button class="square" onmousedown="onPress('square')" onmouseup="onRelease('square')">■</button>
+      <button class="circle" onmousedown="onPress('circle')" onmouseup="onRelease('circle')">○</button>
+      <button class="x" onmousedown="onPress('x')" onmouseup="onRelease('x')">X</button>
+    </div>
+  </div>
+</body>
+</html>

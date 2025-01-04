@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    button { width: 60px; height: 60px; margin: 5px; font-size: 18px; }
+  </style>
+  <script>
+    function sendButtonAction(button, action) {
+      fetch(`/button`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ button, action })
+      });
+    }
+
+    function onPress(button) {
+      sendButtonAction(button, 'press');
+    }
+
+    function onRelease(button) {
+      sendButtonAction(button, 'release');
+    }
+  </script>
+</head>
+<body>
+  <div>
+    <button onmousedown="onPress('up')" onmouseup="onRelease('up')">↑</button>
+    <button onmousedown="onPress('down')" onmouseup="onRelease('down')">↓</button>
+    <button onmousedown="onPress('left')" onmouseup="onRelease('left')">←</button>
+    <button onmousedown="onPress('right')" onmouseup="onRelease('right')">→</button>
+  </div>
+  <div>
+    <button onmousedown="onPress('square')" onmouseup="onRelease('square')">■</button>
+    <button onmousedown="onPress('triangle')" onmouseup="onRelease('triangle')">▲</button>
+    <button onmousedown="onPress('circle')" onmouseup="onRelease('circle')">○</button>
+    <button onmousedown="onPress('x')" onmouseup="onRelease('x')">X</button>
+  </div>
+  <div>
+    <button onmousedown="onPress('start')" onmouseup="onRelease('start')">Start</button>
+    <button onmousedown="onPress('reset')" onmouseup="onRelease('reset')">Reset</button>
+  </div>
+  <div>
+    <button onmousedown="onPress('r1')" onmouseup="onRelease('r1')">R1</button>
+    <button onmousedown="onPress('l1')" onmouseup="onRelease('l1')">L1</button>
+    <button onmousedown="onPress('r2')" onmouseup="onRelease('r2')">R2</button>
+    <button onmousedown="onPress('l2')" onmouseup="onRelease('l2')">L2</button>
+  </div>
+</body>
+</html>
