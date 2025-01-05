@@ -56,7 +56,7 @@ static void StControlFunc( drone_t * obj ) {
         ( 180 / M_PI ) * __sin( 0.02f, 1.0f, timer )
     );
 
-    printf( "%f\r\n,", ( 180 / M_PI ) * __sin( 0.02f, 1.0f, timer ) );
+    printf( "%f\r\n", ( 180 / M_PI ) * __sin( 0.02f, 1.0f, timer ) );
 
     /* If timer exceeds from 2π */
     if( timer > ( 2 * M_PI ) ) {
@@ -94,6 +94,7 @@ static void StControlFunc( drone_t * obj ) {
 
 static void StCalibrationFunc( drone_t * obj ) {
     printf( "Calibration\r\n" );
+    obj->attributes.global_variables.tx_buttons->triangle = false;  /* TESTING */
 }
 
 static void StResetFunc( drone_t * obj ) {
@@ -144,11 +145,13 @@ static const state_trans_row_t state_trans_matrix[  ] = {
     { .curr_state = ST_IDLE,        .event = EV_CROSS,    .next_state = ST_INIT },
     { .curr_state = ST_IDLE,        .event = EV_TRIANGLE, .next_state = ST_CALIBRATION },
     { .curr_state = ST_IDLE,        .event = EV_CIRCLE,   .next_state = ST_MEASURE },
-    { .curr_state = ST_IDLE,        .event = EV_R1_L1,    .next_state = ST_RESET },
+    { .curr_state = ST_IDLE,        .event = EV_PS,       .next_state = ST_RESET },
     { .curr_state = ST_INIT,        .event = EV_ANY,      .next_state = ST_IDLE },
     { .curr_state = ST_CALIBRATION, .event = EV_ANY,      .next_state = ST_IDLE },
     { .curr_state = ST_MEASURE,     .event = EV_ANY,      .next_state = ST_CONTROL },
+    { .curr_state = ST_MEASURE,     .event = EV_PS,       .next_state = ST_RESET },
     { .curr_state = ST_CONTROL,     .event = EV_ANY,      .next_state = ST_MEASURE },
+    { .curr_state = ST_CONTROL,     .event = EV_PS,       .next_state = ST_RESET },
 };
 
 
@@ -208,8 +211,8 @@ const char * StateMachine_GetEventName( sm_event_t event ) {
         return "EV_ANY";
         break;
 
-    case EV_R1_L1:
-        return "EV_R1_L1";
+    case EV_PS:
+        return "EV_PS";
         break;
 
     default:

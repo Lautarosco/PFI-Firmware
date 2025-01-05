@@ -22,7 +22,7 @@ typedef enum state_machine_events {
     EV_CROSS,
     EV_TRIANGLE,
     EV_CIRCLE,
-    EV_R1_L1
+    EV_PS
 
 } sm_event_t;
 

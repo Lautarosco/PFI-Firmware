@@ -448,6 +448,9 @@ drone_t * Drone( void ) {
     drone->attributes.global_variables.tx_buttons->r2       = false;
     drone->attributes.global_variables.tx_buttons->l1       = false;
     drone->attributes.global_variables.tx_buttons->l2       = false;
+    drone->attributes.global_variables.tx_buttons->select   = false;
+    drone->attributes.global_variables.tx_buttons->start    = false;
+    drone->attributes.global_variables.tx_buttons->ps       = false;
 
     /* Assign memory to Bluetooth data */
     drone->attributes.global_variables.bt_data = malloc( sizeof( BluetoothData_t ) );
@@ -504,8 +507,21 @@ drone_t * Drone( void ) {
     drone->attributes.components.Tx = Transmitter( &( drone->attributes.global_variables ) );
     ESP_LOGI( DRONE_TAG, "Instance succesfully made" );
 
-    /* Initialize Transmitter object */
-    drone->attributes.components.Tx->init( drone->attributes.components.Tx, DroneConfigs.esp_mac_addr );
+    #if PLAYSTATION_TX & WEBSV_TX
+        ESP_LOGE( DRONE_TAG, "Multiple transmitters can't be used simmultaneously. See transmitter_structs.h header file" );
+        esp_restart();
+
+    /* Check if playstation joystick is used as transmitter */
+    #elif PLAYSTATION_TX
+        /* Initialize Transmitter object */
+        drone->attributes.components.Tx->init( drone->attributes.components.Tx, DroneConfigs.esp_mac_addr );
+        
+    /* Check if HTTP server is used as transmitter */
+    #elif WEBSV_TX
+        /* Initialize Transmitter object */
+        drone->attributes.components.Tx->init( drone->attributes.components.Tx );
+
+    #endif
 
     /* Assign Transmitter buttons global variable memmory address to 'GlobalTxButtons' variable */
     GlobalTxButtons = drone->attributes.global_variables.tx_buttons;

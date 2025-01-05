@@ -1,10 +1,10 @@
-#ifndef MANDO
-#define MANDO
+#ifndef MANDO_H
+#define MANDO_H
 
 #include <transmitter_structs.h>
 
 /**
-* @brief Make an instance of Joystick class
+* @brief Make an instance of Transmitter class
 * @param global_variables: Address of drone's global variables struct
 * @retval Pointer to Transmitter object
 */

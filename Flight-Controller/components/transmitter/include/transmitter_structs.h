@@ -3,7 +3,10 @@
 
 #include <ps3.h>
 
-#define MAC_ADDR_SIZE 6 /* Total bytes of MCU MAC Address */
+#define PLAYSTATION_TX     0  /* Use playstation transmitter */
+#define WEBSV_TX           1  /* Use web server transmitter */
+#define MAC_ADDR_SIZE      6  /* Total bytes of MCU MAC Address */
+
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
@@ -24,6 +27,9 @@ typedef struct tx_buttons {
    bool r2;
    bool l1;
    bool l2;
+   bool start;
+   bool select;
+   bool ps;
 
 } tx_buttons_t;
 
@@ -38,14 +44,24 @@ typedef struct drone_globals drone_globals_t;
 typedef struct transmitter transmitter_t;
 
 typedef struct transmitter {
-   /* [ A ] Transmitter MAC Address */
-   uint8_t mac_addr[ MAC_ADDR_SIZE ]; 
+   #if PLAYSTATION_TX
+      /* [ A ] Transmitter MAC Address */
+      uint8_t mac_addr[ MAC_ADDR_SIZE ]; 
 
-   /* [ A ] Drone's global variables */
-   drone_globals_t * global_variables;
+      /* [ A ] Drone's global variables */
+      drone_globals_t * global_variables;
 
-   /** @brief [ M ] Initialize Joystick  @param obj: Address of Transmitter object @param mac_p: Mac address @retval esp_err_t */
-   esp_err_t ( *init )( transmitter_t * obj, const uint8_t mac_p[ MAC_ADDR_SIZE ] );
+      /** @brief [ M ] Initialize Joystick  @param obj: Address of Transmitter object @param mac_p: Mac address @retval esp_err_t */
+      esp_err_t ( * init )( transmitter_t * obj, const uint8_t mac_p[ MAC_ADDR_SIZE ] );
+
+   #elif WEBSV_TX
+      /* [ A ] Drone's global variables */
+      drone_globals_t * global_variables;
+
+      /** @brief [ M ] Initialize Joystick  @param obj: Address of Transmitter object @retval esp_err_t */
+      esp_err_t ( * init )( transmitter_t * obj );
+
+   #endif
 
 } transmitter_t;
 

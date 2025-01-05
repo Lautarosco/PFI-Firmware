@@ -99,10 +99,10 @@ static void getEvent( sm_state_machine_t * state_machine, drone_t obj ) {
                 }
             }
 
-            /* If user pressed R1 and L1 simmultaneously */
-            else if( ( obj.attributes.global_variables.tx_buttons->r1 ) && ( obj.attributes.global_variables.tx_buttons->l1 ) ) {
+            /* If user pressed PS */
+            else if( ( obj.attributes.global_variables.tx_buttons->ps ) ) {
 
-                state_machine->event = EV_R1_L1;
+                state_machine->event = EV_PS;
             }
 
             break;
@@ -116,11 +116,31 @@ static void getEvent( sm_state_machine_t * state_machine, drone_t obj ) {
             break;
 
         case ST_MEASURE:
-            state_machine->event = EV_ANY;
+            /* If user pressed PS */
+            if( obj.attributes.global_variables.tx_buttons->ps ) {
+
+                state_machine->event = EV_PS;
+            }
+
+            else {
+
+                state_machine->event = EV_ANY;
+            }
+            
             break;
 
         case ST_CONTROL:
-            state_machine->event = EV_ANY;
+            /* If user pressed PS */
+            if( obj.attributes.global_variables.tx_buttons->ps ) {
+
+                state_machine->event = EV_PS;
+            }
+
+            else {
+
+                state_machine->event = EV_ANY;
+            }
+
             break;
 
         default:
@@ -153,7 +173,7 @@ void vTaskStateMachine_Run( void * pvParameters ) {
         /* Go to the next state and run it's respective function */
         StateMachine_RunIteration( &state_machine, obj );
         
-        vTaskDelay( pdMS_TO_TICKS( 20 ) );
+        vTaskDelay( pdMS_TO_TICKS( 1000 ) );
     }
     
 }
