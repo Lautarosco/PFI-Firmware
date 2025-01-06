@@ -17,17 +17,20 @@ static const char * PWM_TAG = "PWM";
  * @retval esp_err_t
  */
 static esp_err_t Pwm_Init( pwm_t * obj, pwm_cfg_t PwmConfigs ) {
+
     ESP_LOGI( PWM_TAG, "Initializing Pwm %d object...", obj->tag + 1 );
     
     obj->init_ok = true;
     obj->pwm_cfg = PwmConfigs;
 
     if( ledc_timer_config( &( obj->pwm_cfg.timer_cfg ) ) != ESP_OK ) {
+        
         ESP_LOGE( PWM_TAG, "[ pwm %d ] Wrong timer settings!", obj->tag );
         return ESP_FAIL;
     }
 
     if( ledc_channel_config( &( obj->pwm_cfg.channel_cfg ) ) != ESP_OK ) {
+
         ESP_LOGE( PWM_TAG, "[ pwm %d ] Wrong channel settings!", obj->tag );
         return ESP_FAIL;
     }
@@ -55,22 +58,30 @@ static esp_err_t Pwm_Init( pwm_t * obj, pwm_cfg_t PwmConfigs ) {
  * @retval esp_err_t
  */
 static esp_err_t Pwm_SetDc( pwm_t * obj, float duty ) {
+
     if( !obj->init_ok ) {
+
         ESP_LOGE( PWM_TAG, "[ pwm %d ] Object is not initialized!", obj->tag + 1 );
         esp_restart();
     }
 
     if( ( duty < 0 ) || ( duty > 1 ) ) {
+
         ESP_LOGE( PWM_TAG, "[ pwm %d ] Wrong Duty Cycle '%f'. Select values from 0 to 1 only", obj->tag, duty );
         return ESP_FAIL;
     }
     else {
+
         if( ( duty >= obj->dc_min ) && ( duty <= obj->dc_max ) ) {
+
             if( ledc_set_duty( obj->pwm_cfg.timer_cfg.speed_mode, obj->pwm_cfg.channel_cfg.channel, duty * obj->n ) != ESP_OK ) {
+
                 ESP_LOGE( PWM_TAG, "[ pwm %d ] Failed to set duty dycle", obj->tag + 1 );
                 return ESP_FAIL;
             }
+
             if( ledc_update_duty( obj->pwm_cfg.timer_cfg.speed_mode, obj->pwm_cfg.channel_cfg.channel ) != ESP_OK ) {
+
                 ESP_LOGE( PWM_TAG, "[ pwm %d ] Failed to update duty dycle", obj->tag + 1 );
                 return ESP_FAIL;
             }
@@ -90,7 +101,9 @@ static esp_err_t Pwm_SetDc( pwm_t * obj, float duty ) {
  * @retval uint32_t
  */
 static double Pwm_GetDc( pwm_t * obj ) {
+
     if( !obj->init_ok ) {
+
         ESP_LOGE( PWM_TAG, "Object is not initialized!" );
         esp_restart();
     }
@@ -105,9 +118,10 @@ static double Pwm_GetDc( pwm_t * obj ) {
 /** @details Public functions implementation */
 
 pwm_t * Pwm( int tag ) {
+
     ESP_LOGI( PWM_TAG, "Making an instance of Pwm %d Class...", tag + 1 );
 
-    pwm_t * pwm = malloc( sizeof( pwm_t ) );
+    pwm_t * pwm = ( pwm_t * ) malloc( sizeof( pwm_t ) );
 
     pwm->dc_min     = 0;              /* Initialize attributes */
     pwm->dc_max     = 0;

@@ -4,6 +4,7 @@
 #include <driver/i2c.h>
 #include <math.h>
 #include <esp_log.h>
+#include <string.h>
 
 const char * DRONE_TAG = "DRONE";
 
@@ -27,10 +28,35 @@ BluetoothData_t * GlobalBluetoothData;
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
+/** @details Private structs */
+
+/**
+ * @brief Details of a csv row
+ * @param var_name: Variable name
+ * @param var_type: Variable type
+ * @param var_value: Vaiable value
+ */
+typedef struct csv_row {
+
+    /* Variable name */
+    char * var_name;
+
+    /* Variable type */
+    char * var_type;
+
+    /* Vaiable value */
+    float var_value;
+
+} csv_row_t;
+
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
+
 /**
  * @brief Drone Class generic configs
  */
-static const drone_cfg_t DroneConfigs = {
+static drone_cfg_t DroneConfigs = {
     .roll = {
         .error = 0.0f,
         .Q     = 0.01f,
@@ -219,6 +245,7 @@ static const drone_cfg_t DroneConfigs = {
  * @retval true if success else false
  */
 inline bool GPIO_INIT( gpio_num_t GPIOx, gpio_mode_t io_mode, gpio_pull_mode_t up_mode ) {
+
     gpio_reset_pin( GPIOx ); return ( !gpio_set_direction( GPIOx, io_mode ) && !gpio_set_pull_mode( GPIOx, up_mode ) );
 }
 
@@ -329,13 +356,203 @@ static bool i2c_scan( void ) {
 
 
 /**
+ * @brief Read drone_configs csv file and return csv_row_t object with each row data
+ * @param filename: Path to csv file
+ * @param n_rows: Rows count variable pre-initialized in 0
+ * @retval Updated csv_row_t object with csv rows
+ */
+static csv_row_t * read_csv( const char * filename, int * n_rows ) {
+
+    /* Open file in read only mode */
+    FILE * fp = fopen( filename, "r" );
+
+    /* Initialize rows to NULL */
+    csv_row_t * rows = NULL;
+
+    /* Initialize rows count to 0 */
+    *n_rows = 0;
+
+    /* Check if file was successfully opened */
+    if( !fp ) {
+
+        ESP_LOGE( DRONE_TAG, "Failed to open '%s' file... See function %s in line %d", filename, __func__, __LINE__ );
+    }
+
+    /* File was successfully opened */
+    else {
+
+        /* Buffer to store a csv row */
+        char buffer[ 1024 ];
+
+        const char * delimeter = ", ";
+
+        /* Read csv rows until end of file */
+        while( fgets( buffer, 1024, fp ) ) {
+
+
+            /* ASCII integer value of # is 35 => If first character is #, then it's the header row */
+            if(  ( int ) buffer[ 0 ] == 35 ) {
+                
+                continue;
+            }
+
+            /* Increment rows count */
+            ( *n_rows )++;
+
+            /* Re-alocate memory for a new row */
+            rows = realloc( rows, ( *n_rows ) * sizeof( csv_row_t ) );
+
+            /* Check memory re-alocation was successfull */
+            if( !rows ) {
+
+                ESP_LOGE( DRONE_TAG, "Failed to re-alocate memory for another row... See function %s in line %d", __func__, __LINE__ );
+                fclose( fp );
+                return NULL;
+            }
+
+            /* Get each column value */
+            char * token = strtok( buffer, delimeter );
+
+            /* Get all column values */
+            for( int i = 0; token != NULL; i++ ) {
+
+                switch( i ) {
+
+                    case 0:
+                        rows[ ( *n_rows ) - 1 ].var_name = strdup( token );
+                        break;
+                    
+                    case 1:
+                        rows[ ( *n_rows ) - 1 ].var_type = strdup( token );
+                        break;
+
+                    case 2:
+                        rows[ ( *n_rows ) - 1 ].var_value = atof( token );
+                        break;
+
+                    default:
+                        break;
+                }
+
+                /* Get next column value */
+                token = strtok( NULL, delimeter );
+            }
+        }
+        
+        /* Close file */
+        fclose( fp );
+    }
+
+    return rows;
+}
+
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
+
+/**
+ * @brief Retrieve first occurence of 'name' in 'Name' column of drone_configs csv file
+ * @param csv_rows: csv rows object retrieved by 'read_csv' function
+ * @param n_rows: Total rows of drone_configs csv
+ * @param name: Name to look for
+ * @retval csv row of given name - NULL
+ */
+static csv_row_t get_csv_row( csv_row_t * csv_rows, int n_rows, const char * name ) {
+
+    /* Set default values for a row */
+    csv_row_t csv_row = {
+
+        .var_name  = "",
+        .var_type  = "",
+        .var_value = 0.0f
+    };
+
+    /* Look for given name in all rows */
+    for( int i = 0; i < n_rows; i++ ) {
+
+        /* Check if actual row name matches parameter name */
+        if( !strcmp( csv_rows[ i ].var_name, name ) ) {
+
+            csv_row = csv_rows[ i ];
+        }
+    }
+
+    return csv_row;
+}
+
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
+
+/**
  * @brief Initialize an object of Drone Class
  * @param obj: Address of Drone object
- * @retval esp_err_t
+ * @retval ESP_OK if success - ESP_FAIL
  */
 static esp_err_t drone_init( drone_t * obj ) {
+
     ESP_LOGI( DRONE_TAG, "Initializing Drone object..." );
     
+    /* If joystick is used as tx, then spiffs partition is not initialized */
+    #if PLAYSTATION_TX
+
+        #include <esp_spiffs.h>
+
+        /* Set spiffs configs */
+        esp_vfs_spiffs_conf_t config = {
+
+            .base_path              = "/spiffs",
+            .partition_label        = NULL,
+            .max_files              = 5,
+            .format_if_mount_failed = true
+        };
+
+        /* Mount spiffs configs */
+        esp_err_t ret = esp_vfs_spiffs_register( &config );
+
+        /* Check if mount was succesfull */
+        if( ret != ESP_OK ) {
+
+            if( ret == ESP_ERR_NOT_FOUND ) {
+
+                ESP_LOGE( DRONE_TAG, "Failed to find spiffs partition" );
+                return ESP_FAIL;
+            }
+
+            else if( ret == ESP_FAIL ) {
+
+                ESP_LOGE( DRONE_TAG, "Failed to mount spiffs partition" );
+                return ESP_FAIL;
+            }
+
+            else {
+
+                ESP_LOGE( DRONE_TAG, "Failed to initialize spiffs ( %s )", esp_err_to_name( ret ) );
+                return ESP_FAIL;
+            }
+        }
+
+        ESP_LOGI( DRONE_TAG, "Spiffs mounted succesfully" );
+
+    #endif
+
+    /* Number of csv rows */
+    int n_rows = 0;
+
+    /* Read csv, stored in flash memory of MCU, rows */
+    csv_row_t * csv_rows = read_csv( "/spiffs/drone_configs.csv", &n_rows );    /* '/base_path/filename.extension' */
+
+    /**
+     * ¡IMPORTANT!
+     * 
+     * All objects must be initialized after any update of Drone Class configs with csv configs, otherwise
+     * they'll initialize with past values
+     */
+    DroneConfigs.imu_cfg.gyro_offset.x = get_csv_row( csv_rows, n_rows, "x" ).var_value;
+    DroneConfigs.imu_cfg.gyro_offset.y = get_csv_row( csv_rows, n_rows, "y" ).var_value;
+    DroneConfigs.imu_cfg.gyro_offset.z = get_csv_row( csv_rows, n_rows, "z" ).var_value;
+
+
     /* Drone object is initialized */
     obj->attributes.init_ok = true;
 
@@ -369,7 +586,14 @@ static esp_err_t drone_init( drone_t * obj ) {
     for(int i = 0; i < ( ( sizeof( obj->attributes.components.controllers ) ) / ( sizeof( obj->attributes.components.controllers[ 0 ] ) ) ); i++) {
         obj->attributes.components.controllers[ i ]->init( obj->attributes.components.controllers[ i ], DroneConfigs.ControllersConfigs[ i ] );
     }
-    
+
+    for( int i = 0; i < n_rows; i++ ) {
+
+        free( csv_rows[ i ].var_name );
+        free( csv_rows[ i ].var_type );
+    }
+    free( csv_rows );
+
     /* Blink MCU internal LED to indicate Drone object was successfully initialized */
     gpio_set_level( GPIO_NUM_2, false );
     vTaskDelay( pdMS_TO_TICKS( 1000 ) );
@@ -391,6 +615,7 @@ static esp_err_t drone_init( drone_t * obj ) {
  * @retval none
  */
 static void UpdateStates( drone_t * obj, float ts ) {
+
     if( !obj->attributes.init_ok ) {
 
         /* If Drone object isn't initialized */
@@ -413,12 +638,17 @@ static void UpdateStates( drone_t * obj, float ts ) {
 
 
 drone_t * Drone( void ) {
+
     ESP_LOGI( DRONE_TAG, "Making an instance of Drone Class..." );
 
-    /* Assign memmory to Drone object */
-    drone_t * drone = malloc( sizeof( drone_t ) );
-    if( drone == NULL )
+    /* Assign memory to Drone object */
+    drone_t * drone = ( drone_t * ) malloc( sizeof( drone_t ) );
+
+    /* Check if memory assign was succesfull */
+    if( drone == NULL ){
+
         return NULL;
+    }
 
     /* States default values */
     drone->attributes.states.z         = 0;

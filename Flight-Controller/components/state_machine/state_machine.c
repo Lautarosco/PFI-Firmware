@@ -94,7 +94,10 @@ static void StControlFunc( drone_t * obj ) {
 
 static void StCalibrationFunc( drone_t * obj ) {
     printf( "Calibration\r\n" );
-    obj->attributes.global_variables.tx_buttons->triangle = false;  /* TESTING */
+    
+    #if WEBSV_TX
+        obj->attributes.global_variables.tx_buttons->triangle = false;  /* TESTING */
+    #endif
 }
 
 static void StResetFunc( drone_t * obj ) {

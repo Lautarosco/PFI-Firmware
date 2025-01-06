@@ -1,0 +1,4 @@
+# Name, Type, Value
+x, gyro_offset, 6.80f
+y, gyro_offset, -2.15f
+z, gyro_offset, 3.28f

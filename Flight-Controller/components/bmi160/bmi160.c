@@ -16,7 +16,12 @@ static const char *TAG = "BMI160";
 bmi160_t * Bmi160( int i2c_addr, int i2c_sda, int i2c_scl ) {
     ESP_LOGI( TAG, "Making an instance of Bmi160 Class..." );
 
-    bmi160_t * bmi = malloc( sizeof( bmi160_t ) );
+    /* Assign memory for a Bmi160 object */
+    bmi160_t * bmi = ( bmi160_t * ) malloc( sizeof( bmi160_t ) );
+
+    bmi->Gyro.offset.x = 0.0f;
+    bmi->Gyro.offset.y = 0.0f;
+    bmi->Gyro.offset.z = 0.0f;
 
     // Function pointers assignment
     bmi->init                 = bmi_init;
@@ -50,7 +55,7 @@ bmi160_t * Bmi160( int i2c_addr, int i2c_sda, int i2c_scl ) {
 esp_err_t bmi_init( bmi160_t * self,
     int acc_mode,  int acc_freq,  int acc_range,
     int gyro_mode, int gyro_freq, int gyro_range,
-    int gyro_offset_x, int gyro_offset_y, int gyro_offset_z
+    float gyro_offset_x, float gyro_offset_y, float gyro_offset_z
 )
 {
     ESP_LOGI( TAG, "Initializing Bmi160 object..." );

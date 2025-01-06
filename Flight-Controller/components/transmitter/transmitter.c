@@ -221,6 +221,11 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
         }
     }
 
+    /**
+     * @brief Get mac address of MCU and store it
+     * @param mac_addr: Array to store MCU mac address
+     * @retval none
+     */
     static void get_mac_address( uint8_t * mac_addr ) {
 
         esp_wifi_get_mac( ESP_IF_WIFI_STA, mac_addr );
@@ -228,6 +233,11 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
             mac_addr[ 0 ], mac_addr[ 1 ], mac_addr[ GPIO_NUM_2 ], mac_addr[ 3 ], mac_addr[ 4 ], mac_addr[ 5 ] );
     }
 
+    /**
+     * @brief Set MCU a new mac address
+     * @param mac_addr: Array containing the new mac address
+     * @retval ESP_OK if success
+     */
     static esp_err_t set_mac_address( const uint8_t * mac_addr ) {
 
         ESP_ERROR_CHECK( esp_wifi_set_mac( ESP_IF_WIFI_STA, mac_addr ) );
@@ -238,6 +248,11 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
         return ESP_OK;
     }
 
+    /**
+     * @brief Initialize NVS of MCU
+     * @param none
+     * @retval none
+     */
     static void nvs_init( void ) {
 
         esp_err_t res = nvs_flash_init();
@@ -290,7 +305,7 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
 
         ESP_LOGI( "TRANSMITTER", "Making an instance of Transmitter Class..." );
 
-        transmitter_t * Tx = malloc( sizeof( transmitter_t ) );
+        transmitter_t * Tx = ( transmitter_t * ) malloc( sizeof( transmitter_t ) );
 
         /* Initialize Transmitter mac address in 0 */
         for (int i = 0; i < MAC_ADDR_SIZE; i++) { Tx->mac_addr[ i ] = 0; }
@@ -675,16 +690,19 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
             if( ret == ESP_ERR_NOT_FOUND ) {
 
                 ESP_LOGE( TRANSMITTER_TAG, "Failed to find spiffs partition" );
+                return ESP_FAIL;
             }
 
             else if( ret == ESP_FAIL ) {
 
                 ESP_LOGE( TRANSMITTER_TAG, "Failed to mount spiffs partition" );
+                return ESP_FAIL;
             }
 
             else {
 
                 ESP_LOGE( TRANSMITTER_TAG, "Failed to initialize spiffs ( %s )", esp_err_to_name( ret ) );
+                return ESP_FAIL;
             }
         }
 
@@ -714,7 +732,7 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
 
         ESP_LOGI( "TRANSMITTER", "Making an instance of Transmitter Class..." );
 
-        transmitter_t * Tx = malloc( sizeof( transmitter_t ) );
+        transmitter_t * Tx = ( transmitter_t * ) malloc( sizeof( transmitter_t ) );
 
         /* Assign Drone object global variables to Transmitter object global variables  */
         Tx->global_variables = global_variables;

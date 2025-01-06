@@ -85,7 +85,7 @@ mma_t * Mma( void ) {
     ESP_LOGI( MMA_TAG, "Making an instance of Mma Class..." );
 
     /* Assign memmory for Mma object */
-    mma_t * mma = malloc( sizeof( mma_t ) );
+    mma_t * mma = ( mma_t * ) malloc( sizeof( mma_t ) );
 
     /* Default values for Mma Class attributes */
     for (int i = 0; i < ( ( sizeof( mma->input ) )  / ( sizeof( mma->input[ 0 ] ) ) ); i++) { mma->input[ i ]   = 0; }
