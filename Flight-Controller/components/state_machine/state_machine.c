@@ -30,7 +30,7 @@ typedef struct state_function {
  */
 
 static void StIdleFunc( drone_t * obj ) {
-    printf( "IDLE\r\n" );
+    // printf( "IDLE\r\n" );
 }
 
 static void StInitFunc( drone_t * obj ) {
@@ -113,7 +113,7 @@ static state_func_row_t state_function_array[  ] = {
     { .name = "ST_IDLE",        .func = &StIdleFunc },
     { .name = "ST_INIT",        .func = &StInitFunc },
     { .name = "ST_CALIBRATION", .func = &StCalibrationFunc },
-    { .name = "ST_MEASURE",     .func = &StUpdateStatesFunc },
+    { .name = "ST_UPDATE_STATES",     .func = &StUpdateStatesFunc },
     { .name = "ST_CONTROL",     .func = &StControlFunc },
     { .name = "ST_RESET",       .func = &StResetFunc },
 
@@ -144,17 +144,17 @@ typedef struct state_transition_row {
  * @brief State transition matrix
  */
 static const state_trans_row_t state_trans_matrix[  ] = {
-    { .curr_state = ST_IDLE,        .event = EV_ANY,      .next_state = ST_IDLE },
-    { .curr_state = ST_IDLE,        .event = EV_CROSS,    .next_state = ST_INIT },
-    { .curr_state = ST_IDLE,        .event = EV_TRIANGLE, .next_state = ST_CALIBRATION },
-    { .curr_state = ST_IDLE,        .event = EV_CIRCLE,   .next_state = ST_MEASURE },
-    { .curr_state = ST_IDLE,        .event = EV_PS,       .next_state = ST_RESET },
-    { .curr_state = ST_INIT,        .event = EV_ANY,      .next_state = ST_IDLE },
-    { .curr_state = ST_CALIBRATION, .event = EV_ANY,      .next_state = ST_IDLE },
-    { .curr_state = ST_MEASURE,     .event = EV_ANY,      .next_state = ST_CONTROL },
-    { .curr_state = ST_MEASURE,     .event = EV_PS,       .next_state = ST_RESET },
-    { .curr_state = ST_CONTROL,     .event = EV_ANY,      .next_state = ST_MEASURE },
-    { .curr_state = ST_CONTROL,     .event = EV_PS,       .next_state = ST_RESET },
+    { .curr_state = ST_IDLE,          .event = EV_ANY,      .next_state = ST_IDLE },
+    { .curr_state = ST_IDLE,          .event = EV_CROSS,    .next_state = ST_INIT },
+    { .curr_state = ST_IDLE,          .event = EV_TRIANGLE, .next_state = ST_CALIBRATION },
+    { .curr_state = ST_IDLE,          .event = EV_CIRCLE,   .next_state = ST_UPDATE_STATES },
+    { .curr_state = ST_IDLE,          .event = EV_PS,       .next_state = ST_RESET },
+    { .curr_state = ST_INIT,          .event = EV_ANY,      .next_state = ST_IDLE },
+    { .curr_state = ST_CALIBRATION,   .event = EV_ANY,      .next_state = ST_IDLE },
+    { .curr_state = ST_UPDATE_STATES, .event = EV_ANY,      .next_state = ST_CONTROL },
+    { .curr_state = ST_UPDATE_STATES, .event = EV_PS,       .next_state = ST_RESET },
+    { .curr_state = ST_CONTROL,       .event = EV_ANY,      .next_state = ST_UPDATE_STATES },
+    { .curr_state = ST_CONTROL,       .event = EV_PS,       .next_state = ST_RESET },
 };
 
 

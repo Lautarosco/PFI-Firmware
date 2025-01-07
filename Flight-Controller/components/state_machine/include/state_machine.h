@@ -8,7 +8,7 @@ typedef enum state_machine_states {
     ST_IDLE,
     ST_INIT,
     ST_CALIBRATION,
-    ST_MEASURE,
+    ST_UPDATE_STATES,
     ST_CONTROL,
     ST_RESET
 

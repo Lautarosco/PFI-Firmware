@@ -115,7 +115,7 @@ static void getEvent( sm_state_machine_t * state_machine, drone_t obj ) {
             state_machine->event = EV_ANY;
             break;
 
-        case ST_MEASURE:
+        case ST_UPDATE_STATES:
             /* If user pressed PS */
             if( obj.attributes.global_variables.tx_buttons->ps ) {
 
@@ -165,6 +165,9 @@ void vTaskStateMachine_Run( void * pvParameters ) {
     /* Initialize state_machine object */
     StateMachine_Init( &state_machine );
 
+    /* Get Drone Class general configs */
+    drone_cfg_t Droneconfigs = GetDroneConfigs();
+
     while( 1 ) {
 
         /* Get occurred event */
@@ -173,7 +176,7 @@ void vTaskStateMachine_Run( void * pvParameters ) {
         /* Go to the next state and run it's respective function */
         StateMachine_RunIteration( &state_machine, obj );
         
-        vTaskDelay( pdMS_TO_TICKS( 1000 ) );
+        vTaskDelay( pdMS_TO_TICKS( Droneconfigs.ControllersConfigs[ z ].ts ) );
     }
     
 }
@@ -187,12 +190,15 @@ void vTaskDroneMeasure( void * pvParameters ) {
     /* Cast parameter into Drone object */
     drone_t * obj = ( drone_t * ) pvParameters;
 
+    /* Get Drone Class general configs */
+    drone_cfg_t Droneconfigs = GetDroneConfigs();
+
     while( 1 ) {
 
         /* Measure attitude and update bmi sensor internal registers with respective values */
         obj->attributes.components.bmi->measure( obj->attributes.components.bmi );
 
-        vTaskDelay( pdMS_TO_TICKS( 1000 ) );
+        vTaskDelay( pdMS_TO_TICKS( Droneconfigs.ControllersConfigs[ z ].ts ) );
     }
 }
 

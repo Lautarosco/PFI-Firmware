@@ -579,11 +579,13 @@ static esp_err_t drone_init( drone_t * obj ) {
 
     /* Initialize all Pwm objects */
     for( int i = 0; i < ( ( sizeof( obj->attributes.components.pwm ) ) / ( sizeof( obj->attributes.components.pwm[ 0 ] ) ) ); i++ ) {
+
         obj->attributes.components.pwm[ i ]->init( obj->attributes.components.pwm[ i ], DroneConfigs.pwm_cfg[ i ] );
     }
 
     /* Initialize all Pid objects */
-    for(int i = 0; i < ( ( sizeof( obj->attributes.components.controllers ) ) / ( sizeof( obj->attributes.components.controllers[ 0 ] ) ) ); i++) {
+    for( int i = 0; i < ( ( sizeof( obj->attributes.components.controllers ) ) / ( sizeof( obj->attributes.components.controllers[ 0 ] ) ) ); i++ ) {
+
         obj->attributes.components.controllers[ i ]->init( obj->attributes.components.controllers[ i ], DroneConfigs.ControllersConfigs[ i ] );
     }
 
