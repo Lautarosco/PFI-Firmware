@@ -696,7 +696,7 @@ drone_t * Drone( void ) {
     );
 
     /* Check if all devices are connected to i2c bus */
-    if( !drone->methods.i2c_scan() ) {
+    /*if( !drone->methods.i2c_scan() ) {
         bool found = false;
         ESP_LOGI( DRONE_TAG, "Scanning i2c bus..." );
         while( !found )
@@ -708,7 +708,7 @@ drone_t * Drone( void ) {
 
             vTaskDelay( pdMS_TO_TICKS( 10 ) );
         }
-    }
+    }*/
 
     /* Make an instance of Mma Class */
     drone->attributes.components.mma = Mma();

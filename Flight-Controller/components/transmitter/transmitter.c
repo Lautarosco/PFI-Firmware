@@ -328,6 +328,15 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
     #include <cJSON.h>
     #include <esp_spiffs.h>
 
+    /* TESTING */
+
+        #include <esp_spp_api.h>
+        #include <esp_bt.h>
+        #include <esp_bt_main.h>
+        #include <esp_gap_bt_api.h>
+
+    /* TESTING */
+
     #define WIFI_SSID "ESP32_Transmitter"
     #define WIFI_PASS "12345678"
 
@@ -660,6 +669,97 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
         ESP_LOGI( TRANSMITTER_TAG, "WiFi AP started... SSID: %s, Password: %s", wifi_config.ap.ssid, wifi_config.ap.password );
     }
 
+    static void spp_event_handler( esp_spp_cb_event_t event, esp_spp_cb_param_t * param ) {
+
+        extern BluetoothData_t * GlobalBluetoothData;
+
+        switch ( event ) {
+
+        case ESP_SPP_INIT_EVT:
+            if ( param->init.status == ESP_SPP_SUCCESS ) {
+
+                ESP_LOGI( TRANSMITTER_TAG, "ESP_SPP_INIT_EVT" );
+                esp_spp_start_srv( ESP_SPP_SEC_NONE, ESP_SPP_ROLE_SLAVE, 0, "SPP_SERVER" );
+            }
+            break;
+
+        case ESP_SPP_START_EVT:
+            if ( param->start.status == ESP_SPP_SUCCESS ) {
+
+                ESP_LOGI( TRANSMITTER_TAG, "ESP_SPP_START_EVT" );
+                esp_bt_gap_set_device_name( "esp32" );
+                /* esp_bt_dev_set_device_name( PS3_DEVICE_NAME ); ... Deprecated => Replaced by esp_bt_gap_set_device_name function */
+                esp_bt_gap_set_scan_mode( ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE );
+            }
+            break;
+
+        case ESP_SPP_SRV_OPEN_EVT:
+            ESP_LOGI( TRANSMITTER_TAG, "New device connected, MAC Address: %02x:%02x:%02x:%02x:%02x:%02x",
+                param->srv_open.rem_bda[ 0 ], param->srv_open.rem_bda[ 1 ], param->srv_open.rem_bda[ 2 ],
+                param->srv_open.rem_bda[ 3 ], param->srv_open.rem_bda[ 4 ], param->srv_open.rem_bda[ 5 ]
+            );
+            break;
+
+        case ESP_SPP_DATA_IND_EVT:
+            if( GlobalBluetoothData != NULL ) {
+
+                /* Initialize data length in 0 */
+                GlobalBluetoothData->len = 0;
+
+                /* Data received, hence state = 1 */
+                GlobalBluetoothData->state = true;
+                for (int i = 0; i < param->data_ind.len; i++) {
+
+                    /* Avoid \r ( ascii = 13 ) and \n ( ascii 10 ) chars */
+                    if( ( param->data_ind.data[ i ] != 13 ) && ( param->data_ind.data[ i ] != 10 ) ) {
+                        
+                        /* Assign character to GlobalBluetoothData data */
+                        GlobalBluetoothData->data[ i ] = param->data_ind.data[ i ];
+
+                        /* Increment GlobalBluetoothData data length */
+                        GlobalBluetoothData->len++;
+                    }
+                }
+            }
+
+            else {
+
+                ESP_LOGE( "BLUETOOTH", "'GlobalBluetoothData' variable is NULL" );
+            }
+            
+            break;
+
+        default:
+            break;
+    }
+    }
+
+    static void bluetooth_init() {
+
+        esp_bt_controller_mem_release( ESP_BT_MODE_BLE );
+
+        esp_bt_controller_config_t bt_config = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+
+        esp_bt_controller_init( &bt_config );
+
+        esp_bt_controller_enable( ESP_BT_MODE_CLASSIC_BT );
+
+        esp_bluedroid_init();
+
+        esp_bluedroid_enable();
+
+        esp_spp_register_callback( spp_event_handler );
+
+        esp_spp_cfg_t bt_spp_cfg = {
+
+            .mode = ESP_SPP_MODE_CB,
+            .enable_l2cap_ertm = true,
+            .tx_buffer_size = 0,
+        };
+
+        esp_spp_enhanced_init( &bt_spp_cfg );
+    }
+
     /**
      * @brief Initialize Transmitter object
      * @param obj: Pointer to Transmitter object
@@ -686,6 +786,8 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
 
         /* Start HTTP server */
         start_webserver();
+
+        bluetooth_init();
 
         ESP_LOGI( TRANSMITTER_TAG, "Transmitter object initialized" );
 
