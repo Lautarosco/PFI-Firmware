@@ -173,7 +173,7 @@ void vTaskStateMachine_Run( void * pvParameters ) {
         /* Go to the next state and run it's respective function */
         StateMachine_RunIteration( &state_machine, obj );
         
-        vTaskDelay( pdMS_TO_TICKS( 1000 ) );
+        vTaskDelay( pdMS_TO_TICKS( 20 ) );
     }
     
 }
@@ -192,7 +192,7 @@ void vTaskDroneMeasure( void * pvParameters ) {
         /* Measure attitude and update bmi sensor internal registers with respective values */
         obj->attributes.components.bmi->measure( obj->attributes.components.bmi );
 
-        vTaskDelay( pdMS_TO_TICKS( 1000 ) );
+        vTaskDelay( pdMS_TO_TICKS( 20 ) );
     }
 }
 
@@ -267,6 +267,6 @@ void vTaskParseBluetooth( void * pvParameters ) {
             }
         }
 
-        vTaskDelay( pdMS_TO_TICKS( 1000 ) );
+        vTaskDelay( pdMS_TO_TICKS( 20 ) );
     }
 }

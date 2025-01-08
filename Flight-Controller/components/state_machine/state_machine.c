@@ -56,7 +56,10 @@ static void StControlFunc( drone_t * obj ) {
         ( 180 / M_PI ) * __sin( 0.02f, 1.0f, timer )
     );
 
-    printf( "%f\r\n", ( 180 / M_PI ) * __sin( 0.02f, 1.0f, timer ) );
+    printf( "Setpoint: %f\r\n", ( 180 / M_PI ) * __sin( 0.02f, 1.0f, timer ) );
+    printf("Roll: %0.2f\r\n", obj->attributes.states.roll);
+    printf("Roll Speed: %0.2f\r\n", obj->attributes.states.roll);
+
 
     /* If timer exceeds from 2π */
     if( timer > ( 2 * M_PI ) ) {
