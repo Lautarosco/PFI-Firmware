@@ -5,6 +5,7 @@
 #include <math.h>
 #include <esp_log.h>
 #include <string.h>
+#include <esp_spiffs.h>
 
 const char * DRONE_TAG = "DRONE";
 
@@ -320,9 +321,10 @@ static void Kalman( drone_t * obj, float ts ) {
  * @retval bool
  */
 static bool i2c_scan( void ) {
+
     bool found = false;
-    for ( uint8_t address = 1; address < 127; address++ )
-    {
+    for( uint8_t address = 1; address < 127; address++ ) {
+
         i2c_cmd_handle_t cmd = i2c_cmd_link_create();
         ESP_ERROR_CHECK( i2c_master_start( cmd ) );
         ESP_ERROR_CHECK( i2c_master_write_byte( cmd, ( address << 1 ) | I2C_MASTER_WRITE, true ) );
@@ -331,21 +333,24 @@ static bool i2c_scan( void ) {
         esp_err_t ret = i2c_master_cmd_begin( I2C_NUM_0, cmd, 1000 / portTICK_PERIOD_MS );
         i2c_cmd_link_delete( cmd );
         
-        if ( ret == ESP_OK )
-        {
-            if( address == BMI160_ADDR )
-            {
+        if ( ret == ESP_OK ) {
+
+            if( address == BMI160_ADDR ) {
+
                 ESP_LOGI( DRONE_TAG, "Bmi160 found at ( 0x%02x )", address );
                 found = true;
             }
-            else
-            {
+
+            else {
+
                 ESP_LOGI( DRONE_TAG, "Device found at address: ( 0x%02x )", address );
-                found = true;
             }
         }
-        else if ( ret == ESP_ERR_TIMEOUT )
+        
+        else if ( ret == ESP_ERR_TIMEOUT ) {
+
             ESP_LOGW( DRONE_TAG, "I2C bus is busy" );
+        }
     }
 
     return found;
@@ -492,66 +497,6 @@ static csv_row_t get_csv_row( csv_row_t * csv_rows, int n_rows, const char * nam
 static esp_err_t drone_init( drone_t * obj ) {
 
     ESP_LOGI( DRONE_TAG, "Initializing Drone object..." );
-    
-    /* If joystick is used as tx, then spiffs partition is not initialized */
-    #if PLAYSTATION_TX
-
-        #include <esp_spiffs.h>
-
-        /* Set spiffs configs */
-        esp_vfs_spiffs_conf_t config = {
-
-            .base_path              = "/spiffs",
-            .partition_label        = NULL,
-            .max_files              = 5,
-            .format_if_mount_failed = true
-        };
-
-        /* Mount spiffs configs */
-        esp_err_t ret = esp_vfs_spiffs_register( &config );
-
-        /* Check if mount was succesfull */
-        if( ret != ESP_OK ) {
-
-            if( ret == ESP_ERR_NOT_FOUND ) {
-
-                ESP_LOGE( DRONE_TAG, "Failed to find spiffs partition" );
-                return ESP_FAIL;
-            }
-
-            else if( ret == ESP_FAIL ) {
-
-                ESP_LOGE( DRONE_TAG, "Failed to mount spiffs partition" );
-                return ESP_FAIL;
-            }
-
-            else {
-
-                ESP_LOGE( DRONE_TAG, "Failed to initialize spiffs ( %s )", esp_err_to_name( ret ) );
-                return ESP_FAIL;
-            }
-        }
-
-        ESP_LOGI( DRONE_TAG, "Spiffs mounted succesfully" );
-
-    #endif
-
-    /* Number of csv rows */
-    int n_rows = 0;
-
-    /* Read csv, stored in flash memory of MCU, rows */
-    csv_row_t * csv_rows = read_csv( "/spiffs/drone_configs.csv", &n_rows );    /* '/base_path/filename.extension' */
-
-    /**
-     * ¡IMPORTANT!
-     * 
-     * All objects must be initialized after any update of Drone Class configs with csv configs, otherwise
-     * they'll initialize with past values
-     */
-    DroneConfigs.imu_cfg.gyro_offset.x = get_csv_row( csv_rows, n_rows, "x" ).var_value;
-    DroneConfigs.imu_cfg.gyro_offset.y = get_csv_row( csv_rows, n_rows, "y" ).var_value;
-    DroneConfigs.imu_cfg.gyro_offset.z = get_csv_row( csv_rows, n_rows, "z" ).var_value;
-
 
     /* Drone object is initialized */
     obj->attributes.init_ok = true;
@@ -588,13 +533,6 @@ static esp_err_t drone_init( drone_t * obj ) {
 
         obj->attributes.components.controllers[ i ]->init( obj->attributes.components.controllers[ i ], DroneConfigs.ControllersConfigs[ i ] );
     }
-
-    for( int i = 0; i < n_rows; i++ ) {
-
-        free( csv_rows[ i ].var_name );
-        free( csv_rows[ i ].var_type );
-    }
-    free( csv_rows );
 
     /* Blink MCU internal LED to indicate Drone object was successfully initialized */
     gpio_set_level( GPIO_NUM_2, false );
@@ -697,6 +635,56 @@ drone_t * Drone( void ) {
     drone->methods.init             = drone_init;
     drone->methods.i2c_scan         = i2c_scan;
 
+    /* Initialize spiffs */
+    esp_vfs_spiffs_conf_t config = {
+
+        .base_path              = "/spiffs",    /* See partition table => Spiffs row => Name column */
+        .partition_label        = NULL,
+        .max_files              = 5,
+        .format_if_mount_failed = true
+    };
+
+    /* Mount spiffs configs */
+    esp_err_t ret = esp_vfs_spiffs_register( &config );
+
+    /* Check if mount was succesfull */
+    if( ret != ESP_OK ) {
+
+        if( ret == ESP_ERR_NOT_FOUND ) {
+
+            ESP_LOGE( DRONE_TAG, "Failed to find spiffs partition" );
+            return ESP_FAIL;
+        }
+
+        else if( ret == ESP_FAIL ) {
+
+            ESP_LOGE( DRONE_TAG, "Failed to mount spiffs partition" );
+            return ESP_FAIL;
+        }
+
+        else {
+
+            ESP_LOGE( DRONE_TAG, "Failed to initialize spiffs ( %s )", esp_err_to_name( ret ) );
+            return ESP_FAIL;
+        }
+    }
+    ESP_LOGI( DRONE_TAG, "Spiffs mounted succesfully" );
+
+    /* Number of csv rows */
+    int n_rows = 0;
+
+    /* Read csv, stored in flash memory of MCU, rows */
+    csv_row_t * csv_rows = read_csv( "/spiffs/drone_configs.csv", &n_rows );    /* '/base_path/filename.extension' */
+
+    /**
+     * ¡IMPORTANT!
+     * 
+     * Any changes for Drone Class general configs must be done before calling 'GetDroneConfigs' function
+     */
+    DroneConfigs.imu_cfg.gyro_offset.x = get_csv_row( csv_rows, n_rows, "x" ).var_value;
+    DroneConfigs.imu_cfg.gyro_offset.y = get_csv_row( csv_rows, n_rows, "y" ).var_value;
+    DroneConfigs.imu_cfg.gyro_offset.z = get_csv_row( csv_rows, n_rows, "z" ).var_value;
+
     /* Get Drone Class generic configs */
     drone_cfg_t DroneConfigs = GetDroneConfigs();
 
@@ -753,6 +741,11 @@ drone_t * Drone( void ) {
         /* Initialize Transmitter object */
         drone->attributes.components.Tx->init( drone->attributes.components.Tx );
 
+    #else
+        /* No transmitter selected */
+        ESP_LOGE( DRONE_TAG, "No transmitter selected. See transmitter_structs.h header file" );
+        esp_restart();
+
     #endif
 
     /* Assign Transmitter buttons global variable memmory address to 'GlobalTxButtons' variable */
@@ -760,6 +753,14 @@ drone_t * Drone( void ) {
 
     /* Assign Bluetooth data global variable memmory address to 'GlobalBluetoothData' variable */
     GlobalBluetoothData = drone->attributes.global_variables.bt_data;
+
+    /* Free memory used for csv object */
+    for( int i = 0; i < n_rows; i++ ) {
+
+        free( csv_rows[ i ].var_name );
+        free( csv_rows[ i ].var_type );
+    }
+    free( csv_rows );
 
     /* Blink MCU internal LED to indicate Transmitter object is ready to receive commands */
     gpio_set_level( GPIO_NUM_2, false );

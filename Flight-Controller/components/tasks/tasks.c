@@ -67,6 +67,7 @@ static bool PID_INDEX_CHECK( char * index, int n_obj, const char * func, int lin
  * @retval none
  */
 static void getEvent( sm_state_machine_t * state_machine, drone_t obj ) {
+
     switch( state_machine->curr_state ) {
         
         case ST_IDLE:
@@ -80,7 +81,17 @@ static void getEvent( sm_state_machine_t * state_machine, drone_t obj ) {
             /* If user pressed △ */
             else if( obj.attributes.global_variables.tx_buttons->triangle ) {
 
-                state_machine->event = EV_TRIANGLE;
+                /* If drone isn't initialized */
+                if( !obj.attributes.init_ok ) {
+
+                    state_machine->event = EV_CROSS;
+                }
+
+                /* If drone is already initialized */
+                else {
+
+                    state_machine->event = EV_TRIANGLE;
+                }
             }
 
             /* If user pressed ◯ */
@@ -103,6 +114,12 @@ static void getEvent( sm_state_machine_t * state_machine, drone_t obj ) {
             else if( ( obj.attributes.global_variables.tx_buttons->ps ) ) {
 
                 state_machine->event = EV_PS;
+            }
+
+            /* If no one of above buttons is being pressed */
+            else {
+
+                state_machine->event = EV_ANY;
             }
 
             break;
@@ -176,7 +193,7 @@ void vTaskStateMachine_Run( void * pvParameters ) {
         /* Go to the next state and run it's respective function */
         StateMachine_RunIteration( &state_machine, obj );
         
-        vTaskDelay( pdMS_TO_TICKS( Droneconfigs.ControllersConfigs[ z ].ts ) );
+        vTaskDelay( pdMS_TO_TICKS( Droneconfigs.ControllersConfigs[ z ].ts * 100 ) );
     }
     
 }

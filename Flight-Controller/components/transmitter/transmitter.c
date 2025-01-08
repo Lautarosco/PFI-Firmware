@@ -672,42 +672,6 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
         /* Initialize No Volatile System partition */
         ESP_ERROR_CHECK( nvs_flash_init() );
 
-        /* Initialize spiffs */
-        esp_vfs_spiffs_conf_t config = {
-
-            .base_path              = "/spiffs",    /* See partition table => Spiffs row => Name column */
-            .partition_label        = NULL,
-            .max_files              = 5,
-            .format_if_mount_failed = true
-        };
-
-        /* Mount spiffs configs */
-        esp_err_t ret = esp_vfs_spiffs_register( &config );
-
-        /* Check if mount was succesfull */
-        if( ret != ESP_OK ) {
-
-            if( ret == ESP_ERR_NOT_FOUND ) {
-
-                ESP_LOGE( TRANSMITTER_TAG, "Failed to find spiffs partition" );
-                return ESP_FAIL;
-            }
-
-            else if( ret == ESP_FAIL ) {
-
-                ESP_LOGE( TRANSMITTER_TAG, "Failed to mount spiffs partition" );
-                return ESP_FAIL;
-            }
-
-            else {
-
-                ESP_LOGE( TRANSMITTER_TAG, "Failed to initialize spiffs ( %s )", esp_err_to_name( ret ) );
-                return ESP_FAIL;
-            }
-        }
-
-        ESP_LOGI( TRANSMITTER_TAG, "Spiffs mounted succesfully" );
-
         /* Initialize network interface */
         ESP_ERROR_CHECK( esp_netif_init() );
 
