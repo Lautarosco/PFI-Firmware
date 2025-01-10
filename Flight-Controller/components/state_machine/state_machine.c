@@ -33,10 +33,12 @@ typedef struct state_function {
  */
 
 static void StIdleFunc( drone_t * obj ) {
+
     // printf( "IDLE\r\n" );
 }
 
 static void StInitFunc( drone_t * obj ) {
+
     ESP_ERROR_CHECK( obj->methods.init( obj ) );
 
     #if WEBSV_TX
@@ -46,7 +48,8 @@ static void StInitFunc( drone_t * obj ) {
 }
 
 static void StUpdateStatesFunc( drone_t * obj ) {
-    obj->methods.update_states( obj, 10 );
+
+    obj->methods.update_states( obj, GetDroneConfigs().ControllersConfigs[ z ].ts );
 }
 
 /* Timer used to get sine values */
@@ -64,7 +67,7 @@ static void StControlFunc( drone_t * obj ) {
         ( 180 / M_PI ) * __sin( 0.02f, 1.0f, timer )
     );
 
-    printf( "%f\r\n", ( 180 / M_PI ) * __sin( 0.02f, 1.0f, timer ) );
+    // printf( "%f\r\n", ( 180 / M_PI ) * __sin( 0.02f, 1.0f, timer ) );
 
     /* If timer exceeds from 2π */
     if( timer > ( 2 * M_PI ) ) {
@@ -185,6 +188,7 @@ static void StCalibrationFunc( drone_t * obj ) {
 }
 
 static void StResetFunc( drone_t * obj ) {
+
     esp_restart();
 }
 
@@ -228,6 +232,7 @@ typedef struct state_transition_row {
  * @brief State transition matrix
  */
 static const state_trans_row_t state_trans_matrix[  ] = {
+
     { .curr_state = ST_IDLE,          .event = EV_ANY,      .next_state = ST_IDLE },
     { .curr_state = ST_IDLE,          .event = EV_CROSS,    .next_state = ST_INIT },
     { .curr_state = ST_IDLE,          .event = EV_TRIANGLE, .next_state = ST_CALIBRATION },
@@ -256,7 +261,8 @@ void StateMachine_Init( sm_state_machine_t * state_machine ) {
 }
 
 void StateMachine_RunIteration( sm_state_machine_t * state_machine, drone_t * drone ) {
-    printf( "Current state: %s\r\nCurrent event: %s\r\n", StateMachine_GetStateName( state_machine->curr_state ), StateMachine_GetEventName( state_machine->event ) );
+
+    // printf( "Current state: %s\r\nCurrent event: %s\r\n", StateMachine_GetStateName( state_machine->curr_state ), StateMachine_GetEventName( state_machine->event ) );
 
     /* Loop through the entire transition matrix to match actual state and occurred event */
     for( int i = 0; i < sizeof( state_trans_matrix ) / sizeof( state_trans_matrix[ 0 ] ); i++ ) {
@@ -279,31 +285,36 @@ void StateMachine_RunIteration( sm_state_machine_t * state_machine, drone_t * dr
 }
 
 const char * StateMachine_GetStateName( sm_state_t state ) {
+
     return state_function_array[ state ].name;
 }
 
 const char * StateMachine_GetEventName( sm_event_t event ) {
+
     switch ( event ) {
 
-    case EV_CROSS:
-        return "EV_CROSS";
-        break;
-    case EV_TRIANGLE:
-        return "EV_TRIANGLE";
-        break;
-    case EV_CIRCLE:
-        return "EV_CIRCLE";
-        break;
-    case EV_ANY:
-        return "EV_ANY";
-        break;
+        case EV_CROSS:
+            return "EV_CROSS";
+            break;
 
-    case EV_PS:
-        return "EV_PS";
-        break;
+        case EV_TRIANGLE:
+            return "EV_TRIANGLE";
+            break;
 
-    default:
-        return "EVENT NOT FOUND";
-        break;
+        case EV_CIRCLE:
+            return "EV_CIRCLE";
+            break;
+            
+        case EV_ANY:
+            return "EV_ANY";
+            break;
+
+        case EV_PS:
+            return "EV_PS";
+            break;
+
+        default:
+            return "EVENT NOT FOUND";
+            break;
     }
 }

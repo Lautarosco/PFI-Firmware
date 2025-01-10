@@ -1,8 +1,6 @@
 #ifndef DRONE_H
 #define DRONE_H
 
-#define HOBBYWING_SKYWALKER 1   /* 0: Use other ESC | 1: Hobbywing Skywalker ESC used */
-
 #include <esp_err.h>
 #include <drone_structs.h>
 

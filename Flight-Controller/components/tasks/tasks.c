@@ -193,7 +193,7 @@ void vTaskStateMachine_Run( void * pvParameters ) {
         /* Go to the next state and run it's respective function */
         StateMachine_RunIteration( &state_machine, obj );
         
-        vTaskDelay( pdMS_TO_TICKS( Droneconfigs.ControllersConfigs[ z ].ts * 100 ) );
+        vTaskDelay( pdMS_TO_TICKS( Droneconfigs.ControllersConfigs[ z ].ts ) );
     }
     
 }
@@ -213,7 +213,7 @@ void vTaskDroneMeasure( void * pvParameters ) {
     while( 1 ) {
 
         /* Measure attitude and update bmi sensor internal registers with respective values */
-        obj->attributes.components.bmi->measure( obj->attributes.components.bmi );
+        obj->attributes.components.bmi.measure( &( obj->attributes.components.bmi ) );
 
         vTaskDelay( pdMS_TO_TICKS( Droneconfigs.ControllersConfigs[ z ].ts ) );
     }

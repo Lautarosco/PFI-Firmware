@@ -45,8 +45,8 @@ typedef struct drone_states {
 /** @brief Drone's components */
 
 typedef struct drone_components {
-    /* bmi160 component */
-    bmi160_t * bmi;
+    /* bmi160 component ( PENDIENTE PASARLO A PUNTERO ) */
+    bmi160_t bmi;
 
     /* Transmitter component */
     transmitter_t * Tx;
@@ -163,9 +163,7 @@ typedef struct drone_attributes {
     /* Drone's global variables */
     drone_globals_t global_variables;
 
-    /* Drone's cfgs */
-    // drone_cfg_t cfg;
-
+    /* Drone's init flag */
     bool init_ok;
 
 } drone_attributes_t;

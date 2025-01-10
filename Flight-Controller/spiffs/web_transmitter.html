@@ -26,7 +26,7 @@
 
     button {
       height: 60px;
-      width: 60px; /* Ensures square buttons */
+      width: 60px;
       font-size: 18px;
       margin: 5px;
       border: none;
@@ -40,9 +40,9 @@
       background-color: #0056b3;
     }
 
-    /* Shoulder Buttons (Wider Buttons) */
+    /* Shoulder Buttons */
     .l2, .r2, .l1, .r1 {
-      width: 120px; /* 2:1 width-to-height ratio */
+      width: 120px;
     }
 
     .l2 { grid-area: l2; }
@@ -92,54 +92,82 @@
       justify-content: center;
       gap: 10px;
     }
-
   </style>
   <script>
+    // Manejador del estado de los botones
+    const buttonStates = {};
+
     function sendButtonAction(button, action) {
       fetch(`/button`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ button, action })
+        body: JSON.stringify({ button, action }),
+      }).catch((err) => console.error('Error:', err));
+    }
+
+    function handlePress(button) {
+      if (!buttonStates[button]) {
+        buttonStates[button] = true;
+        sendButtonAction(button, 'press');
+      }
+    }
+
+    function handleRelease(button) {
+      if (buttonStates[button]) {
+        buttonStates[button] = false;
+        sendButtonAction(button, 'release');
+      }
+    }
+
+    function attachButtonEvents(buttonElement, buttonName) {
+      buttonElement.addEventListener('mousedown', () => handlePress(buttonName));
+      buttonElement.addEventListener('mouseup', () => handleRelease(buttonName));
+      buttonElement.addEventListener('mouseleave', () => handleRelease(buttonName));
+      buttonElement.addEventListener('touchstart', (e) => {
+        e.preventDefault(); // Evita eventos duplicados en dispositivos táctiles
+        handlePress(buttonName);
       });
+      buttonElement.addEventListener('touchend', () => handleRelease(buttonName));
+      buttonElement.addEventListener('touchcancel', () => handleRelease(buttonName));
     }
 
-    function onPress(button) {
-      sendButtonAction(button, 'pressed');
-    }
-
-    function onRelease(button) {
-      sendButtonAction(button, 'released');
-    }
+    document.addEventListener('DOMContentLoaded', () => {
+      const buttons = document.querySelectorAll('button');
+      buttons.forEach((button) => {
+        const buttonName = button.textContent.trim().toLowerCase();
+        attachButtonEvents(button, buttonName);
+      });
+    });
   </script>
 </head>
 <body>
   <div class="joystick-container">
     <!-- Shoulder Buttons -->
-    <button class="l2" onmousedown="onPress('l2')" onmouseup="onRelease('l2')">L2</button>
-    <button class="r2" onmousedown="onPress('r2')" onmouseup="onRelease('r2')">R2</button>
-    <button class="l1" onmousedown="onPress('l1')" onmouseup="onRelease('l1')">L1</button>
-    <button class="r1" onmousedown="onPress('r1')" onmouseup="onRelease('r1')">R1</button>
+    <button class="l2">l2</button>
+    <button class="r2">R2</button>
+    <button class="l1">L1</button>
+    <button class="r1">R1</button>
 
     <!-- D-Pad -->
     <div class="dpad">
-      <button class="up" onmousedown="onPress('up')" onmouseup="onRelease('up')">&uarr;</button>
-      <button class="down" onmousedown="onPress('down')" onmouseup="onRelease('down')">&darr;</button>
-      <button class="left" onmousedown="onPress('left')" onmouseup="onRelease('left')">&larr;</button>
-      <button class="right" onmousedown="onPress('right')" onmouseup="onRelease('right')">&rarr;</button>
+      <button class="up">&uarr;</button>
+      <button class="down">&darr;</button>
+      <button class="left">&larr;</button>
+      <button class="right">&rarr;</button>
     </div>
 
     <!-- Center Buttons -->
     <div class="center">
-      <button onmousedown="onPress('start')" onmouseup="onRelease('start')">Start</button>
-      <button onmousedown="onPress('reset')" onmouseup="onRelease('reset')">Reset</button>
+      <button>Start</button>
+      <button>Reset</button>
     </div>
 
     <!-- Action Buttons -->
     <div class="actions">
-      <button class="triangle" onmousedown="onPress('triangle')" onmouseup="onRelease('triangle')">&#9651;</button>
-      <button class="square" onmousedown="onPress('square')" onmouseup="onRelease('square')">&#9632;</button>
-      <button class="circle" onmousedown="onPress('circle')" onmouseup="onRelease('circle')">&#9675;</button>
-      <button class="x" onmousedown="onPress('x')" onmouseup="onRelease('x')">X</button>
+      <button class="triangle">&#9651;</button>
+      <button class="square">&#9632;</button>
+      <button class="circle">&#9675;</button>
+      <button class="x">X</button>
     </div>
   </div>
 </body>
