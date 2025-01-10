@@ -9,12 +9,6 @@
 
 void app_main( void ) {
 
-    esp_chip_info_t info;
-    esp_chip_info( &info );
-
-    printf( "MCU model: %d\r\n", info.model );
-    printf( "MCU revision: %d\r\n", info.revision );
-
     /* Make an instance of Drone Class */
     drone_t * drone = Drone();
 
@@ -37,8 +31,8 @@ void app_main( void ) {
 
     while( 1 ) {
 
-        printf( "x: %d\r\n", drone->attributes.global_variables.tx_buttons->cross );
-
+        printf( "Roll: %2.2f\r\n", drone->attributes.states.roll );
+        
         vTaskDelay( pdMS_TO_TICKS( 1000 ) );
     }
 }
