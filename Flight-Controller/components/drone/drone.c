@@ -60,19 +60,19 @@ typedef struct csv_row {
  */
 static drone_cfg_t DroneConfigs = {
     .roll = {
-        .error = 0.0f,
-        .Q     = 0.01f,
-        .R     = 0.5f,
+        .P = 1.0f,
+        .Q = 0.1f,
+        .R = 0.5f,
     },
     .pitch = {
-        .error = 0.0f,
-        .Q     = 0.01f,
-        .R     = 0.5f,
+        .P = 0.0f,
+        .Q = 0.0f,
+        .R = 0.0f,
     },
     .yaw = {
-        .error = 0.0f,
-        .Q     = 0.01f,
-        .R     = 0.5f,
+        .P = 0.0f,
+        .Q = 0.0f,
+        .R = 0.0f,
     },
     .IIR_coeff_roll_dot  = 0.9f,
     .IIR_coeff_pitch_dot = 0.9f,
@@ -263,6 +263,7 @@ inline bool GPIO_INIT( gpio_num_t GPIOx, gpio_mode_t io_mode, gpio_pull_mode_t u
  * @retval float
  */
 static float FirstOrderIIR( float in, float out, float a ) {
+    
     if( ( a < 0.0f ) || ( a > 1.0f ) )  /* Assume default value if 'a' parameter is wrong */
         a =  0.5f;
 
@@ -281,41 +282,38 @@ static float FirstOrderIIR( float in, float out, float a ) {
  */
 static void Kalman( drone_t * obj, float ts ) {
 
-    /* Use Gyroscope as mathematical model of IMU sensor */
-    obj->attributes.states.roll  += ( ts / 1000.0f ) * obj->attributes.components.bmi.Gyro.x;
-    obj->attributes.states.pitch += ( ts / 1000.0f ) * obj->attributes.components.bmi.Gyro.y;
-    obj->attributes.states.yaw   += ( ts / 1000.0f ) * obj->attributes.components.bmi.Gyro.z;
-
     /* Get Drone Class generic configs */
     drone_cfg_t DroneConfigs = GetDroneConfigs();
 
-    /* Update states errors */
-    DroneConfigs.roll.error  += DroneConfigs.roll.Q;
-    DroneConfigs.pitch.error += DroneConfigs.pitch.Q;
-    // DroneConfigs.yaw.error   += DroneConfigs.yaw.Q;
+
+    /* -------------------------------------------------------------------------------- */
+
+
+    /* Prediction step */
+
+    /* Use Gyroscope as mathematical model of IMU sensor */
+    float estimated_roll = obj->attributes.states.roll + ( ts / 1000.0f ) * obj->attributes.components.bmi.Gyro.x;
+
+    /* Predict uncertainty of estimation */
+    float estimated_P = DroneConfigs.roll.P + DroneConfigs.roll.Q;
+
+
+    /* -------------------------------------------------------------------------------- */
+
+
+    /* Update step */
+
+    /* Update Kalman gain */
+    float roll_K = estimated_P / ( estimated_P + DroneConfigs.roll.R );
 
     /* Use Accelerometer as sensor readings of IMU */
-    float roll_sensor  = atan2( obj->attributes.components.bmi.Acc.y, obj->attributes.components.bmi.Acc.z ) * ( 180.0f / M_PI );
-    float pitch_sensor = -atan2(
-        -obj->attributes.components.bmi.Acc.x,
-        sqrt( ( obj->attributes.components.bmi.Acc.y * obj->attributes.components.bmi.Acc.y ) +
-              ( obj->attributes.components.bmi.Acc.z * obj->attributes.components.bmi.Acc.z ) )
-    ) * ( 180.0f / M_PI );
-    // float yaw_sensor   =  * ( 180 / M_PI );
-
-    float roll_K  = DroneConfigs.roll.error  / ( DroneConfigs.roll.error  + DroneConfigs.roll.R );
-    float pitch_K = DroneConfigs.pitch.error / ( DroneConfigs.pitch.error + DroneConfigs.pitch.R );
-    // float yaw_K   = DroneConfigs.yaw.error   / ( DroneConfigs.yaw.error   + DroneConfigs.yaw.R );
+    float roll_sensor = atan2( obj->attributes.components.bmi.Acc.y, obj->attributes.components.bmi.Acc.z ) * ( 180.0f / M_PI );
 
     /* Update states */
-    obj->attributes.states.roll  = ( obj->attributes.states.roll  * ( 1 - roll_K ) )  + ( roll_K  * roll_sensor );
-    obj->attributes.states.pitch = ( obj->attributes.states.pitch * ( 1 - pitch_K ) ) + ( pitch_K * pitch_sensor );
-    // drone->attributes.states.yaw   = ( drone->attributes.states.yaw   * ( 1 - yaw_K ) )   + ( yaw_K   * yaw_sensor );
+    obj->attributes.states.roll = ( estimated_roll * ( 1 - roll_K ) ) + ( roll_K * roll_sensor );
 
-    /* Update states errors */
-    DroneConfigs.roll.error  *= ( 1 - roll_K );
-    DroneConfigs.pitch.error *= ( 1 - pitch_K );
-    // DroneConfigs.yaw.error   *= ( 1 - yaw_K );
+    /* Update P uncertainty */
+    DroneConfigs.roll.P = ( 1 - roll_K ) * estimated_P;
 }
 
 
@@ -520,11 +518,15 @@ static esp_err_t drone_init( drone_t * obj ) {
         DroneConfigs.imu_cfg.gyro_mode,
         DroneConfigs.imu_cfg.gyro_freq,
         DroneConfigs.imu_cfg.gyro_range,
-        DroneConfigs.imu_cfg.gyro_offset.x,
-        DroneConfigs.imu_cfg.gyro_offset.y,
-        DroneConfigs.imu_cfg.gyro_offset.z
+        0.0f,
+        0.0f,
+        0.0f
         )
     );
+
+    obj->attributes.components.bmi.Gyro.offset.x = DroneConfigs.imu_cfg.gyro_offset.x;
+    obj->attributes.components.bmi.Gyro.offset.y = DroneConfigs.imu_cfg.gyro_offset.y;
+    obj->attributes.components.bmi.Gyro.offset.z = DroneConfigs.imu_cfg.gyro_offset.z;
 
     /* Fast offset compensation for bmi sensor */
     obj->attributes.components.bmi.foc( &( obj->attributes.components.bmi ) );
@@ -570,6 +572,7 @@ static void UpdateStates( drone_t * obj, float ts ) {
         /* If Drone object isn't initialized */
         ESP_LOGE( DRONE_TAG, "Drone object must be initialized before calling it's methods!. See %s in line %d", __func__, __LINE__ );
     }
+
     else {
 
         /* Update state's velocity */
@@ -579,6 +582,9 @@ static void UpdateStates( drone_t * obj, float ts ) {
         
         /* Update state's position */
         Kalman( obj, ts );
+        // float roll_acc = atan2( obj->attributes.components.bmi.Acc.y, obj->attributes.components.bmi.Acc.z ) * ( 180.0f / M_PI );
+        // float roll_gyro = obj->attributes.states.roll + ( obj->attributes.components.bmi.Gyro.x * ( ts / 1000.0f ) );
+        // obj->attributes.states.roll = ( 0.98f * roll_acc ) + ( 0.02f * roll_gyro );
     }
 }
 
@@ -662,23 +668,23 @@ drone_t * Drone( void ) {
         if( ret == ESP_ERR_NOT_FOUND ) {
 
             ESP_LOGE( DRONE_TAG, "Failed to find spiffs partition" );
-            return ESP_FAIL;
+            return NULL;
         }
 
         else if( ret == ESP_FAIL ) {
 
             ESP_LOGE( DRONE_TAG, "Failed to mount spiffs partition" );
-            return ESP_FAIL;
+            return NULL;
         }
 
         else {
 
             ESP_LOGE( DRONE_TAG, "Failed to initialize spiffs ( %s )", esp_err_to_name( ret ) );
-            return ESP_FAIL;
+            return NULL;
         }
     }
 
-    ESP_LOGI( DRONE_TAG, "Spiffs mounted succesfully" );
+    ESP_LOGI( DRONE_TAG, "Spiffs mounted successfully" );
 
     /* Number of csv rows */
     int n_rows = 0;

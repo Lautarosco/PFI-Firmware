@@ -177,7 +177,13 @@ void vTaskStateMachine_Run( void * pvParameters ) {
     drone_t * obj = ( drone_t * ) pvParameters;
 
     /* Create a state_machine object */
-    sm_state_machine_t state_machine;
+
+    /* TESTING */
+
+    // sm_state_machine_t state_machine;    /* It will end being local */
+    extern sm_state_machine_t state_machine;
+
+    /* TESTING */
 
     /* Initialize state_machine object */
     StateMachine_Init( &state_machine );

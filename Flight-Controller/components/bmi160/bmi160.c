@@ -10,43 +10,11 @@
 
 #include "string.h"
 
-#include <esp_chip_info.h>
-
 static const char *TAG = "BMI160";
 
-#define ESP32_CHIP_SCL  22      /* SCL GPIO for ESP32 chip */
-#define ESP32_CHIP_SDA  21      /* SDA GPIO for ESP32 chip */
-
-
-/* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
-
+// Device Methods
+/*Takes an empty bmi160_t struct and inits its functions and parameters*/
 esp_err_t Bmi160( bmi160_t* bmi, int i2c_address_param, int i2c_scl_param, int i2c_sda_param ) {
-
-    ESP_LOGI( TAG, "Making an instance of Bmi160 Class..." );
-
-    esp_chip_info_t chip_info;
-
-    /* Get info of MCU chip */
-    esp_chip_info( &chip_info );
-
-    /* Check if MCU chip is ESP32 */
-    if( chip_info.model == CHIP_ESP32 ) {
-
-        /* Check if SCL parameter is correct */
-        if( i2c_scl_param != ESP32_CHIP_SCL ) {
-
-            ESP_LOGE( TAG, "SCL GPIO should be [ %d ] for ESP32 chip. Check parameters of function %s", ESP32_CHIP_SCL, __func__ );
-            return ESP_ERR_INVALID_ARG;
-        }
-
-        /* Check if SDA parameter is correct */
-        else if( i2c_sda_param != ESP32_CHIP_SDA ) {
-
-            ESP_LOGE( TAG, "SDA GPIO should be [ %d ] for ESP32 chip. Check parameters of function %s", ESP32_CHIP_SDA, __func__ );
-            return ESP_ERR_INVALID_ARG;
-        }
-    }
 
     // Function pointers assignment
     bmi->init                 = bmi_init;
@@ -61,30 +29,26 @@ esp_err_t Bmi160( bmi160_t* bmi, int i2c_address_param, int i2c_scl_param, int i
     esp_err_t i2c_ret = i2c_init(i2c_sda_param, i2c_scl_param);
 
     if (i2c_ret == ESP_OK){
-
         bmi->i2c.address = i2c_address_param;
         bmi->i2c.scl = i2c_scl_param;
         bmi->i2c.sda = i2c_sda_param;
-
-        ESP_LOGI( TAG, "I2C successfully initialized" );
-    }
-    
-    else {
-
+    } else {
         ESP_LOGI(TAG, "INIT->I2C ERROR: %d", i2c_ret);
     }
+
+    bmi->Acc.offset.x = 0.0f;
+    bmi->Acc.offset.y = 0.0f;
+    bmi->Acc.offset.z = 0.0f;
+
+    bmi->Gyro.offset.x = 0.0f;
+    bmi->Gyro.offset.y = 0.0f;
+    bmi->Gyro.offset.z = 0.0f;
 
     bmi->Acc.i2c = bmi->i2c;
     bmi->Gyro.i2c = bmi->i2c;
 
-    ESP_LOGI( TAG, "Instance successfully made" );
-
     return ESP_OK;
 }
-
-
-/* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
 
 esp_err_t bmi_init( bmi160_t * self,
     int acc_mode,  int acc_freq,  int acc_range,
@@ -92,12 +56,12 @@ esp_err_t bmi_init( bmi160_t * self,
     int gyro_offset_x, int gyro_offset_y, int gyro_offset_z ) {
 
     /* Initialize Acelerometer */
-    ESP_ERROR_CHECK( bmi160_write_byte( self->i2c.address, BMI160_CMD_REG,   acc_mode ) );
+    ESP_ERROR_CHECK( bmi160_write_byte( self->i2c.address, BMI160_CMD_REG,   acc_mode ) );       
     ESP_ERROR_CHECK( bmi160_write_byte( self->i2c.address, BMI160_ACC_CONF,  acc_freq ) );
     ESP_ERROR_CHECK( bmi160_write_byte( self->i2c.address, BMI160_ACC_RANGE, acc_range ) );
     
     /* Initialize Gyroscope */
-    ESP_ERROR_CHECK( bmi160_write_byte( self->i2c.address, BMI160_CMD_REG,   gyro_mode ) );
+    ESP_ERROR_CHECK( bmi160_write_byte( self->i2c.address, BMI160_CMD_REG,   gyro_mode ) );      
     ESP_ERROR_CHECK( bmi160_write_byte( self->i2c.address, BMI160_ACC_CONF,  gyro_freq ) );
     ESP_ERROR_CHECK( bmi160_write_byte( self->i2c.address, BMI160_ACC_RANGE, gyro_range ) );
 
@@ -108,9 +72,6 @@ esp_err_t bmi_init( bmi160_t * self,
 
     return ESP_OK;
 }
-
-
-/* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
 esp_err_t bmi160_measure(bmi160_t* bmi) {
@@ -160,9 +121,6 @@ esp_err_t bmi160_measure(bmi160_t* bmi) {
 }
 
 
-/* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
-
 // Sensor Methods
 esp_err_t acc_set_range(acc_t* acc, uint8_t fs_sel) {
     if (fs_sel > 3) {
@@ -176,14 +134,7 @@ esp_err_t acc_set_range(acc_t* acc, uint8_t fs_sel) {
 }
 
 
-/* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
-
 void print_binary(unsigned int num);
-
-
-/* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
 
 float acc_get_sensitivity(acc_t acc) {
     uint8_t accel_sensitivity_setting;
@@ -204,9 +155,6 @@ float acc_get_sensitivity(acc_t acc) {
 
 
 };
-
-
-/* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
 void print_binary(unsigned int num) {
@@ -236,11 +184,7 @@ void print_binary(unsigned int num) {
 }
 
 
-/* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
-
 esp_err_t gyro_set_range(gyro_t* gyro, uint8_t fs_sel){
-
     if (fs_sel > 3) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -251,12 +195,7 @@ esp_err_t gyro_set_range(gyro_t* gyro, uint8_t fs_sel){
     return ret;
 
 }
-
-/* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
-
 float gyro_get_sensitivity(gyro_t gyro){
-
     uint8_t gyro_sensitivity_setting;
     bmi160_read_bytes(gyro.i2c.address, BMI160_GYRO_RANGE, &gyro_sensitivity_setting, 1);
 
@@ -276,10 +215,6 @@ float gyro_get_sensitivity(gyro_t gyro){
     }
 
 }
-
-
-/* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
 
 esp_err_t gyro_calibrate(gyro_t* gyro, uint32_t samples) {
 
@@ -326,10 +261,6 @@ esp_err_t gyro_calibrate(gyro_t* gyro, uint32_t samples) {
 
     return ESP_OK;
 }
-
-
-/* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
 
 esp_err_t bmi160_foc(bmi160_t* bmi){
 
@@ -417,8 +348,6 @@ esp_err_t bmi160_foc(bmi160_t* bmi){
     ESP_LOGI(TAG, "acc_x_off: %.2fG - acc_y_off: %.2fG - acc_z_off: %.2fG\n", acc_x_g, acc_y_g, acc_z_g);
 
     ESP_LOGI(TAG, "gyro_x_off: %.2f°/s - gyro_y_off: %.2f°/s - gyro_z_off: %.2f°/s\n", gyro_x_dps, gyro_y_dps, gyro_z_dps);
-
-    vTaskDelay( pdMS_TO_TICKS( 2000 ) );
 
     return ESP_OK;
 }

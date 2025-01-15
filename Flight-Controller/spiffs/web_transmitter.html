@@ -94,14 +94,34 @@
     }
   </style>
   <script>
+    // Dictionary to map button names to custom values
+    const buttonMap = {
+    "x": "cross",
+    "square": "square",
+    "triangle": "triangle",
+    "circle": "circle",
+    "up": "up",
+    "down": "down",
+    "left": "left",
+    "right": "right",
+    "r1": "r1",
+    "l1": "l1",
+    "r2": "r2",
+    "l2": "l2",
+    "start": "start",
+    "reset": "ps"
+};
+
+
     // Manejador del estado de los botones
     const buttonStates = {};
 
     function sendButtonAction(button, action) {
+      const mappedButton = buttonMap[button] || button; // Use the mapped name, fallback to original
       fetch(`/button`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ button, action }),
+        body: JSON.stringify({ button: mappedButton, action }),
       }).catch((err) => console.error('Error:', err));
     }
 
@@ -124,7 +144,7 @@
       buttonElement.addEventListener('mouseup', () => handleRelease(buttonName));
       buttonElement.addEventListener('mouseleave', () => handleRelease(buttonName));
       buttonElement.addEventListener('touchstart', (e) => {
-        e.preventDefault(); // Evita eventos duplicados en dispositivos táctiles
+        e.preventDefault(); // Prevent duplicate events on touch devices
         handlePress(buttonName);
       });
       buttonElement.addEventListener('touchend', () => handleRelease(buttonName));

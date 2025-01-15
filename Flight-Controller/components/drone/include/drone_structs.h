@@ -69,8 +69,14 @@ typedef struct drone_components {
 /** @brief Kalman parameters of drone's attitude */
 
 typedef struct drone_kalman {
-    float error;
+
+    /* Estimated uncertainty related to the estimation */
+    float P;
+
+    /* Process noise covariance */
     float Q;
+
+    /* Sensor noise covariance */
     float R;
 
 } drone_kalman_t;

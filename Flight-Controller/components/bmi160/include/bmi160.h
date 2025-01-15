@@ -75,15 +75,13 @@ typedef struct temperature {
 
 } temp_t;
 
-typedef struct bmi160_t bmi160_t;
-
 typedef struct bmi160_t {
     // Device config
     i2c_params_t i2c;
 
-    esp_err_t (*init)( bmi160_t* self, int acc_mode, int acc_freq, int acc_range, int gyro_mode, int gyro_freq, int gyro_range, int gyro_offset_x, int gyro_offset_y, int gyro_offset_z);
-    esp_err_t (*measure)( bmi160_t* self);
-    esp_err_t (*foc)( bmi160_t* self);
+    esp_err_t (*init)(struct bmi160_t* self, int acc_mode, int acc_freq, int acc_range, int gyro_mode, int gyro_freq, int gyro_range, int gyro_offset_x, int gyro_offset_y, int gyro_offset_z);
+    esp_err_t (*measure)(struct bmi160_t* self);
+    esp_err_t (*foc)(struct bmi160_t* self);
     
     // Sensors
     acc_t Acc;

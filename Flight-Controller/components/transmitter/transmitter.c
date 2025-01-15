@@ -399,13 +399,13 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
         /* Store occurred action */
         const char * action = cJSON_GetObjectItem( json, "action" )->valuestring;
 
-        ESP_LOGE( "DEBUG", "%s", action );
+        ESP_LOGE( "DEBUG", "Action: %s | Button: %s", action, button );
 
         /* Declared in drone.c source file */
         extern tx_buttons_t * GlobalTxButtons;
 
         /* If any button was pressed */
-        if( !strcmp( action, "pressed" ) ) {
+        if( !strcmp( action, "press" ) ) {
 
             /* If x button is being pressed */
             if( !strcmp( button, "x" ) ) {
@@ -493,7 +493,7 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
         }
 
         /* If any button was released */
-        else if( !strcmp( action, "released" ) ) {
+        else if( !strcmp( action, "release" ) ) {
 
             /* If x button is being released */
             if( !strcmp( button, "x" ) ) {

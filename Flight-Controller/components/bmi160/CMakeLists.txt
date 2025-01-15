@@ -1,3 +1,3 @@
-idf_component_register(SRCS "bmi160.c" "communications.c"
+idf_component_register(SRCS "communications.c" "bmi160.c"
                     INCLUDE_DIRS "include"
                     REQUIRES "driver")
