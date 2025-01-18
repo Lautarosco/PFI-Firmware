@@ -3,7 +3,14 @@
 #include <drone.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+<<<<<<< Updated upstream
 
+=======
+#include <esp_log.h>
+
+const char * STATE_MACHINE_TAG = "STATE_MACHINE";
+sm_state_machine_t state_machine;
+>>>>>>> Stashed changes
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
@@ -30,7 +37,19 @@ typedef struct state_function {
  */
 
 static void StIdleFunc( drone_t * obj ) {
+<<<<<<< Updated upstream
     printf( "IDLE\r\n" );
+=======
+
+    // printf( "IDLE\r\n" );
+    if (obj->attributes.global_variables.tx_buttons->cross) {
+        printf("X.\n");
+    }
+
+    if (obj->attributes.global_variables.tx_buttons->up) {
+        printf("Up.\n");
+    }
+>>>>>>> Stashed changes
 }
 
 static void StInitFunc( drone_t * obj ) {
@@ -107,6 +126,14 @@ static void StResetFunc( drone_t * obj ) {
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
+const char *state_names[] = {
+    "ST_IDLE",
+    "ST_INIT",
+    "ST_CALIBRATION",
+    "ST_UPDATE_STATES",
+    "ST_CONTROL",
+    "ST_RESET"
+};
 
 static state_func_row_t state_function_array[  ] = {
 
@@ -165,29 +192,35 @@ static const state_trans_row_t state_trans_matrix[  ] = {
  * @details Public functions definitions
  */
 
-void StateMachine_Init( sm_state_machine_t * state_machine ) {
+void StateMachine_Init( sm_state_machine_t * sm ) {
 
     /* Default state */
-    state_machine->curr_state = ST_IDLE;
+    sm->curr_state = ST_IDLE;
 }
 
+<<<<<<< Updated upstream
 void StateMachine_RunIteration( sm_state_machine_t * state_machine, drone_t * drone ) {
     printf( "Current state: %s\r\nCurrent event: %s\r\n", StateMachine_GetStateName( state_machine->curr_state ), StateMachine_GetEventName( state_machine->event ) );
+=======
+void StateMachine_RunIteration( sm_state_machine_t * sm, drone_t * drone ) {
+
+    // printf( "Current state: %s\r\nCurrent event: %s\r\n", StateMachine_GetStateName( state_machine->curr_state ), StateMachine_GetEventName( state_machine->event ) );
+>>>>>>> Stashed changes
 
     /* Loop through the entire transition matrix to match actual state and occurred event */
     for( int i = 0; i < sizeof( state_trans_matrix ) / sizeof( state_trans_matrix[ 0 ] ); i++ ) {
 
         /* If matched actual state */
-        if( state_trans_matrix[ i ].curr_state == state_machine->curr_state ) {
+        if( state_trans_matrix[ i ].curr_state == sm->curr_state ) {
 
             /* If matched occurred event */
-            if( state_trans_matrix[ i ].event == state_machine->event ) {
+            if( state_trans_matrix[ i ].event == sm->event ) {
 
                 /* Go to the next state */
-                state_machine->curr_state = state_trans_matrix[ i ].next_state;
+                sm->curr_state = state_trans_matrix[ i ].next_state;
 
                 /* Run new actual state respective function */
-                state_function_array[ state_machine->curr_state ].func( drone );
+                state_function_array[ sm->curr_state ].func( drone );
                 break;
             }
         }

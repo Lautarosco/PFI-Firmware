@@ -343,8 +343,14 @@ static esp_err_t drone_init( drone_t * obj ) {
     drone_cfg_t DroneConfigs = GetDroneConfigs();
 
     /* Initialize Bmi160 object */
+<<<<<<< Updated upstream
     ESP_ERROR_CHECK( obj->attributes.components.bmi->init(
         obj->attributes.components.bmi,
+=======
+    ESP_ERROR_CHECK( obj->attributes.components.bmi.init(
+        &( obj->attributes.components.bmi ),
+        0x68,
+>>>>>>> Stashed changes
         DroneConfigs.imu_cfg.acc_mode,
         DroneConfigs.imu_cfg.acc_freq,
         DroneConfigs.imu_cfg.acc_range,

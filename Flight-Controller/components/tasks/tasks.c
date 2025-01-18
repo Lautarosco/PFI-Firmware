@@ -150,7 +150,7 @@ static void getEvent( sm_state_machine_t * state_machine, drone_t obj ) {
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
+// sm_state_machine_t state_machine;
 
 /** @details Public functions definitions */
 
@@ -158,9 +158,6 @@ void vTaskStateMachine_Run( void * pvParameters ) {
 
     /* Cast parameter into Drone object */
     drone_t * obj = ( drone_t * ) pvParameters;
-
-    /* Create a state_machine object */
-    sm_state_machine_t state_machine;
 
     /* Initialize state_machine object */
     StateMachine_Init( &state_machine );

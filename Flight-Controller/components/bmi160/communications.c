@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include "driver/i2c.h"
+#include "driver/i2c_master.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
