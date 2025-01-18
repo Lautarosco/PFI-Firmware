@@ -3,14 +3,10 @@
 #include <drone.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-<<<<<<< Updated upstream
-
-=======
 #include <esp_log.h>
 
 const char * STATE_MACHINE_TAG = "STATE_MACHINE";
 sm_state_machine_t state_machine;
->>>>>>> Stashed changes
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
@@ -37,19 +33,7 @@ typedef struct state_function {
  */
 
 static void StIdleFunc( drone_t * obj ) {
-<<<<<<< Updated upstream
     printf( "IDLE\r\n" );
-=======
-
-    // printf( "IDLE\r\n" );
-    if (obj->attributes.global_variables.tx_buttons->cross) {
-        printf("X.\n");
-    }
-
-    if (obj->attributes.global_variables.tx_buttons->up) {
-        printf("Up.\n");
-    }
->>>>>>> Stashed changes
 }
 
 static void StInitFunc( drone_t * obj ) {
@@ -198,14 +182,9 @@ void StateMachine_Init( sm_state_machine_t * sm ) {
     sm->curr_state = ST_IDLE;
 }
 
-<<<<<<< Updated upstream
-void StateMachine_RunIteration( sm_state_machine_t * state_machine, drone_t * drone ) {
-    printf( "Current state: %s\r\nCurrent event: %s\r\n", StateMachine_GetStateName( state_machine->curr_state ), StateMachine_GetEventName( state_machine->event ) );
-=======
 void StateMachine_RunIteration( sm_state_machine_t * sm, drone_t * drone ) {
 
     // printf( "Current state: %s\r\nCurrent event: %s\r\n", StateMachine_GetStateName( state_machine->curr_state ), StateMachine_GetEventName( state_machine->event ) );
->>>>>>> Stashed changes
 
     /* Loop through the entire transition matrix to match actual state and occurred event */
     for( int i = 0; i < sizeof( state_trans_matrix ) / sizeof( state_trans_matrix[ 0 ] ); i++ ) {

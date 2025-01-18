@@ -5,10 +5,6 @@
 
 #define PLAYSTATION_TX     0  /* Use playstation transmitter */
 #define WEBSV_TX           1  /* Use web server transmitter */
-<<<<<<< Updated upstream
-=======
-
->>>>>>> Stashed changes
 #define MAC_ADDR_SIZE      6  /* Total bytes of MCU MAC Address */
 
 

@@ -13,18 +13,11 @@ static const char *TAG = "BMI160";
 
 // Device Methods
 /*Takes an empty bmi160_t struct and inits its functions and parameters*/
-<<<<<<< Updated upstream
-bmi160_t * Bmi160( int i2c_addr, int i2c_sda, int i2c_scl ) {
-    ESP_LOGI( TAG, "Making an instance of Bmi160 Class..." );
-
-    bmi160_t * bmi = malloc( sizeof( bmi160_t ) );
-=======
 esp_err_t Bmi160( bmi160_t* bmi,
                         int i2c_address_param,
                         int i2c_scl_param,
                         int i2c_sda_param
                 ) {
->>>>>>> Stashed changes
 
     // Function pointers assignment
     bmi->init                 = bmi_init;
@@ -38,7 +31,6 @@ esp_err_t Bmi160( bmi160_t* bmi,
 
     esp_err_t i2c_ret = i2c_init(i2c_sda, i2c_scl);
 
-<<<<<<< Updated upstream
     if (i2c_ret == ESP_OK) {
         bmi->i2c.address = i2c_addr;
         bmi->i2c.scl     = i2c_scl;
@@ -46,57 +38,31 @@ esp_err_t Bmi160( bmi160_t* bmi,
         ESP_LOGI( TAG, "i2c succesfully initialized" );
     } else {
         ESP_LOGI(TAG, "INIT->I2C ERROR: %d. See func %s in line %d", i2c_ret, __func__, __LINE__);
-=======
-    if (i2c_ret == ESP_OK){
-        bmi->i2c.address = i2c_address_param;
-        bmi->i2c.scl = i2c_scl_param;
-        bmi->i2c.sda = i2c_sda_param;
-    } else {
-        ESP_LOGI(TAG, "INIT->I2C ERROR: %d", i2c_ret);
->>>>>>> Stashed changes
     }
 
     bmi->Acc.i2c  = bmi->i2c;
     bmi->Gyro.i2c = bmi->i2c;
 
-<<<<<<< Updated upstream
-    ESP_LOGI( TAG, "Instance succesfully made" );
-
-    return bmi;
-}
-
-esp_err_t bmi_init( bmi160_t * self,
-=======
     return ESP_OK;
 }
 
 esp_err_t bmi_init( bmi160_t * self, int bmi_address,
->>>>>>> Stashed changes
     int acc_mode,  int acc_freq,  int acc_range,
     int gyro_mode, int gyro_freq, int gyro_range,
     int gyro_offset_x, int gyro_offset_y, int gyro_offset_z
 )
 {
-<<<<<<< Updated upstream
     ESP_LOGI( TAG, "Initializing Bmi160 object..." );
 
-=======
->>>>>>> Stashed changes
     /* Initialize Acelerometer */
     ESP_ERROR_CHECK( bmi160_write_byte( bmi_address, BMI160_CMD_REG,   acc_mode ) );       
     ESP_ERROR_CHECK( bmi160_write_byte( bmi_address, BMI160_ACC_CONF,  acc_freq ) );
     ESP_ERROR_CHECK( bmi160_write_byte( bmi_address, BMI160_ACC_RANGE, acc_range ) );
     
     /* Initialize Gyroscope */
-<<<<<<< Updated upstream
     ESP_ERROR_CHECK( bmi160_write_byte( self->i2c.address, BMI160_CMD_REG,   gyro_mode ) );
     ESP_ERROR_CHECK( bmi160_write_byte( self->i2c.address, BMI160_GYRO_CONF,  gyro_freq ) );
     ESP_ERROR_CHECK( bmi160_write_byte( self->i2c.address, BMI160_GYRO_RANGE, gyro_range ) );
-=======
-    ESP_ERROR_CHECK( bmi160_write_byte( bmi_address, BMI160_CMD_REG,   gyro_mode ) );      
-    ESP_ERROR_CHECK( bmi160_write_byte( bmi_address, BMI160_ACC_CONF,  gyro_freq ) );
-    ESP_ERROR_CHECK( bmi160_write_byte( bmi_address, BMI160_ACC_RANGE, gyro_range ) );
->>>>>>> Stashed changes
 
     /* Set initials offsets*/
     self->Gyro.offset.x = gyro_offset_x;
