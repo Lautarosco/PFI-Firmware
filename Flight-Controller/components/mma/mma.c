@@ -69,6 +69,7 @@ static float u2pwm( float u, float dc_min, float dc_max ) {
  * @retval none
  */
 static void compute_obj( mma_t * obj, float dc_min, float dc_max ) {
+    
     obj->output[ u1 ] = u2pwm( obj->input[ C_z ] + ( ( 0.5f ) * (   obj->input[ C_Roll ] + obj->input[ C_Pitch ] + obj->input[ C_Yaw ] ) ), dc_min, dc_max );
     obj->output[ u2 ] = u2pwm( obj->input[ C_z ] + ( ( 0.5f ) * ( - obj->input[ C_Roll ] + obj->input[ C_Pitch ] - obj->input[ C_Yaw ] ) ), dc_min, dc_max );
     obj->output[ u3 ] = u2pwm( obj->input[ C_z ] + ( ( 0.5f ) * ( - obj->input[ C_Roll ] - obj->input[ C_Pitch ] + obj->input[ C_Yaw ] ) ), dc_min, dc_max );

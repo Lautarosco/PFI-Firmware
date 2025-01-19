@@ -13,6 +13,17 @@
 
 
 /**
+ * @brief Retrieve state's label
+ * @param stateIndex: state index ( See state_t enum defined in controllers_structs.h header file )
+ * @retval State's label
+ */
+static const char * GetStateName( int stateIndex );
+
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
+
+/**
  * @brief Check if Bluetooth command for PID index is correct
  * @param index: Desired index
  * @param n_obj: Total of Pid objects
@@ -242,50 +253,119 @@ void vTaskParseBluetooth( void * pvParameters ) {
             /* Reset state to default value */
             obj->attributes.global_variables.bt_data->state = false;
 
-            /* Define strings delimeter, i.e 'this,is,an,example' */
-            const char * delimeter = ",";
+            /* Error detection flags */
+            bool err = false;
+            bool eof = false;
 
-            /* String match */
-            char * token;
+            /* Pointer to store each char of substring */
+            char * ptr = ( char * ) malloc( 256 * sizeof( char ) );
 
-            /* All strings matched */
-            char * tokens[] = { "" };
+            /* Pointer of char ( array of 4 strings ) */
+            char * ptrArr[ 4 ] = { 0 };
 
-            /* Get first string of complete data */
-            token = strtok( obj->attributes.global_variables.bt_data->data, delimeter );
+            /* Pointer index */
+            int ptrIndex = 0;
 
-            /* Get all strings until NULL, which means there are no more strings in data array */
-            for( int i = 0; token != NULL; i++ ) {
+            /* Array index */
+            int ptrArrIndex = 0;
 
-                /* Save matched string */
-                tokens[ i ] = token;
+            /* Loop through data received */
+            for( int i = 0; i < obj->attributes.global_variables.bt_data->len; i++ ) {
 
-                /* Get next string */
-                token = strtok( NULL, delimeter );
+                /**
+                 * Frame's format: <pid/state/( p | i | d )/value>
+                 * 
+                 * i.e, <pid/1/p/10> which means
+                 * 
+                 * pid command
+                 * state 1 indicates roll ( see states_t enum defined in controllers_struct.h header file )
+                 * p indicates proportional action
+                 * 10 is the new value for roll Kp gain
+                 */
+
+                /* Get actual char */
+                char currChar = obj->attributes.global_variables.bt_data->data[ i ];
+
+                /* Checek if start of frame is correct */
+                if( !i ) {
+
+                    if( currChar == '<' ) {
+
+                        continue;
+                    }
+
+                    else {
+
+                        err = true;
+                        ESP_LOGE( "TASK3", "Frame must start with '<' character" );
+                    }
+                }
+
+                /* Check if end of frame is correct */
+                else if( currChar == '>' ) {
+                
+                    /* End of frame is correct */
+                    eof = true;
+                    
+                    /* Store last substring */
+                    ptr[ ptrIndex ] = '\0';
+                    ptrArr[ ptrArrIndex++ ] = strdup( ptr );
+
+                    break;
+                }
+
+                /* Check if end of substring */
+                else if( currChar == '/' ) {
+
+                    /* Store substring */
+                    ptr[ ptrIndex ] = '\0';
+                    ptrArr[ ptrArrIndex++ ] = strdup( ptr );
+
+                    /* Reset substring's index */
+                    ptrIndex = 0;
+                }
+
+                /* Keep adding char to substring */
+                else {
+
+                    ptr[ ptrIndex++ ] = currChar;
+                }
+            }
+
+            /* Errors check */
+            if( !eof ) {
+
+                ESP_LOGE( "TASK3", "Frame must end with '>' character" );
+                continue;
+            }
+
+            else if( err == true ) {
+
+                continue;
             }
 
             /* Check if it's a PID command */
-            if( !strcmp( tokens[ 0 ], "pid" ) ) {
+            if( !strcmp( ptrArr[ 0 ], "pid" ) ) {
                 
-                if( PID_INDEX_CHECK( tokens[ 1 ], sizeof( obj->attributes.components.controllers ) / ( sizeof( obj->attributes.components.controllers[ 0 ] ) ), __func__, __LINE__ ) ) {
+                if( PID_INDEX_CHECK( ptrArr[ 1 ], sizeof( obj->attributes.components.controllers ) / ( sizeof( obj->attributes.components.controllers[ 0 ] ) ), __func__, __LINE__ ) ) {
 
                     /* If updating proportional action */
-                    if( !strcmp( tokens[ 2 ], "p" ) ) {
+                    if( !strcmp( ptrArr[ 2 ], "p" ) ) {
 
-                        obj->attributes.components.controllers[ atoi( tokens[ 1 ] ) ]->gain.kp = atof( tokens[ 3 ] );
-                        ESP_LOGW( "TASK3", "New kp [ State %d ]: %.2f", atoi( tokens[ 1 ] ), obj->attributes.components.controllers[ atoi( tokens[ 1 ] ) ]->gain.kp );
+                        obj->attributes.components.controllers[ atoi( ptrArr[ 1 ] ) ]->gain.kp = atof( ptrArr[ 3 ] );
+                        ESP_LOGW( "TASK3", "%s new kp [ %.2f ]", GetStateName( atoi( ptrArr[ 1 ] ) ), obj->attributes.components.controllers[ atoi( ptrArr[ 1 ] ) ]->gain.kp );
                     }
 
-                    else if( !strcmp( tokens[ 2 ], "i" ) ) {
+                    else if( !strcmp( ptrArr[ 2 ], "i" ) ) {
 
-                        obj->attributes.components.controllers[ atoi( tokens[ 1 ] ) ]->gain.ki = atof( tokens[ 3 ] );
-                        ESP_LOGW( "TASK3", "New ki [ State %d ]: %.2f", atoi( tokens[ 1 ] ), obj->attributes.components.controllers[ atoi( tokens[ 1 ] ) ]->gain.ki );
+                        obj->attributes.components.controllers[ atoi( ptrArr[ 1 ] ) ]->gain.ki = atof( ptrArr[ 3 ] );
+                        ESP_LOGW( "TASK3", "%s new ki [ %.2f ]", GetStateName( atoi( ptrArr[ 1 ] ) ), obj->attributes.components.controllers[ atoi( ptrArr[ 1 ] ) ]->gain.ki );
                     }
 
-                    else if( !strcmp( tokens[ 2 ], "d" ) ) {
+                    else if( !strcmp( ptrArr[ 2 ], "d" ) ) {
 
-                        obj->attributes.components.controllers[ atoi( tokens[ 1 ] ) ]->gain.kd = atof( tokens[ 3 ] );
-                        ESP_LOGW( "TASK3", "New kd [ State %d ]: %.2f", atoi( tokens[ 1 ] ), obj->attributes.components.controllers[ atoi( tokens[ 1 ] ) ]->gain.kd );
+                        obj->attributes.components.controllers[ atoi( ptrArr[ 1 ] ) ]->gain.kd = atof( ptrArr[ 3 ] );
+                        ESP_LOGW( "TASK3", "%s new kd [ %.2f ]", GetStateName( atoi( ptrArr[ 1 ] ) ), obj->attributes.components.controllers[ atoi( ptrArr[ 1 ] ) ]->gain.kd );
                     }
 
                     else {
@@ -297,5 +377,47 @@ void vTaskParseBluetooth( void * pvParameters ) {
         }
 
         vTaskDelay( pdMS_TO_TICKS( 1000 ) );
+    }
+}
+
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
+
+static const char * GetStateName( int stateIndex ) {
+
+    switch ( stateIndex ) {
+
+        case z:
+            return "z";
+            break;
+        
+        case roll:
+            return "roll";
+            break;
+
+        case pitch:
+            return "pitch";
+            break;
+
+        case yaw:
+            return "yaw";
+            break;
+
+        case roll_dot:
+            return "roll_dot";
+            break;
+
+        case pitch_dot:
+            return "pitch_dot";
+            break;
+
+        case yaw_dot:
+            return "yaw_dot";
+            break;
+
+        default:
+            return "UNDEFINED STATE";
+            break;
     }
 }
