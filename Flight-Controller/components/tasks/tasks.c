@@ -33,7 +33,7 @@ static const char * GetStateName( int stateIndex );
  */
 static bool PID_INDEX_CHECK( char * index, int n_obj, const char * func, int line ) {
     
-    printf( "Index: %d\r\n", ( int ) index[ 0 ] );
+    printf( "Index: %d\r\n", atoi( index ) );
 
     /* Default returning value */
     bool ret = false;
@@ -57,8 +57,8 @@ static bool PID_INDEX_CHECK( char * index, int n_obj, const char * func, int lin
         ESP_LOGE( "TASK3", "Type error: index muest be int. See function %s in line %d", func, line );
     }
 
-    /* If index is greater that total of Pid objects */
-    else if( atoi( index ) >= n_obj ) {
+    /* If index is greater that total of Pid objects or less than 0 */
+    else if( ( atoi( index ) >= n_obj ) || ( atoi( index ) == -1 ) ) {
 
         ESP_LOGE( "TASK3", "Index error: index out of range. See function %s in line %d", func, line );
     }
