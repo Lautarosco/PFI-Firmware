@@ -60,11 +60,14 @@ static void StControlFunc( drone_t * obj ) {
     /* Get Drone Class generic configs */
     drone_cfg_t DroneConfigs = GetDroneConfigs();
 
+    /* Update sp */
+    obj->attributes.sp.roll = ( 180 / M_PI ) * __sin( 0.02f, 1.0f, timer );
+
     /* Compute PID algorithm for all states */
     float CRoll = obj->attributes.components.controllers[ roll ]->pid(
         obj->attributes.components.controllers[ roll ],
         obj->attributes.states.roll,
-        ( 180 / M_PI ) * __sin( 0.02f, 1.0f, timer )
+        obj->attributes.sp.roll
     );
 
     // printf( "%f\r\n", ( 180 / M_PI ) * __sin( 0.02f, 1.0f, timer ) );
@@ -89,8 +92,8 @@ static void StControlFunc( drone_t * obj ) {
     /* Compute MMA algorithm */
     obj->attributes.components.mma->compute(
         obj->attributes.components.mma,
-        PULSE_WIDTH_TO_DUTY( DroneConfigs.pwm_cfg[ 0 ].Ton_min, DroneConfigs.pwm_cfg[ 0 ].timer_cfg.freq_hz, DroneConfigs.pwm_cfg[ 0 ].timer_cfg.duty_resolution ),
-        PULSE_WIDTH_TO_DUTY( DroneConfigs.pwm_cfg[ 0 ].Ton_max, DroneConfigs.pwm_cfg[ 0 ].timer_cfg.freq_hz, DroneConfigs.pwm_cfg[ 0 ].timer_cfg.duty_resolution )
+        obj->attributes.components.pwm[ 0 ]->dc_min,
+        obj->attributes.components.pwm[ 0 ]->dc_max
     );
 
     /* Update all pwm duty cycle */

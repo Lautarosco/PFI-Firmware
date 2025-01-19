@@ -160,8 +160,12 @@ typedef struct drone_cfg {
 /** @brief Drone's attributes */
 
 typedef struct drone_attributes {
+
     /* Drone's states */
     drone_states_t states;
+
+    /* Drone's sp */
+    drone_states_t sp;
 
     /* Drone's components */
     drone_components_t components;

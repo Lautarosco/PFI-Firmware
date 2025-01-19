@@ -58,7 +58,7 @@ static bool PID_INDEX_CHECK( char * index, int n_obj, const char * func, int lin
     }
 
     /* If index is greater that total of Pid objects or less than 0 */
-    else if( ( atoi( index ) >= n_obj ) || ( atoi( index ) == -1 ) ) {
+    else if( ( atoi( index ) >= n_obj ) || ( atoi( index ) < 0 ) ) {
 
         ESP_LOGE( "TASK3", "Index error: index out of range. See function %s in line %d", func, line );
     }

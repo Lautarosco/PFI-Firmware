@@ -606,14 +606,23 @@ drone_t * Drone( void ) {
     }
 
     /* States default values */
-    drone->attributes.states.z         = 0;
-    drone->attributes.states.roll      = 0;
-    drone->attributes.states.pitch     = 0;
-    drone->attributes.states.yaw       = 0;
-    drone->attributes.states.roll_dot  = 0;
-    drone->attributes.states.pitch_dot = 0;
-    drone->attributes.states.yaw_dot   = 0;
+    drone->attributes.states.z         = 0.0f;
+    drone->attributes.states.roll      = 0.0f;
+    drone->attributes.states.pitch     = 0.0f;
+    drone->attributes.states.yaw       = 0.0f;
+    drone->attributes.states.roll_dot  = 0.0f;
+    drone->attributes.states.pitch_dot = 0.0f;
+    drone->attributes.states.yaw_dot   = 0.0f;
     
+    /* sp default values */
+    drone->attributes.sp.z         = 0.0f;
+    drone->attributes.sp.roll      = 0.0f;
+    drone->attributes.sp.pitch     = 0.0f;
+    drone->attributes.sp.yaw       = 0.0f;
+    drone->attributes.sp.roll_dot  = 0.0f;
+    drone->attributes.sp.pitch_dot = 0.0f;
+    drone->attributes.sp.yaw_dot   = 0.0f;
+
     /* Drone object isn't initialized yet */
     drone->attributes.init_ok = false;
 
