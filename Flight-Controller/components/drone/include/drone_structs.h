@@ -13,7 +13,6 @@
 
 
 /** @brief Drone states */
-
 typedef struct drone_states {
     /* z linear position */
     float z;
@@ -43,7 +42,6 @@ typedef struct drone_states {
 
 
 /** @brief Drone's components */
-
 typedef struct drone_components {
     /* bmi160 component ( PENDIENTE PASARLO A PUNTERO ) */
     bmi160_t bmi;
@@ -67,7 +65,6 @@ typedef struct drone_components {
 
 
 /** @brief Kalman parameters of drone's attitude */
-
 typedef struct drone_kalman {
 
     /* Estimated uncertainty related to the estimation */
@@ -86,7 +83,6 @@ typedef struct drone_kalman {
 
 
 /** @brief IMU configs */
-
 typedef struct drone_imu_cfg {
     /* IMU i2c configs */
     i2c_params_t imu_i2c_cfg;
@@ -119,7 +115,6 @@ typedef struct drone_imu_cfg {
 
 
 /** @brief Drone's cfgs */
-
 typedef struct drone_cfg {
     /* Kalman parameters for roll */
     drone_kalman_t roll;
@@ -158,7 +153,6 @@ typedef struct drone_cfg {
 
 
 /** @brief Drone's attributes */
-
 typedef struct drone_attributes {
 
     /* Drone's states */
@@ -186,7 +180,6 @@ typedef struct drone_attributes {
 typedef struct drone drone_t;
 
 /** @brief Drone's methods */
-
 typedef struct drone_methods {
     /** @brief Update Drone object states @param obj: Address of Drone object @param ts: Sampling time in milliseconds @retval none */
     void ( * update_states )( drone_t * obj, float ts );
@@ -204,7 +197,6 @@ typedef struct drone_methods {
 
 
 /** @brief Drone Class */
-
 typedef struct drone {
     /* Drone's attributes */
     drone_attributes_t attributes;

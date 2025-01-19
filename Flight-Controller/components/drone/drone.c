@@ -184,53 +184,60 @@ static drone_cfg_t DroneConfigs = {
     },
     .ControllersConfigs = {
         {
-            .tag = z,
-            .fc  = 0,
-            .ts  = 10,
-            .sat = no_saturation,
-            .gains = { .kp = 0, .ki = 0, .kd = 0 }
+            .tag       = z,
+            .fc        = 0,
+            .ts        = 10,
+            .sat       = no_saturation,
+            .gains     = { .kp = 0, .ki = 0, .kd = 0 },
+            .intMinErr = 0.0f
         },
         {
             .tag = roll,
             .fc  = 0,
             .ts  = 10,
             .sat = no_saturation,
-            .gains = { .kp = 1, .ki = 0, .kd = 0 }
+            .gains = { .kp = 1, .ki = 0, .kd = 0 },
+            .intMinErr = 0.0f
         },
         {
             .tag = pitch,
             .fc  = 0,
             .ts  = 10,
             .sat = no_saturation,
-            .gains = { .kp = 0, .ki = 0, .kd = 0 }
+            .gains = { .kp = 0, .ki = 0, .kd = 0 },
+            .intMinErr = 0.0f
         },
         {
             .tag = yaw,
             .fc  = 0,
             .ts  = 10,
             .sat = no_saturation,
-            .gains = { .kp = 0, .ki = 0, .kd = 0 }
+            .gains = { .kp = 0, .ki = 0, .kd = 0 },
+            .intMinErr = 0.0f
         },
         {
             .tag = roll_dot,
             .fc  = 0,
             .ts  = 10,
             .sat = no_saturation,
-            .gains = { .kp = 0, .ki = 0, .kd = 0 }
+            .gains = { .kp = 0, .ki = 0, .kd = 0 },
+            .intMinErr = 0.0f
         },
         {
             .tag = pitch_dot,
             .fc  = 0,
             .ts  = 10,
             .sat = no_saturation,
-            .gains = { .kp = 0, .ki = 0, .kd = 0 }
+            .gains = { .kp = 0, .ki = 0, .kd = 0 },
+            .intMinErr = 0.0f
         },
         {
             .tag = yaw_dot,
             .fc  = 0,
             .ts  = 10,
             .sat = no_saturation,
-            .gains = { .kp = 0, .ki = 0, .kd = 0 }
+            .gains = { .kp = 0, .ki = 0, .kd = 0 },
+            .intMinErr = 0.0f
         },
     }
 };

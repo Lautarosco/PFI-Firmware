@@ -126,7 +126,7 @@ static float pid( pid_controller_t * obj, float pv, float sp ) {
      * ***********************************
      */
     
-    if( obj->gain.ki != 0 ) {
+    if( ( obj->gain.ki != 0 ) && ( fabs( obj->error_buffer[ N ] ) > obj->cfg.intMinErr ) ) {
 
         if( obj->cfg.sat == anti_windup ) {
 
@@ -179,6 +179,7 @@ static float pid( pid_controller_t * obj, float pv, float sp ) {
  * @retval none
  */
 static void pid_init( pid_controller_t * obj, ControllerCfgs_t cfg ) {
+
     ESP_LOGI( CONTROLLER_TAG, "Initializing Pid object..." );
     
     /* Set configs */
@@ -205,13 +206,13 @@ pid_controller_t * Pid( void ) {
     pid_controller_t * controller = malloc( sizeof( pid_controller_t ) );
 
     /* Default values */
-    controller->gain.kp            = 0;
-    controller->gain.ki            = 0;
-    controller->gain.kd            = 0;
-    controller->cfg.fc             = 0;
-    controller->cfg.ts             = 0;
+    controller->gain.kp            = 0.0f;
+    controller->gain.ki            = 0.0f;
+    controller->gain.kd            = 0.0f;
+    controller->cfg.fc             = 0.0f;
+    controller->cfg.ts             = 0.0f;
     controller->cfg.sat            = no_saturation;
-    controller->action.p           = 0;
+    controller->action.p           = 0.0f;
     controller->init_ok            = false;
 
     /* Default values */

@@ -117,7 +117,11 @@ typedef struct ControllerCfgs {
     /* Integral saturation */
     int_sat_t sat;
 
+    /* PID gains */
     pid_gain_t gains;
+
+    /* Minimum error to start using integral action */
+    float intMinErr;
 
 } ControllerCfgs_t;
 

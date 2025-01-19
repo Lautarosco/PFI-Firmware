@@ -281,7 +281,7 @@ void vTaskParseBluetooth( void * pvParameters ) {
             for( int i = 0; i < obj->attributes.global_variables.bt_data->len; i++ ) {
 
                 /**
-                 * Frame's format: <pid/state/( p | i | d )/value>
+                 * Frame's format: <pid/state/( p | i | d | min_err )/value>
                  * 
                  * i.e, <pid/1/p/10> which means
                  * 
@@ -289,6 +289,13 @@ void vTaskParseBluetooth( void * pvParameters ) {
                  * state 1 indicates roll ( see states_t enum defined in controllers_struct.h header file )
                  * p indicates proportional action
                  * 10 is the new value for roll Kp gain
+                 * 
+                 * i.e, <pid/0/min_err/10> which means
+                 * 
+                 * pid command
+                 * state 1 indicates z ( see states_t enum defined in controllers_struct.h header file )
+                 * min_err indicates new value for z integral minimum error
+                 * 10 is the new minimum value for the integral error
                  */
 
                 /* Get actual char */
@@ -364,21 +371,34 @@ void vTaskParseBluetooth( void * pvParameters ) {
                         ESP_LOGW( "TASK3", "%s new kp [ %.2f ]", GetStateName( atoi( ptrArr[ 1 ] ) ), obj->attributes.components.controllers[ atoi( ptrArr[ 1 ] ) ]->gain.kp );
                     }
 
+                    /* If updating integral action */
                     else if( !strcmp( ptrArr[ 2 ], "i" ) ) {
 
                         obj->attributes.components.controllers[ atoi( ptrArr[ 1 ] ) ]->gain.ki = atof( ptrArr[ 3 ] );
                         ESP_LOGW( "TASK3", "%s new ki [ %.2f ]", GetStateName( atoi( ptrArr[ 1 ] ) ), obj->attributes.components.controllers[ atoi( ptrArr[ 1 ] ) ]->gain.ki );
                     }
 
+
+                    /* If updating derivative action */
                     else if( !strcmp( ptrArr[ 2 ], "d" ) ) {
 
                         obj->attributes.components.controllers[ atoi( ptrArr[ 1 ] ) ]->gain.kd = atof( ptrArr[ 3 ] );
                         ESP_LOGW( "TASK3", "%s new kd [ %.2f ]", GetStateName( atoi( ptrArr[ 1 ] ) ), obj->attributes.components.controllers[ atoi( ptrArr[ 1 ] ) ]->gain.kd );
                     }
 
+                    /* If updating minimum integral error */
+                    else if( !strcmp( ptrArr[ 2 ], "min_err" ) ) {
+
+                        obj->attributes.components.controllers[ atoi( ptrArr[ 1 ] ) ]->cfg.intMinErr = atof( ptrArr[ 3 ] );
+                        ESP_LOGW( "TASK3", "%s new integral minimum error [ %.2f ]",
+                            GetStateName( atoi( ptrArr[ 1 ] ) ),
+                            obj->attributes.components.controllers[ atoi( ptrArr[ 1 ] ) ]->cfg.intMinErr
+                        );
+                    }
+
                     else {
 
-                        ESP_LOGE( "TASK3", "PID action error: action must be 'p' 'i' or 'd' " );
+                        ESP_LOGE( "TASK3", "Third parameter of bluetooth frame must be 'p' or 'i' or 'd' or 'min_err' " );
                     }
                 }
             }
