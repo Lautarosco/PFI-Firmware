@@ -33,6 +33,8 @@ static const char * GetStateName( int stateIndex );
  */
 static bool PID_INDEX_CHECK( char * index, int n_obj, const char * func, int line ) {
     
+    printf( "Index: %d\r\n", ( int ) index[ 0 ] );
+
     /* Default returning value */
     bool ret = false;
 
@@ -41,6 +43,12 @@ static bool PID_INDEX_CHECK( char * index, int n_obj, const char * func, int lin
 
         /* Index is OK */
         ret = true;
+    }
+
+    /* Check if index is an empty string */
+    else if( !( ( int ) index[ 0 ] ) ) {
+
+        ESP_LOGE( "TASK3", "Value error: empty index. See function %s in line %d", func, line );
     }
 
     /* If index is a string */
@@ -297,7 +305,7 @@ void vTaskParseBluetooth( void * pvParameters ) {
                     else {
 
                         err = true;
-                        ESP_LOGE( "TASK3", "Frame must start with '<' character" );
+                        ESP_LOGE( "TASK3", "Frame must start with '<' character. See function %s in line %d", __func__, __LINE__ );
                     }
                 }
 
@@ -335,7 +343,7 @@ void vTaskParseBluetooth( void * pvParameters ) {
             /* Errors check */
             if( !eof ) {
 
-                ESP_LOGE( "TASK3", "Frame must end with '>' character" );
+                ESP_LOGE( "TASK3", "Frame must end with '>' character. See function %s in line %d", __func__, __LINE__ );
                 continue;
             }
 
