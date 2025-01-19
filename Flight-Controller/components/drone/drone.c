@@ -239,6 +239,10 @@ static drone_cfg_t DroneConfigs = {
             .gains = { .kp = 0, .ki = 0, .kd = 0 },
             .intMinErr = 0.0f
         },
+    },
+    .mma_out_limits = {
+        .upper = 0.91f,
+        .lower = 1.1f
     }
 };
 
@@ -552,6 +556,13 @@ static esp_err_t drone_init( drone_t * obj ) {
         obj->attributes.components.controllers[ i ]->init( obj->attributes.components.controllers[ i ], DroneConfigs.ControllersConfigs[ i ] );
     }
 
+    /* Initialize Mma object */
+    obj->attributes.components.mma->init(
+        obj->attributes.components.mma,
+        DroneConfigs.mma_out_limits.upper,
+        DroneConfigs.mma_out_limits.lower
+    );
+
     /* Blink MCU internal LED to indicate Drone object was successfully initialized */
     gpio_set_level( GPIO_NUM_2, false );
     vTaskDelay( pdMS_TO_TICKS( 1000 ) );
@@ -716,6 +727,9 @@ drone_t * Drone( void ) {
     DroneConfigs.imu_cfg.gyro_offset.x = get_csv_row( csv_rows, n_rows, "x" ).var_value;
     DroneConfigs.imu_cfg.gyro_offset.y = get_csv_row( csv_rows, n_rows, "y" ).var_value;
     DroneConfigs.imu_cfg.gyro_offset.z = get_csv_row( csv_rows, n_rows, "z" ).var_value;
+    
+    DroneConfigs.mma_out_limits.upper = get_csv_row( csv_rows, n_rows, "upper_limit" ).var_value;
+    DroneConfigs.mma_out_limits.lower = get_csv_row( csv_rows, n_rows, "lower_limit" ).var_value;
 
     /* Get Drone Class generic configs */
     drone_cfg_t DroneConfigs = GetDroneConfigs();

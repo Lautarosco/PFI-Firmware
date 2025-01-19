@@ -58,7 +58,7 @@ static float timer = 0.0f;
 static void StControlFunc( drone_t * obj ) {
 
     /* Get Drone Class generic configs */
-    drone_cfg_t DroneConfigs = GetDroneConfigs();
+    // drone_cfg_t DroneConfigs = GetDroneConfigs();
 
     /* Update sp */
     obj->attributes.sp.roll = ( 180 / M_PI ) * __sin( 0.02f, 1.0f, timer );

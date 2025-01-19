@@ -146,6 +146,9 @@ typedef struct drone_cfg {
     /* Controllers configs */
     ControllerCfgs_t ControllersConfigs[ 7 ];
 
+    /* Upper and lower limits of mma output */
+    limits_t mma_out_limits;
+
 } drone_cfg_t;
 
 

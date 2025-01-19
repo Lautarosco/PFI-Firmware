@@ -1,4 +1,6 @@
 # Name, Type, Value
-x, gyro_offset, 5.81
-y, gyro_offset, 8.85
-z, gyro_offset, 4.64
+x, gyro_offset, 5.81f
+y, gyro_offset, 8.85f
+z, gyro_offset, 4.64f
+upper_limit, mma_output_limit, 9.1f
+lower_limit, mma_output_limit, 1.1f
