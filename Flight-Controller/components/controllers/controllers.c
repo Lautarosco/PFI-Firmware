@@ -3,9 +3,7 @@
 #include <math.h>
 #include <esp_system.h>
 #include <esp_log.h>
-
-#define N       1       /* Actual sample [ n ] of buffers used in discrete algorithms */
-#define N_1     0       /* 1 sample delay [ n - 1 ] of buffers used in discrete algorithms */
+#include <string.h>
 
 const char * CONTROLLER_TAG = "CONTROLLER";
 
@@ -28,20 +26,19 @@ static float pid( pid_controller_t * obj, float pv, float sp ) {
         esp_restart();
     }
     
-    float w0 = 2 * M_PI * obj->cfg.fc;   /* Calculate Low Pass Filter coefficient in rad/s */
+    float w = 2 * M_PI * obj->cfg.fc;   /* Calculate Low Pass Filter coefficient in rad/s */
 
-    obj->error_buffer[ N_1 ] = obj->error_buffer[ N ];          /* Update last Error */
-    obj->error_buffer[ N ]   = sp - pv;                         /* Update new Error */
+    obj->error = sp - pv; /* Update error */
 
     /* Note: Roll, Pitch and Yaw SetPoints and measures are in angles but the model of the drone is in radians, so we need to convert them to radians */
     if( obj->cfg.tag != z ) {
 
-        obj->error_buffer[ 1 ] *= ( M_PI / 180.0f );
+        obj->error *= ( M_PI / 180.0f );
     }
 
     if( obj->gain.kp != 0 ) {
 
-        obj->action.p = obj->error_buffer[ N ];                   /* Update Proportional value */
+        obj->action.p = obj->error; /* Update Proportional value */
     }
 
 
@@ -57,22 +54,20 @@ static float pid( pid_controller_t * obj, float pv, float sp ) {
 
     /** Integral Discretization:
      * 
-     *                         Ts
-     * y[ n ] = y[ n - 1 ]  + ---- * ( x[ n ] + x[ n - 1 ] ) = a + ( b * c ) where,
-     *                         2
-     * x is the error and
-     * y is the integral value
+     *        _____
+     *       |     |
+     *   e   |  1  |   y
+     * ----> | --- | ---->
+     *       |  s  |
+     *       |_____|
+     * 
+     * y = y + ( x * dt )
+     * 
      */
 
     if( obj->gain.ki != 0 ) {
 
-        obj->action.i_buffer[ N_1 ] = obj->action.i_buffer[ N ];                /* Update last Integral value */
-
-        float ai = obj->action.i_buffer[ N_1 ];
-        float bi = obj->cfg.ts / 2;
-        float ci = obj->error_buffer[ N ] + obj->error_buffer[ N_1 ];
-
-        obj->action.i_buffer[ N ] = ai + ( bi * ci );                           /* Update new Integral value */
+        obj->action.i += obj->error * obj->cfg.ts;
     }
     
     
@@ -81,24 +76,27 @@ static float pid( pid_controller_t * obj, float pv, float sp ) {
     /**
      * Derivative Discretization:
      * 
-     *            [ 2 * w0 * ( x[ n ] - x[ n - 1 ] ) ] + [ ( 2 - ( w0 * Ts ) ) * y[ n - 1 ] ]    a + b
-     * y[ n ] = ----------------------------------------------------------------------------- = ------- where,
-     *                                        2 + ( w0 * Ts )                                      c
+     *                 _____
+     *   e  +         |     |       y'
+     * ----->◯ ----> |  w  | ------------>
+     *     - ^        |_____|        |
+     *       |                       |
+     *       |         _____         |
+     *       |        |     |        |
+     *       |        |  1  |        |
+     *       |<-------| --- |<-------|
+     *           y    |  s  |
+     *                |_____|
      * 
-     * If PI-D control, then the input to D action is te state nor the error
-     * However, if PID control, the input to D action is as usual, the error
+     * ( 1 ) y' = w * ( e - y ) => Update out of the algorithm
+     * ( 2 ) y = sum + ( y' * dt ) => Update [ y is the integral of y' ]
      * 
      */
 
     if( obj->gain.kd != 0 ) {
 
-        obj->action.d_buffer[ N_1 ] = obj->action.d_buffer[ N ];                      /* Update last Derivative value */
-
-        float ad = 2 * w0 * ( obj->error_buffer[ N ] - obj->error_buffer[ N_1 ] );
-        float bd = ( 2 - ( w0 * obj->cfg.ts ) ) * obj->action.d_buffer[ N_1 ];
-        float cd = 2 + ( w0 * obj->cfg.ts );
-
-        obj->action.d_buffer[ N ] = ( ad + bd ) / cd;                                  /* Update new Derivative value */
+        obj->action.d.out = w * ( obj->error - obj->action.d.sum ); /* ( 1 ) */
+        obj->action.d.sum += obj->action.d.out * obj->cfg.ts; /* ( 2 ) */
     }
 
     float c_p = 0;
@@ -126,18 +124,18 @@ static float pid( pid_controller_t * obj, float pv, float sp ) {
      * ***********************************
      */
     
-    if( ( obj->gain.ki != 0 ) && ( fabs( obj->error_buffer[ N ] ) > obj->cfg.intMinErr ) ) {
+    if( ( obj->gain.ki != 0 ) && ( fabs( obj->error ) > obj->cfg.intMinErr ) ) {
 
         if( obj->cfg.sat == anti_windup ) {
 
-            if( ( obj->error_buffer[ N ] < 0 ) && ( obj->action.i_buffer[ N ] > 0 ) ) {
+            if( ( obj->error < 0 ) && ( obj->action.i > 0 ) ) {
 
                 c_i = 0;
             }
 
             else {
 
-                c_i = obj->action.i_buffer[ N ] * obj->gain.ki;
+                c_i = obj->action.i * obj->gain.ki;
             }
         }
 
@@ -148,7 +146,7 @@ static float pid( pid_controller_t * obj, float pv, float sp ) {
 
         else {
 
-            c_i = obj->action.i_buffer[ N ] * obj->gain.ki;
+            c_i = obj->action.i * obj->gain.ki;
         }
     }
 
@@ -162,7 +160,7 @@ static float pid( pid_controller_t * obj, float pv, float sp ) {
 
     if( obj->gain.kd != 0 ) {
 
-        c_d = obj->action.d_buffer[ N ] * obj->gain.kd;
+        c_d = obj->action.d.out * obj->gain.kd;
     }
 
     return c_p + c_i + c_d;
@@ -185,6 +183,12 @@ static void pid_init( pid_controller_t * obj, ControllerCfgs_t cfg ) {
     /* Set configs */
     obj->cfg = cfg;
 
+    /* Check if cut off frequency ensures numerical stability */
+    if( obj->cfg.fc > ( 0.90f / ( M_PI * ( obj->cfg.ts / 1000.0f ) ) ) ) {
+
+        obj->cfg.fc = 0.90f / ( M_PI * ( obj->cfg.ts / 1000.0f ) );
+    }
+
     /* Set gains */
     obj->gain = obj->cfg.gains;
 
@@ -205,31 +209,21 @@ pid_controller_t * Pid( void ) {
     /* Assign memmory to Pid object */
     pid_controller_t * controller = malloc( sizeof( pid_controller_t ) );
 
-    /* Default values */
-    controller->gain.kp            = 0.0f;
-    controller->gain.ki            = 0.0f;
-    controller->gain.kd            = 0.0f;
-    controller->cfg.fc             = 0.0f;
-    controller->cfg.ts             = 0.0f;
-    controller->cfg.sat            = no_saturation;
-    controller->action.p           = 0.0f;
-    controller->init_ok            = false;
+    /* Set default attributes values in 0 */
+    memset( controller, 0, sizeof( * controller ) );
 
-    /* Default values */
-    for(int i = 0; i < ( ( sizeof( controller->action.i_buffer ) ) / ( sizeof( controller->action.i_buffer[ 0 ] ) ) ); i++) {
-
-        controller->action.i_buffer[ i ] = 0;
-    }
-
-    for(int i = 0; i < ( ( sizeof( controller->action.d_buffer ) ) / ( sizeof( controller->action.d_buffer[ 0 ] ) ) ); i++) {
-
-        controller->action.d_buffer[ i ] = 0;
-    }
-
-    for(int i = 0; i < ( ( sizeof( controller->error_buffer ) ) / ( sizeof( controller->error_buffer[ 0 ] ) ) ); i++) {
-
-        controller->error_buffer[ i ] = 0;
-    }
+    // controller->action.i           = 0.0f;
+    // controller->action.d.out       = 0.0f;
+    // controller->action.d.sum       = 0.0f;
+    // controller->error              = 0.0f;
+    // controller->gain.kp            = 0.0f;
+    // controller->gain.ki            = 0.0f;
+    // controller->gain.kd            = 0.0f;
+    // controller->cfg.fc             = 0.0f;
+    // controller->cfg.ts             = 0.0f;
+    // controller->cfg.sat            = no_saturation;
+    // controller->action.p           = 0.0f;
+    // controller->init_ok            = false;
 
     /* Pointer assignment to Pid Class functions ( methods ) */
     controller->pid  = pid;

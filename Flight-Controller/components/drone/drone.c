@@ -193,10 +193,10 @@ static drone_cfg_t DroneConfigs = {
         },
         {
             .tag = roll,
-            .fc  = 0,
+            .fc  = 1.0f,
             .ts  = 10,
             .sat = no_saturation,
-            .gains = { .kp = 1, .ki = 0, .kd = 0 },
+            .gains = { .kp = 0.0f, .ki = 0.0f, .kd = 0.0f },
             .intMinErr = 0.0f
         },
         {
@@ -217,10 +217,10 @@ static drone_cfg_t DroneConfigs = {
         },
         {
             .tag = roll_dot,
-            .fc  = 0,
+            .fc  = 1.0f,
             .ts  = 10,
             .sat = no_saturation,
-            .gains = { .kp = 0, .ki = 0, .kd = 0 },
+            .gains = { .kp = 0.0f, .ki = 0.0f, .kd = 0.0f },
             .intMinErr = 0.0f
         },
         {
@@ -728,7 +728,9 @@ drone_t * Drone( void ) {
     DroneConfigs.imu_cfg.gyro_offset.y = get_csv_row( csv_rows, n_rows, "y" ).var_value;
     DroneConfigs.imu_cfg.gyro_offset.z = get_csv_row( csv_rows, n_rows, "z" ).var_value;
     
+    printf( "Upper limit ( before ): %.2f\r\n", DroneConfigs.mma_out_limits.upper );
     DroneConfigs.mma_out_limits.upper = get_csv_row( csv_rows, n_rows, "upper_limit" ).var_value;
+    printf( "Upper limit ( after ): %.2f\r\n", DroneConfigs.mma_out_limits.upper );
     DroneConfigs.mma_out_limits.lower = get_csv_row( csv_rows, n_rows, "lower_limit" ).var_value;
 
     /* Get Drone Class generic configs */

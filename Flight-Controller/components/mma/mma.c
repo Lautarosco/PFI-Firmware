@@ -114,8 +114,8 @@ static void mma_init( mma_t * obj, float upper_limit, float lower_limit ) {
 
     /* Check lower limit */
 
-    /* If lower limit is from 0 to 1 */
-    if( ( lower_limit >= 0.0f ) && ( lower_limit <= 1.0f ) ) {
+    /* If lower limit is from 1 to 2 */
+    if( ( lower_limit >= 1.0f ) && ( lower_limit <= 2.0f ) ) {
 
         obj->limit.upper = lower_limit;
     }

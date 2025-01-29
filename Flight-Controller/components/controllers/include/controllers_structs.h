@@ -81,18 +81,35 @@ typedef struct pid_gain {
 
 
 /**
+ * @brief Struct of an integral
+ */
+typedef struct derivative {
+
+    /* Accumulation of the integral */
+    float sum;
+
+    /* Actual value of the integral */
+    float out;
+
+} derivative_t;
+
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
+
+/**
  * @brief PID Actions
  */
 typedef struct pid_action {
 
-    /* Proportional action. */
+    /* Proportional action */
     float p;
     
-    /* Integral action buffer [ Ci_n-1, Ci_n ] */
-    float i_buffer[ 2 ];
+    /* Integral action */
+    float i;
     
-    /* Derivative action buffer [ Cd_n-1, Cd_n ] */
-    float d_buffer[ 2 ];
+    /* Derivative action */
+    derivative_t d;
     
 } pid_action_t;
 
@@ -138,8 +155,8 @@ typedef struct pid_controller pid_controller_t;
  */
 typedef struct pid_controller {
 
-    /* [ A ] Error buffer [ e_n-1, e_n ] */
-    float error_buffer[ 2 ];
+    /* [ A ] Error */
+    float error;
 
     /* [ A ] Controller gains struct */
     pid_gain_t gain;
