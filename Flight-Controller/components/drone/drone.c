@@ -10,6 +10,7 @@
 
 const char * DRONE_TAG = "DRONE";
 
+// #define IGNORE_BMI
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
@@ -520,6 +521,7 @@ static esp_err_t drone_init( drone_t * obj ) {
     /* Get Drone Class generic configs */
     drone_cfg_t DroneConfigs = GetDroneConfigs();
 
+    #ifndef IGNORE_BMI
     /* Initialize Bmi160 object */
     ESP_ERROR_CHECK( obj->attributes.components.bmi.init(
         &( obj->attributes.components.bmi ),
@@ -534,6 +536,7 @@ static esp_err_t drone_init( drone_t * obj ) {
         0.0f
         )
     );
+    
 
     obj->attributes.components.bmi.Gyro.offset.x = DroneConfigs.imu_cfg.gyro_offset.x;
     obj->attributes.components.bmi.Gyro.offset.y = DroneConfigs.imu_cfg.gyro_offset.y;
@@ -541,7 +544,7 @@ static esp_err_t drone_init( drone_t * obj ) {
 
     /* Fast offset compensation for bmi sensor */
     obj->attributes.components.bmi.foc( &( obj->attributes.components.bmi ) );
-
+    #endif
     // obj->attributes.components.bmi->Gyro.calibrate( &( obj->attributes.components.bmi->Gyro ), 2000 );
 
     /* Initialize all Pwm objects */
@@ -594,12 +597,15 @@ static void UpdateStates( drone_t * obj, float ts ) {
     else {
 
         /* Update state's velocity */
+
+        #ifndef IGNORE_BMI
         obj->attributes.states.roll_dot  = FirstOrderIIR( obj->attributes.components.bmi.Gyro.x, obj->attributes.states.roll_dot,  DroneConfigs.IIR_coeff_roll_dot );
         obj->attributes.states.pitch_dot = FirstOrderIIR( obj->attributes.components.bmi.Gyro.y, obj->attributes.states.pitch_dot, DroneConfigs.IIR_coeff_pitch_dot );
         obj->attributes.states.yaw_dot   = FirstOrderIIR( obj->attributes.components.bmi.Gyro.z, obj->attributes.states.yaw_dot,   DroneConfigs.IIR_coeff_yaw_dot );
         
         /* Update state's position */
         Kalman( obj, ts );
+        #endif
         // float roll_acc = atan2( obj->attributes.components.bmi.Acc.y, obj->attributes.components.bmi.Acc.z ) * ( 180.0f / M_PI );
         // float roll_gyro = obj->attributes.states.roll + ( obj->attributes.components.bmi.Gyro.x * ( ts / 1000.0f ) );
         // obj->attributes.states.roll = ( 0.98f * roll_acc ) + ( 0.02f * roll_gyro );
@@ -737,6 +743,7 @@ drone_t * Drone( void ) {
     drone_cfg_t DroneConfigs = GetDroneConfigs();
 
     /* Make an instance of Bmi160 Class */
+    #ifndef IGNORE_BMI
     ESP_ERROR_CHECK(
         Bmi160(
             &( drone->attributes.components.bmi ),
@@ -760,6 +767,7 @@ drone_t * Drone( void ) {
             vTaskDelay( pdMS_TO_TICKS( 10 ) );
         }
     }
+    #endif
 
     /* Make an instance of Mma Class */
     drone->attributes.components.mma = Mma();
