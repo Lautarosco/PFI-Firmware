@@ -61,7 +61,8 @@ static void StControlFunc( drone_t * obj ) {
     // drone_cfg_t DroneConfigs = GetDroneConfigs();
 
     /* Update sp */
-    obj->attributes.sp.roll = ( 180 / M_PI ) * __sin( 0.02f, 1.0f, timer );
+    // obj->attributes.sp.roll = ( 180 / M_PI ) * __sin( 0.02f, 1.0f, timer );
+    obj->attributes.sp.roll = 0;
 
     /* Compute PID algorithm for all states */
     float CRoll = obj->attributes.components.controllers[ roll ]->pid(
