@@ -73,20 +73,20 @@ typedef struct mma mma_t;
  * @brief Complete description of Mma Class
  */
 typedef struct mma {
-    /* [ A ] Mma object inputs */
+    /* [ A ] Mma object inputs ( controller action ) */
     float input[ 4 ];
 
-    /* [ A ] Mma object outputs */
+    /* [ A ] Mma object outputs ( rpm ) */
     float output[ 4 ];
 
-    /* Upper and lower limit of mma output */
+    /* Upper and lower limits of mma output */
     limits_t limit;
 
     /** @brief Initialize object of Mma Class @param obj: Mma object @param upper_limit: Upper limit of mma output @param lower_limit: Lower limit of mma output @retval none */
     void ( * init )( mma_t * obj, float upper_limit, float lower_limit );
 
-    /** @brief [ M ] Compute MMA algorithm and update object outputs @param obj: Address of Mma Object @param dc_min: Minimum duty cycle @param dc_max: Maximum duty cycle @retval none */
-    void ( * compute )( mma_t * obj, float dc_min, float dc_max );
+    /** @brief Compute MMA algorithm and update object outputs @param obj: Address of Mma object @param min: Minimum rpm @param max: Maximum rpm @retval none */
+    void ( * compute )( mma_t * obj, float min, float max );
 
 } mma_t;
 

@@ -9,12 +9,11 @@
 
 /**
  * @brief Convert pulse width of pwm signal to duty cycle
- * @param pulse_ms:       Pulse width
- * @param pwm_f:          Frequency of timer
- * @param pwm_resolution: Resolution of timer
+ * @param pulse_ms: Pulse width in milliseconds
+ * @param pwm_f: Frequency of timer in Hertz
  * @retval uint32_t
  */
-#define PULSE_WIDTH_TO_DUTY( pulse_ms, pwm_f, pwm_resolution ) ( ( uint32_t ) ( ( pulse_ms / 1000.0f ) * pwm_f ) * ( 1 << pwm_resolution ) )
+#define PULSE_WIDTH_TO_DUTY( pulse_ms, pwm_f ) ( ( uint32_t ) ( ( pulse_ms / 1000.0f ) * pwm_f ) )
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */

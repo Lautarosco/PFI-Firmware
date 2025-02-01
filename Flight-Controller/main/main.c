@@ -36,9 +36,24 @@ void app_main( void ) {
     /* Parse Bluetooth commands */
     xTaskCreatePinnedToCore( vTaskParseBluetooth, "Task3", 1024 * 2, ( void * ) ( drone ), 1, NULL, CORE_0 );
 
+    /* START TESTING */
+
+    printf( "[ %s ] gyrox before init: %.2f\r\n", __func__, drone->attributes.components.bmi.Gyro.offset.x );
+    while( !drone->attributes.init_ok ) {
+
+        vTaskDelay( pdMS_TO_TICKS( 10 ) );
+    }
+    printf( "[ %s ] gyrox after init: %.2f\r\n", __func__, drone->attributes.components.bmi.Gyro.offset.x );
+    printf( "NVS before saving\r\n" );
+    drone->methods.read_from_flash( drone );
+    drone->methods.save_to_nvs( drone );
+    printf( "NVS after saving\r\n" );
+    drone->methods.read_from_flash( drone );
+
+    /* END TESTING */
+
     while( 1 ) {
 
-        printf( "Roll: %.2f\r\n", drone->attributes.states.roll );
         
         vTaskDelay( pdMS_TO_TICKS( 1000 ) );
     }
