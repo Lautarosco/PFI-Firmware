@@ -41,6 +41,23 @@ typedef enum states {
 
 
 /**
+ * @brief Filter derivative action options
+ */
+typedef enum filter_derivative {
+
+    /* Do not filter derivative action */
+    no_filter,
+
+    /* Filter derivative action */
+    filter,
+
+} filter_derivative_t;
+
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
+
+/**
  * @brief Integral action saturation options
  */
 typedef enum int_sat {
@@ -134,6 +151,9 @@ typedef struct ControllerCfgs {
     /* Integral saturation */
     int_sat_t sat;
 
+    /* Derivative filter */
+    filter_derivative_t der_filter;
+
     /* PID gains */
     pid_gain_t gains;
 
@@ -175,6 +195,9 @@ typedef struct pid_controller {
 
     /** @brief [ M ] Calculate Controller action @param obj: Address of Pid object @param pv: Process value @param sp: Set point @retval PID calculation */
     float ( * pid )( pid_controller_t * obj, float pv, float sp );
+
+    /** @brief Calculate Controller PI-D action @param obj: Address of Pid object @param pv: Process value @param sp: Set point @retval PID calculation */
+    float ( * manual_pi_d )( pid_controller_t * obj, float pv, float sp, float d_state );
 
 } pid_controller_t;
 

@@ -57,21 +57,23 @@ static float timer = 0.0f;
 
 static void StControlFunc( drone_t * obj ) {
 
-    /* Get Drone Class generic configs */
-    // drone_cfg_t DroneConfigs = GetDroneConfigs();
-
     /* Update sp */
-    // obj->attributes.sp.roll = ( 180 / M_PI ) * __sin( 0.02f, 1.0f, timer );
     obj->attributes.sp.roll = 0;
 
     /* Compute PID algorithm for all states */
-    float CRoll = obj->attributes.components.controllers[ roll ]->pid(
+
+    float CRoll = obj->attributes.components.controllers[ roll ]->manual_pi_d(
         obj->attributes.components.controllers[ roll ],
         obj->attributes.states.roll,
-        obj->attributes.sp.roll
+        obj->attributes.sp.roll,
+        obj->attributes.states.roll_dot
     );
 
-    // printf( "%f\r\n", ( 180 / M_PI ) * __sin( 0.02f, 1.0f, timer ) );
+    float CRolld = obj->attributes.components.controllers[ roll_dot ]->pid(
+        obj->attributes.components.controllers[ roll_dot ],
+        obj->attributes.states.roll_dot,
+        CRoll
+    );
 
     /* If timer exceeds from 2π */
     if( timer > ( 2 * M_PI ) ) {
@@ -88,7 +90,7 @@ static void StControlFunc( drone_t * obj ) {
     }
     
     /* Update MMA inputs with PID outputs */
-    obj->attributes.components.mma->input[ roll ] = CRoll;
+    obj->attributes.components.mma->input[ roll ] = CRolld;
 
     /* Compute MMA algorithm */
     obj->attributes.components.mma->compute(

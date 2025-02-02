@@ -12,7 +12,7 @@ const char * CONTROLLER_TAG = "CONTROLLER";
 
 
 /**
- * @brief Calculate Controller action
+ * @brief Calculate Controller PID action
  * @param obj: Address of Pid object
  * @param pv: Process value
  * @param sp: Set point
@@ -69,34 +69,41 @@ static float pid( pid_controller_t * obj, float pv, float sp ) {
 
         obj->action.i += obj->error * obj->cfg.ts;
     }
-    
-    
-
-
-    /**
-     * Derivative Discretization:
-     * 
-     *                 _____
-     *   e  +         |     |       y'
-     * ----->◯ ----> |  w  | ------------>
-     *     - ^        |_____|        |
-     *       |                       |
-     *       |         _____         |
-     *       |        |     |        |
-     *       |        |  1  |        |
-     *       |<-------| --- |<-------|
-     *           y    |  s  |
-     *                |_____|
-     * 
-     * ( 1 ) y' = w * ( e - y ) => Update out of the algorithm
-     * ( 2 ) y = sum + ( y' * dt ) => Update [ y is the integral of y' ]
-     * 
-     */
 
     if( obj->gain.kd != 0 ) {
 
-        obj->action.d.out = w * ( obj->error - obj->action.d.sum ); /* ( 1 ) */
-        obj->action.d.sum += obj->action.d.out * obj->cfg.ts; /* ( 2 ) */
+        /* Compute derivative with filter */
+        if( obj->cfg.der_filter ) {
+            
+            /**
+             * Derivative Discretization:
+             * 
+             *                 _____
+             *   e  +         |     |       y'
+             * ----->◯ ----> |  w  | ------------>
+             *     - ^        |_____|        |
+             *       |                       |
+             *       |         _____         |
+             *       |        |     |        |
+             *       |        |  1  |        |
+             *       |<-------| --- |<-------|
+             *           y    |  s  |
+             *                |_____|
+             * 
+             * ( 1 ) y' = w * ( e - y ) => Update out of the algorithm
+             * ( 2 ) y = sum + ( y' * dt ) => Update [ y is the integral of y' ]
+             * 
+             */
+
+            obj->action.d.out = w * ( obj->error - obj->action.d.sum ); /* ( 1 ) */
+            obj->action.d.sum += obj->action.d.out * obj->cfg.ts; /* ( 2 ) */
+        }
+
+        /* Compute derivative without filter */
+        else {
+
+
+        }
     }
 
     float c_p = 0;
@@ -171,6 +178,142 @@ static float pid( pid_controller_t * obj, float pv, float sp ) {
 
 
 /**
+ * @brief Calculate Controller PI-D action
+ * @param obj: Address of Pid object
+ * @param pv: Process value
+ * @param sp: Set point
+ * @retval PID calculation
+ */
+static float manual_pi_d( pid_controller_t * obj, float pv, float sp, float d_state ) {
+
+    if( !obj->init_ok ) {
+
+        ESP_LOGE( CONTROLLER_TAG, "Object is not initialized!" );
+        esp_restart();
+    }
+    
+    float w = 2 * M_PI * obj->cfg.fc;   /* Calculate Low Pass Filter coefficient in rad/s */
+
+    obj->error = sp - pv; /* Update error */
+
+    /* Note: Roll, Pitch and Yaw SetPoints and measures are in angles but the model of the drone is in radians, so we need to convert them to radians */
+    if( obj->cfg.tag != z ) {
+
+        obj->error *= ( M_PI / 180.0f );
+    }
+
+    if( obj->gain.kp != 0 ) {
+
+        obj->action.p = obj->error; /* Update Proportional value */
+    }
+
+
+
+
+    /**
+     * *********************************************************************************
+     * 
+     *         Controller Discretization with Bilinear ( Tustin ) Approximation
+     * 
+     * *********************************************************************************
+     */
+
+    /** Integral Discretization:
+     * 
+     *        _____
+     *       |     |
+     *   e   |  1  |   y
+     * ----> | --- | ---->
+     *       |  s  |
+     *       |_____|
+     * 
+     * y = y + ( x * dt )
+     * 
+     */
+
+    if( obj->gain.ki != 0 ) {
+
+        obj->action.i += obj->error * obj->cfg.ts;
+    }
+
+    /* Derivative Action */
+    if( obj->gain.kd != 0 ) {
+
+        obj->action.d.out = d_state;
+    }
+
+    float c_p = 0;
+    float c_i = 0;
+    float c_d = 0;
+
+    /**
+     * ***********************************
+     * 
+     *         Proportional Action
+     * 
+     * ***********************************
+     */
+    
+    if( obj->gain.kp != 0 ) {
+
+        c_p = obj->action.p * obj->gain.kp;
+    }
+
+    /**
+     * ***********************************
+     * 
+     *         Integral Action
+     * 
+     * ***********************************
+     */
+    
+    if( ( obj->gain.ki != 0 ) && ( fabs( obj->error ) > obj->cfg.intMinErr ) ) {
+
+        if( obj->cfg.sat == anti_windup ) {
+
+            if( ( obj->error < 0 ) && ( obj->action.i > 0 ) ) {
+
+                c_i = 0;
+            }
+
+            else {
+
+                c_i = obj->action.i * obj->gain.ki;
+            }
+        }
+
+        else if( obj->cfg.sat == back_propagation ) {
+
+            /* Back-Propagation Algorithm */
+        }
+
+        else {
+
+            c_i = obj->action.i * obj->gain.ki;
+        }
+    }
+
+    /**
+     * ***********************************
+     * 
+     *         Derivative Action
+     * 
+     * ***********************************
+     */
+
+    if( obj->gain.kd != 0 ) {
+
+        c_d = obj->action.d.out * obj->gain.kd;
+    }
+
+    return c_p + c_i - c_d;
+}
+
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
+
+/**
  * @brief Initialize Pid object
  * @param obj: Address of Pid object
  * @param cfg: Controller configs
@@ -212,22 +355,10 @@ pid_controller_t * Pid( void ) {
     /* Set default attributes values in 0 */
     memset( controller, 0, sizeof( * controller ) );
 
-    // controller->action.i           = 0.0f;
-    // controller->action.d.out       = 0.0f;
-    // controller->action.d.sum       = 0.0f;
-    // controller->error              = 0.0f;
-    // controller->gain.kp            = 0.0f;
-    // controller->gain.ki            = 0.0f;
-    // controller->gain.kd            = 0.0f;
-    // controller->cfg.fc             = 0.0f;
-    // controller->cfg.ts             = 0.0f;
-    // controller->cfg.sat            = no_saturation;
-    // controller->action.p           = 0.0f;
-    // controller->init_ok            = false;
-
     /* Pointer assignment to Pid Class functions ( methods ) */
-    controller->pid  = pid;
-    controller->init = pid_init;
+    controller->pid         = pid;
+    controller->init        = pid_init;
+    controller->manual_pi_d = manual_pi_d;
 
     ESP_LOGI( CONTROLLER_TAG, "Instance successfully made" );
 

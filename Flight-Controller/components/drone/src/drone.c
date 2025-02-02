@@ -75,9 +75,9 @@ static drone_cfg_t DroneConfigs = {
         .Q = 0.0f,
         .R = 0.0f,
     },
-    .IIR_coeff_roll_dot  = 0.9f,
-    .IIR_coeff_pitch_dot = 0.9f,
-    .IIR_coeff_yaw_dot   = 0.9f,
+    .IIR_coeff_roll_dot  = 0.8f,
+    .IIR_coeff_pitch_dot = 0.8f,
+    .IIR_coeff_yaw_dot   = 0.8f,
     .imu_cfg = {
         .imu_i2c_cfg = {
             .address = BMI160_ADDR,
@@ -189,6 +189,7 @@ static drone_cfg_t DroneConfigs = {
             .fc        = 0,
             .ts        = 10,
             .sat       = no_saturation,
+            .der_filter = 0,
             .gains     = { .kp = 0, .ki = 0, .kd = 0 },
             .intMinErr = 0.0f
         },
@@ -197,6 +198,7 @@ static drone_cfg_t DroneConfigs = {
             .fc  = 1.0f,
             .ts  = 10,
             .sat = no_saturation,
+            .der_filter = 0,
             .gains = { .kp = 0.0f, .ki = 0.0f, .kd = 0.0f },
             .intMinErr = 0.0f
         },
@@ -205,6 +207,7 @@ static drone_cfg_t DroneConfigs = {
             .fc  = 0,
             .ts  = 10,
             .sat = no_saturation,
+            .der_filter = 0,
             .gains = { .kp = 0, .ki = 0, .kd = 0 },
             .intMinErr = 0.0f
         },
@@ -213,6 +216,7 @@ static drone_cfg_t DroneConfigs = {
             .fc  = 0,
             .ts  = 10,
             .sat = no_saturation,
+            .der_filter = 0,
             .gains = { .kp = 0, .ki = 0, .kd = 0 },
             .intMinErr = 0.0f
         },
@@ -221,6 +225,7 @@ static drone_cfg_t DroneConfigs = {
             .fc  = 1.0f,
             .ts  = 10,
             .sat = no_saturation,
+            .der_filter = 0,
             .gains = { .kp = 0.0f, .ki = 0.0f, .kd = 0.0f },
             .intMinErr = 0.0f
         },
@@ -229,6 +234,7 @@ static drone_cfg_t DroneConfigs = {
             .fc  = 0,
             .ts  = 10,
             .sat = no_saturation,
+            .der_filter = 0,
             .gains = { .kp = 0, .ki = 0, .kd = 0 },
             .intMinErr = 0.0f
         },
@@ -237,6 +243,7 @@ static drone_cfg_t DroneConfigs = {
             .fc  = 0,
             .ts  = 10,
             .sat = no_saturation,
+            .der_filter = 0,
             .gains = { .kp = 0, .ki = 0, .kd = 0 },
             .intMinErr = 0.0f
         },
@@ -697,48 +704,10 @@ drone_t * Drone( void ) {
 
     memset( drone, 0, sizeof( drone_t ) );
 
-    /* States default values */
-    // drone->attributes.states.z         = 0.0f;
-    // drone->attributes.states.roll      = 0.0f;
-    // drone->attributes.states.pitch     = 0.0f;
-    // drone->attributes.states.yaw       = 0.0f;
-    // drone->attributes.states.roll_dot  = 0.0f;
-    // drone->attributes.states.pitch_dot = 0.0f;
-    // drone->attributes.states.yaw_dot   = 0.0f;
-    
-    /* sp default values */
-    // drone->attributes.sp.z         = 0.0f;
-    // drone->attributes.sp.roll      = 0.0f;
-    // drone->attributes.sp.pitch     = 0.0f;
-    // drone->attributes.sp.yaw       = 0.0f;
-    // drone->attributes.sp.roll_dot  = 0.0f;
-    // drone->attributes.sp.pitch_dot = 0.0f;
-    // drone->attributes.sp.yaw_dot   = 0.0f;
-
-    /* Drone object isn't initialized yet */
-    // drone->attributes.init_ok = false;
-
     /* Assign memmory to Transmitter object buttons */
     drone->attributes.global_variables.tx_buttons = malloc( sizeof( tx_buttons_t ) );
 
     memset( drone->attributes.global_variables.tx_buttons, 0, sizeof( tx_buttons_t ) );
-
-    /* Transmitter buttons default values */
-    // drone->attributes.global_variables.tx_buttons->cross    = false;
-    // drone->attributes.global_variables.tx_buttons->square   = false;
-    // drone->attributes.global_variables.tx_buttons->triangle = false;
-    // drone->attributes.global_variables.tx_buttons->circle   = false;
-    // drone->attributes.global_variables.tx_buttons->up       = false;
-    // drone->attributes.global_variables.tx_buttons->down     = false;
-    // drone->attributes.global_variables.tx_buttons->left     = false;
-    // drone->attributes.global_variables.tx_buttons->right    = false;
-    // drone->attributes.global_variables.tx_buttons->r1       = false;
-    // drone->attributes.global_variables.tx_buttons->r2       = false;
-    // drone->attributes.global_variables.tx_buttons->l1       = false;
-    // drone->attributes.global_variables.tx_buttons->l2       = false;
-    // drone->attributes.global_variables.tx_buttons->select   = false;
-    // drone->attributes.global_variables.tx_buttons->start    = false;
-    // drone->attributes.global_variables.tx_buttons->ps       = false;
 
     /* Assign memory to Bluetooth data */
     drone->attributes.global_variables.bt_data = malloc( sizeof( BluetoothData_t ) );
@@ -747,8 +716,6 @@ drone_t * Drone( void ) {
 
     /* Bluetooth data default values */
     drone->attributes.global_variables.bt_data->data = malloc( 256 * sizeof( char ) );
-    // drone->attributes.global_variables.bt_data->len = 0;
-    // drone->attributes.global_variables.bt_data->state = false;
 
     /* Pointer to Drone functions ( methods ) */
     drone->methods.update_states    = UpdateStates;
