@@ -23,65 +23,54 @@ static const char * GetStateName( int stateIndex );
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
-typedef struct {
-    const char *name;
-    int index;
-} ControllerMap;
+/**
+ * @brief Get state's index given it's name
+ * @param stateName: State's name
+ * @retval State's index
+ */
+int GetStateIndex( const char * stateName );
 
-ControllerMap controller_map[] = {
-    {"z", 0},
-    {"roll", 1},
-    {"pitch", 2},
-    {"yaw", 3},
-    {"roll_d", 1},
-    {"pitch_d", 2},
-    {"yaw_d", 3},
-    {NULL, -1} // Sentinel value to indicate the end of the array
-};
 
-int get_controller_index(const char *name) {
-    for (int i = 0; controller_map[i].name != NULL; i++) {
-        if (strcmp(controller_map[i].name, name) == 0) {
-            return controller_map[i].index;
-        }
-    }
-    return -1; // Return -1 if no match is found
-}
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
 
 /**
  * @brief Check if Bluetooth command for PID index is correct
- * @param index_str: String identifier (e.g., "roll", "pitch")
- * @param n_obj: Total number of PID controllers
+ * @param index: Desired index
+ * @param n_obj: Total of Pid objects
  * @param func: Function caller
- * @param line: Line from caller
- * @retval true if index is OK, false if it's not
+ * @param line: Line from called
+ * @retval true if index is OK - false if it's not
  */
-static bool pid_index_check(const char *index_str, const char *func, int line) {
+static bool PID_INDEX_CHECK( int index, int n_obj, const char * func, int line ) {
     
-    /* Convert string to index */
-    int index = get_controller_index(index_str);
+    printf( "Index: %d\r\n", index );
 
-    /* Log the converted index */
-    printf("Converted Index: %d\r\n", index);
-
-    /* Default return value */
+    /* Default returning value */
     bool ret = false;
 
-    /* Check if conversion failed (index = -1 means not found) */
-    if (index == -1) {
-        ESP_LOGE("TASK3", "Invalid PID identifier: '%s'. See function %s in line %d", index_str, func, line);
+    /* If index is a string */
+    if( isalpha( ( unsigned char ) index ) ) {
+
+        ESP_LOGE( "TASK3", "Type error: index must be int. See function %s in line %d", func, line );
     }
-    /* If index is out of range */
-    else if (index >= (sizeof(controller_map)/sizeof(controller_map[0])-1) || index < 0) {
-        ESP_LOGE("TASK3", "Index error: '%s' out of range. See function %s in line %d", index_str, func, line);
+
+    /* If index is greater that total of Pid objects or less than 0 */
+    else if( ( index >= n_obj ) || ( index < 0 ) ) {
+
+        ESP_LOGE( "TASK3", "Index error: index out of range. See function %s in line %d", func, line );
     }
+
     /* Index is OK */
     else {
+
         ret = true;
     }
 
+    /* Return answer */
     return ret;
 }
+
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
@@ -290,7 +279,7 @@ void vTaskParseBluetooth( void * pvParameters ) {
             for( int i = 0; i < obj->attributes.global_variables.bt_data->len; i++ ) {
 
                 /**
-                 * Frame's format: <pid/state/( p | i | d | min_err )/value>
+                 * Frame's format: <pid,state,( p | i | d | min_err )/value>
                  * 
                  * i.e, <pid/1/p/10> which means
                  * 
@@ -299,7 +288,7 @@ void vTaskParseBluetooth( void * pvParameters ) {
                  * p indicates proportional action
                  * 10 is the new value for roll Kp gain
                  * 
-                 * i.e, <pid/0/min_err/10> which means
+                 * i.e, <pid,0,min_err,10> which means
                  * 
                  * pid command
                  * state 1 indicates z ( see states_t enum defined in controllers_struct.h header file )
@@ -339,7 +328,7 @@ void vTaskParseBluetooth( void * pvParameters ) {
                 }
 
                 /* Check if end of substring */
-                else if( currChar == '/' ) {
+                else if( currChar == ',' ) {
 
                     /* Store substring */
                     ptr[ ptrIndex ] = '\0';
@@ -369,44 +358,49 @@ void vTaskParseBluetooth( void * pvParameters ) {
             }
 
             /* Check if it's a PID command */
-            if (!strcmp(ptrArr[0], "pid")) {
+            if( !strcmp( ptrArr[ 0 ], "pid" ) ) {
+                
+                /* Get state's index */
+                int index = GetStateIndex( ptrArr[ 1 ] );
 
-                int index = get_controller_index(ptrArr[1]); // Convert name to index
-
-            if (pid_index_check(ptrArr[1], __func__, __LINE__)) {
+                if( PID_INDEX_CHECK( index, sizeof( obj->attributes.components.controllers ) / ( sizeof( obj->attributes.components.controllers[ 0 ] ) ), __func__, __LINE__ ) ) {
 
                     /* If updating proportional action */
-                    if (!strcmp(ptrArr[2], "p")) {
-                        obj->attributes.components.controllers[index]->gain.kp = atof(ptrArr[3]);
-                        ESP_LOGW("TASK3", "%s new kp [ %.2f ]", GetStateName(index), obj->attributes.components.controllers[index]->gain.kp);
+                    if( !strcmp( ptrArr[ 2 ], "p" ) ) {
+
+                        obj->attributes.components.controllers[ index ]->gain.kp = atof( ptrArr[ 3 ] );
+                        ESP_LOGW( "TASK3", "%s new kp [ %.2f ]", GetStateName( index ), obj->attributes.components.controllers[ index ]->gain.kp );
                     }
 
                     /* If updating integral action */
-                    else if (!strcmp(ptrArr[2], "i")) {
-                        obj->attributes.components.controllers[index]->gain.ki = atof(ptrArr[3]);
-                        ESP_LOGW("TASK3", "%s new ki [ %.2f ]", GetStateName(index), obj->attributes.components.controllers[index]->gain.ki);
+                    else if( !strcmp( ptrArr[ 2 ], "i" ) ) {
+
+                        obj->attributes.components.controllers[ index ]->gain.ki = atof( ptrArr[ 3 ] );
+                        ESP_LOGW( "TASK3", "%s new ki [ %.2f ]", GetStateName( index ), obj->attributes.components.controllers[ index ]->gain.ki );
                     }
 
+
                     /* If updating derivative action */
-                    else if (!strcmp(ptrArr[2], "d")) {
-                        obj->attributes.components.controllers[index]->gain.kd = atof(ptrArr[3]);
-                        ESP_LOGW("TASK3", "%s new kd [ %.2f ]", GetStateName(index), obj->attributes.components.controllers[index]->gain.kd);
+                    else if( !strcmp( ptrArr[ 2 ], "d" ) ) {
+
+                        obj->attributes.components.controllers[ index ]->gain.kd = atof( ptrArr[ 3 ] );
+                        ESP_LOGW( "TASK3", "%s new kd [ %.2f ]", GetStateName( index ), obj->attributes.components.controllers[ index ]->gain.kd );
                     }
 
                     /* If updating minimum integral error */
-                    else if (!strcmp(ptrArr[2], "min_err")) {
-                        obj->attributes.components.controllers[index]->cfg.intMinErr = atof(ptrArr[3]);
-                        ESP_LOGW("TASK3", "%s new integral minimum error [ %.2f ]",
-                            GetStateName(index),
-                            obj->attributes.components.controllers[index]->cfg.intMinErr
+                    else if( !strcmp( ptrArr[ 2 ], "min_err" ) ) {
+
+                        obj->attributes.components.controllers[ index ]->cfg.intMinErr = atof( ptrArr[ 3 ] );
+                        ESP_LOGW( "TASK3", "%s new integral minimum error [ %.2f ]",
+                            GetStateName( index ),
+                            obj->attributes.components.controllers[ index ]->cfg.intMinErr
                         );
                     }
 
                     else {
-                        ESP_LOGE("TASK3", "Third parameter of bluetooth frame must be 'p' or 'i' or 'd' or 'min_err'");
+
+                        ESP_LOGE( "TASK3", "Third parameter of bluetooth frame must be 'p' or 'i' or 'd' or 'min_err' " );
                     }
-                } else {
-                    ESP_LOGE("TASK3", "Invalid controller name: %s", ptrArr[1]);
                 }
             }
         }
@@ -454,5 +448,52 @@ static const char * GetStateName( int stateIndex ) {
         default:
             return "UNDEFINED STATE";
             break;
+    }
+}
+
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
+
+int GetStateIndex( const char * stateName ) {
+
+    if( !strcmp( stateName, "z" ) ) {
+
+        return z;
+    }
+
+    else if( !strcmp( stateName, "roll" ) ) {
+
+        return roll;
+    }
+
+    else if( !strcmp( stateName, "pitch" ) ) {
+
+        return pitch;
+    }
+
+    else if( !strcmp( stateName, "yaw" ) ) {
+
+        return yaw;
+    }
+
+    else if( !strcmp( stateName, "roll_d" ) ) {
+
+        return roll_dot;
+    }
+
+    else if( !strcmp( stateName, "pitch_d" ) ) {
+
+        return pitch_dot;
+    }
+
+    else if( !strcmp( stateName, "yaw_d" ) ) {
+
+        return yaw_dot;
+    }
+
+    else {
+
+        return -1;
     }
 }
