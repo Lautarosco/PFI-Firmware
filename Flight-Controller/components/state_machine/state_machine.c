@@ -62,6 +62,7 @@ static void StControlFunc( drone_t * obj ) {
 
     /* Compute PID algorithm for all states */
 
+    /* ROLL - Cascaded PID*/
     float CRoll = obj->attributes.components.controllers[ roll ]->manual_pi_d(
         obj->attributes.components.controllers[ roll ],
         obj->attributes.states.roll,
@@ -76,30 +77,17 @@ static void StControlFunc( drone_t * obj ) {
         obj->attributes.states.roll_dot,
         obj->attributes.sp.roll_dot
     );
-
-    /* If timer exceeds from 2π */
-    if( timer > ( 2 * M_PI ) ) {
-
-        /* Sine function goes from 0 to 2π, hence start again from 0 */
-        timer = 0.0f;
-    }
-
-    /* Timer value is between 0 and 2π */
-    else {
-
-        /* Increment timer by 0.1 ms */
-        timer += 10 / 1000.0f;
-    }
     
     /* Update MMA inputs with PID outputs */
-    obj->attributes.components.mma->input[ roll ] = CRolld;
+    obj->attributes.components.mma->input[ C_Roll ] = CRolld;
 
     /* Compute MMA algorithm */
     obj->attributes.components.mma->compute(
-        obj->attributes.components.mma,
-        0.0f,
-        1047.0f
+        obj->attributes.components.mma
     );
+
+
+
 
     /* Update all pwm duty cycle */
     for(int i = 0; i < ( ( sizeof( obj->attributes.components.mma->output ) ) / ( sizeof( obj->attributes.components.mma->output[ 0 ] ) ) ); i++) {

@@ -22,41 +22,14 @@ const char * MMA_TAG = "MMA";
  */
 static float saturate( mma_t * obj, float input, float min, float max ) {
 
-#define UPPER_LIMIT max * obj->limit.upper
-#define LOWER_LIMIT min + obj->limit.lower
+    if( input > max )      /* Upper saturation */
+        return max;
 
-    if( input > UPPER_LIMIT )      /* Upper saturation */
-        return UPPER_LIMIT;
-
-    else if( input < LOWER_LIMIT ) /* Lower saturation */
-        return LOWER_LIMIT;
+    else if( input < min ) /* Lower saturation */
+        return min;
     
     else                        /* No saturation */
         return input;
-}
-
-
-/* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
-
-/**
- * @brief Map mma output to duty cycle
- * @param u: mma block output
- * @param min: Minimum duty cycle
- * @param max: Maximum duty cycle
- */
-static float u2pwm( mma_t * obj, float u, float min, float max ) {
-
-    float Gu = ( U_MAX - U_MIN ) / ( W_MAX );
-    float u_n = u * Gu; /* Normalized controller action */
-
-    float m = 0;
-    float b = 0;
-
-    m = ( max - min ) / ( U_MAX - U_MIN );
-    b = min - ( m * U_MIN );
-
-    return saturate( obj, ( m * u_n ) + b, min, max );
 }
 
 
@@ -70,12 +43,12 @@ static float u2pwm( mma_t * obj, float u, float min, float max ) {
  * @param max: Maximum rpm
  * @retval none
  */
-static void compute_obj( mma_t * obj, float min, float max ) {
+static void compute_obj( mma_t * obj) {
     
-    obj->output[ u1 ] = saturate( obj, obj->input[ C_z ] + ( ( 0.5f ) * (   obj->input[ C_Roll ] + obj->input[ C_Pitch ] + obj->input[ C_Yaw ] ) ), min, max );
-    obj->output[ u2 ] = saturate( obj, obj->input[ C_z ] + ( ( 0.5f ) * ( - obj->input[ C_Roll ] + obj->input[ C_Pitch ] - obj->input[ C_Yaw ] ) ), min, max );
-    obj->output[ u3 ] = saturate( obj, obj->input[ C_z ] + ( ( 0.5f ) * ( - obj->input[ C_Roll ] - obj->input[ C_Pitch ] + obj->input[ C_Yaw ] ) ), min, max );
-    obj->output[ u4 ] = saturate( obj, obj->input[ C_z ] + ( ( 0.5f ) * (   obj->input[ C_Roll ] - obj->input[ C_Pitch ] - obj->input[ C_Yaw ] ) ), min, max );
+    obj->output[ u1 ] = saturate( obj, obj->input[ C_z ] + ( ( 0.5f ) * (   obj->input[ C_Roll ] + obj->input[ C_Pitch ] + obj->input[ C_Yaw ] ) ), obj->limit.lower, obj->limit.upper );
+    obj->output[ u2 ] = saturate( obj, obj->input[ C_z ] + ( ( 0.5f ) * ( - obj->input[ C_Roll ] + obj->input[ C_Pitch ] - obj->input[ C_Yaw ] ) ), obj->limit.lower, obj->limit.upper );
+    obj->output[ u3 ] = saturate( obj, obj->input[ C_z ] + ( ( 0.5f ) * ( - obj->input[ C_Roll ] - obj->input[ C_Pitch ] + obj->input[ C_Yaw ] ) ), obj->limit.lower, obj->limit.upper );
+    obj->output[ u4 ] = saturate( obj, obj->input[ C_z ] + ( ( 0.5f ) * (   obj->input[ C_Roll ] - obj->input[ C_Pitch ] - obj->input[ C_Yaw ] ) ), obj->limit.lower, obj->limit.upper );
 }
 
 
@@ -95,8 +68,8 @@ static void mma_init( mma_t * obj, float upper_limit, float lower_limit ) {
 
     /* Check upper limit */
 
-    /* If upper limit is from 0 to 1 */
-    if( ( upper_limit >= 0.0f ) && ( upper_limit <= 1.0f ) ) {
+    /* If upper limit is positive value*/
+    if( ( upper_limit >= 0.0f ) )  {
 
         obj->limit.upper = upper_limit;
     }
@@ -105,7 +78,7 @@ static void mma_init( mma_t * obj, float upper_limit, float lower_limit ) {
     else {
 
         /* Set default value */
-        obj->limit.upper = 0.91f;
+        obj->limit.upper = 1047;
     }
 
 
@@ -114,17 +87,17 @@ static void mma_init( mma_t * obj, float upper_limit, float lower_limit ) {
 
     /* Check lower limit */
 
-    /* If lower limit is from 1 to 2 */
-    if( ( lower_limit >= 1.0f ) && ( lower_limit <= 2.0f ) ) {
+    /* If lower limit is bigger than 0 and smaller than upper limit */
+    if( ( lower_limit >= 0.0f ) && ( lower_limit < upper_limit ) ) {
 
-        obj->limit.upper = lower_limit;
+        obj->limit.lower = lower_limit;
     }
 
     /* If lower limit is off range  */
     else {
 
         /* Set default value */
-        obj->limit.lower = 1.1f;
+        obj->limit.lower = 0.0f;
     }
 
     ESP_LOGI( MMA_TAG, "Mma object successfully initialized" );

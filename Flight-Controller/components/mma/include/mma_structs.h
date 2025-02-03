@@ -86,7 +86,7 @@ typedef struct mma {
     void ( * init )( mma_t * obj, float upper_limit, float lower_limit );
 
     /** @brief Compute MMA algorithm and update object outputs @param obj: Address of Mma object @param min: Minimum rpm @param max: Maximum rpm @retval none */
-    void ( * compute )( mma_t * obj, float min, float max );
+    void ( * compute )( mma_t * obj);
 
 } mma_t;
 

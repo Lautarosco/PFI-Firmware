@@ -249,8 +249,8 @@ static drone_cfg_t DroneConfigs = {
         },
     },
     .mma_out_limits = {
-        .upper = 0.71f,
-        .lower = 50.0f
+        .upper = 700.0f,
+        .lower = 300.0f
     }
 };
 

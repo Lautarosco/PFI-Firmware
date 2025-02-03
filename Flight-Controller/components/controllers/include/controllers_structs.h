@@ -196,7 +196,12 @@ typedef struct pid_controller {
     /** @brief [ M ] Calculate Controller action @param obj: Address of Pid object @param pv: Process value @param sp: Set point @retval PID calculation */
     float ( * pid )( pid_controller_t * obj, float pv, float sp );
 
-    /** @brief Calculate Controller PI-D action @param obj: Address of Pid object @param pv: Process value @param sp: Set point @retval PID calculation */
+    /** @brief Calculate Controller PI-D action
+     * @param obj: Address of Pid object 
+     * @param pv: Process value 
+     * @param sp: Set point
+     * @param d_state: D value  
+     * @retval PID calculation */
     float ( * manual_pi_d )( pid_controller_t * obj, float pv, float sp, float d_state );
 
 } pid_controller_t;

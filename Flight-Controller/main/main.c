@@ -9,7 +9,7 @@
 #include <esp_chip_info.h>
 
 /* TESTING */
-
+// #define PRINTER
 sm_state_machine_t state_machine;   /* Only for debug purpose ( TEMPORAL REQUIREMENT ) */
 
 /* TESTING */
@@ -37,8 +37,8 @@ void app_main( void ) {
     xTaskCreatePinnedToCore( vTaskParseBluetooth, "Task3", 1024 * 2, ( void * ) ( drone ), 1, NULL, CORE_0 );
     float t = 0.000;
     while( 1 ) {
-
-        if( drone->attributes.init_ok ) {
+        #ifdef PRINTER
+        if( drone->attributes.init_ok) {
             float roll = drone->attributes.states.roll;
             float roll_d = drone->attributes.states.roll_dot;
             float sp_roll = drone->attributes.sp.roll;
@@ -51,11 +51,15 @@ void app_main( void ) {
             float w3 = drone->attributes.components.mma->output[2];
             float w4 = drone->attributes.components.mma->output[3];
 
+            float lower_limit = drone->attributes.components.mma->limit.lower;
+
             printf("printer:t,%.3f|roll,%.2f|roll_d,%.2f|sp_roll,%.2f|sp_roll_d,%.2f", t, roll, roll_d, sp_roll, sp_roll_d);
             printf("|pid_roll,%.2f", pid_roll);
+            printf("|lower_limit,%.2f", lower_limit);
             printf("|w1,%.2f|w2,%.2f|w3,%.2f|w4,%.2f\n", w1, w2, w3, w4);
             t += 0.010;
         }
+        #endif
         vTaskDelay( pdMS_TO_TICKS( 10 ) );
     }
 }
