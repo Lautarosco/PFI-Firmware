@@ -69,10 +69,12 @@ static void StControlFunc( drone_t * obj ) {
         obj->attributes.states.roll_dot
     );
 
+    obj->attributes.sp.roll_dot = CRoll;
+
     float CRolld = obj->attributes.components.controllers[ roll_dot ]->pid(
         obj->attributes.components.controllers[ roll_dot ],
         obj->attributes.states.roll_dot,
-        CRoll
+        obj->attributes.sp.roll_dot
     );
 
     /* If timer exceeds from 2π */

@@ -23,7 +23,7 @@ const char * MMA_TAG = "MMA";
 static float saturate( mma_t * obj, float input, float min, float max ) {
 
 #define UPPER_LIMIT max * obj->limit.upper
-#define LOWER_LIMIT min * obj->limit.lower
+#define LOWER_LIMIT min + obj->limit.lower
 
     if( input > UPPER_LIMIT )      /* Upper saturation */
         return UPPER_LIMIT;

@@ -35,26 +35,27 @@ void app_main( void ) {
 
     /* Parse Bluetooth commands */
     xTaskCreatePinnedToCore( vTaskParseBluetooth, "Task3", 1024 * 2, ( void * ) ( drone ), 1, NULL, CORE_0 );
-
-    /* START TESTING */
-
-    printf( "[ %s ] gyrox before init: %.2f\r\n", __func__, drone->attributes.components.bmi.Gyro.offset.x );
-    while( !drone->attributes.init_ok ) {
-
-        vTaskDelay( pdMS_TO_TICKS( 10 ) );
-    }
-    printf( "[ %s ] gyrox after init: %.2f\r\n", __func__, drone->attributes.components.bmi.Gyro.offset.x );
-    printf( "NVS before saving\r\n" );
-    drone->methods.read_from_flash( drone );
-    drone->methods.save_to_nvs( drone );
-    printf( "NVS after saving\r\n" );
-    drone->methods.read_from_flash( drone );
-
-    /* END TESTING */
-
+    float t = 0.000;
     while( 1 ) {
 
-        
-        vTaskDelay( pdMS_TO_TICKS( 1000 ) );
+        if( drone->attributes.init_ok ) {
+            float roll = drone->attributes.states.roll;
+            float roll_d = drone->attributes.states.roll_dot;
+            float sp_roll = drone->attributes.sp.roll;
+            float sp_roll_d = drone->attributes.sp.roll_dot;
+
+            float pid_roll = drone->attributes.components.mma->input[C_Roll];
+
+            float w1 = drone->attributes.components.mma->output[0];
+            float w2 = drone->attributes.components.mma->output[1];
+            float w3 = drone->attributes.components.mma->output[2];
+            float w4 = drone->attributes.components.mma->output[3];
+
+            printf("printer:t,%.3f|roll,%.2f|roll_d,%.2f|sp_roll,%.2f|sp_roll_d,%.2f", t, roll, roll_d, sp_roll, sp_roll_d);
+            printf("|pid_roll,%.2f", pid_roll);
+            printf("|w1,%.2f|w2,%.2f|w3,%.2f|w4,%.2f\n", w1, w2, w3, w4);
+            t += 0.010;
+        }
+        vTaskDelay( pdMS_TO_TICKS( 10 ) );
     }
 }

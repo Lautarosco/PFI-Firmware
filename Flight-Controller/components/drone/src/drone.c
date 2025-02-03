@@ -222,7 +222,7 @@ static drone_cfg_t DroneConfigs = {
         },
         {
             .tag = roll_dot,
-            .fc  = 1.0f,
+            .fc  = 0.8f,
             .ts  = 10,
             .sat = no_saturation,
             .der_filter = 0,
@@ -249,8 +249,8 @@ static drone_cfg_t DroneConfigs = {
         },
     },
     .mma_out_limits = {
-        .upper = 0.91f,
-        .lower = 1.1f
+        .upper = 0.71f,
+        .lower = 50.0f
     }
 };
 
