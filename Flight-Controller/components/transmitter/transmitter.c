@@ -408,7 +408,7 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
         if( !strcmp( action, "press" ) ) {
 
             /* If x button is being pressed */
-            if( !strcmp( button, "x" ) ) {
+            if( !strcmp( button, "cross" ) ) {
 
                 GlobalTxButtons->cross = true;
             }
@@ -496,7 +496,7 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
         else if( !strcmp( action, "release" ) ) {
 
             /* If x button is being released */
-            if( !strcmp( button, "x" ) ) {
+            if( !strcmp( button, "cross" ) ) {
 
                 GlobalTxButtons->cross = false;
             }
