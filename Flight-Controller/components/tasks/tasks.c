@@ -316,7 +316,7 @@ void vTaskParseBluetooth( void * pvParameters ) {
                  * i.e, <pid,0,min_err,10> which means
                  * 
                  * pid command
-                 * state 1 indicates z ( see states_t enum defined in controllers_struct.h header file )
+                 * state 0 indicates z ( see states_t enum defined in controllers_struct.h header file )
                  * min_err indicates new value for z integral minimum error
                  * 10 is the new minimum value for the integral error
                  */
