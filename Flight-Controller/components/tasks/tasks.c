@@ -24,6 +24,28 @@ static const char * GetStateName( int stateIndex );
 
 
 /**
+ * @brief State's name and index
+ */
+typedef struct stateSpecs {
+
+    const char * name;
+    int index;
+
+} stateSpecs_t;
+
+/* State's matrix */
+static stateSpecs_t state_specs[] = {
+
+    { .name = "z",       .index = z },
+    { .name = "roll",    .index = roll },
+    { .name = "pitch",   .index = pitch },
+    { .name = "yaw",     .index = yaw },
+    { .name = "roll_d",  .index = roll_dot },
+    { .name = "pitch_d", .index = pitch_dot },
+    { .name = "yaw_d",   .index = yaw_dot },
+};
+
+/**
  * @brief Get state's index given it's name
  * @param stateName: State's name
  * @retval State's index
@@ -43,8 +65,6 @@ int GetStateIndex( const char * stateName );
  * @retval true if index is OK - false if it's not
  */
 static bool PID_INDEX_CHECK( int index, int n_obj, const char * func, int line ) {
-    
-    printf( "Index: %d\r\n", index );
 
     /* Default returning value */
     bool ret = false;
@@ -53,6 +73,11 @@ static bool PID_INDEX_CHECK( int index, int n_obj, const char * func, int line )
     if( isalpha( ( unsigned char ) index ) ) {
 
         ESP_LOGE( "TASK3", "Type error: index must be int. See function %s in line %d", func, line );
+    }
+
+    else if( index == -1 ) {
+
+        ESP_LOGE( "TASK3", "Index error ( function %s, line %d ): STATE NOT FOUND ( check 'state_specs' variable from tasks.c source file ).", func, line );
     }
 
     /* If index is greater that total of Pid objects or less than 0 */
@@ -415,40 +440,15 @@ void vTaskParseBluetooth( void * pvParameters ) {
 
 static const char * GetStateName( int stateIndex ) {
 
-    switch ( stateIndex ) {
+    for( int i = 0; i < ( ( sizeof( state_specs ) ) / ( sizeof( state_specs[ 0 ] ) ) ); i++ ) {
 
-        case z:
-            return "z";
-            break;
-        
-        case roll:
-            return "roll";
-            break;
-
-        case pitch:
-            return "pitch";
-            break;
-
-        case yaw:
-            return "yaw";
-            break;
-
-        case roll_dot:
-            return "roll_dot";
-            break;
-
-        case pitch_dot:
-            return "pitch_dot";
-            break;
-
-        case yaw_dot:
-            return "yaw_dot";
-            break;
-
-        default:
-            return "UNDEFINED STATE";
-            break;
+        if( state_specs[ i ].index == stateIndex ) {
+            
+            return state_specs[ i ].name;
+        }
     }
+
+    return "STATE NOT FOUND";
 }
 
 
@@ -457,43 +457,13 @@ static const char * GetStateName( int stateIndex ) {
 
 int GetStateIndex( const char * stateName ) {
 
-    if( !strcmp( stateName, "z" ) ) {
+    for( int i = 0; i < ( ( sizeof( state_specs ) ) / ( sizeof( state_specs[ 0 ] ) ) ); i++ ) {
 
-        return z;
+        if( !strcmp( state_specs[ i ].name, stateName ) ) {
+            
+            return state_specs[ i ].index;
+        }
     }
 
-    else if( !strcmp( stateName, "roll" ) ) {
-
-        return roll;
-    }
-
-    else if( !strcmp( stateName, "pitch" ) ) {
-
-        return pitch;
-    }
-
-    else if( !strcmp( stateName, "yaw" ) ) {
-
-        return yaw;
-    }
-
-    else if( !strcmp( stateName, "roll_d" ) ) {
-
-        return roll_dot;
-    }
-
-    else if( !strcmp( stateName, "pitch_d" ) ) {
-
-        return pitch_dot;
-    }
-
-    else if( !strcmp( stateName, "yaw_d" ) ) {
-
-        return yaw_dot;
-    }
-
-    else {
-
-        return -1;
-    }
+    return -1;
 }

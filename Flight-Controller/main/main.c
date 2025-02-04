@@ -44,12 +44,12 @@ void app_main( void ) {
             float sp_roll = drone->attributes.sp.roll;
             float sp_roll_d = drone->attributes.sp.roll_dot;
 
-            float pid_roll = drone->attributes.components.mma->input[C_Roll];
+            float pid_roll = drone->attributes.components.mma->input[ C_Roll ];
 
-            float w1 = drone->attributes.components.mma->output[0];
-            float w2 = drone->attributes.components.mma->output[1];
-            float w3 = drone->attributes.components.mma->output[2];
-            float w4 = drone->attributes.components.mma->output[3];
+            float w1 = drone->attributes.components.mma->output[ u1 ];
+            float w2 = drone->attributes.components.mma->output[ u2 ];
+            float w3 = drone->attributes.components.mma->output[ u3 ];
+            float w4 = drone->attributes.components.mma->output[ u4 ];
 
             float lower_limit = drone->attributes.components.mma->limit.lower;
 
