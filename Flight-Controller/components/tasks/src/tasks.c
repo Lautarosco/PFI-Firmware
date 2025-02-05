@@ -7,6 +7,7 @@
 #include <string.h>
 #include <esp_log.h>
 #include <ctype.h>
+#include <uart_init.h>
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
@@ -271,10 +272,74 @@ void vTaskDroneMeasure( void * pvParameters ) {
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
+static void vTaskUartEvent( void * pvParameters ) {
+
+    /* Cast parameter into Drone object */
+    drone_t * obj = ( drone_t * ) pvParameters;
+
+    /* UART port num */
+    uart_port_t uart_num = UART_NUM_0;
+
+    /* Initialize UART interface */
+    QueueHandle_t uart_queue = uart_init( uart_num );
+
+    /* UART event handler */
+    uart_event_t uart_event;
+
+    /* Data received */
+    uint8_t data[ 128 ];
+
+    while ( 1 ) {
+
+        /* Wait until UART interrupt returns an UART event */
+        if( xQueueReceive( uart_queue, ( void * ) &uart_event, portMAX_DELAY ) ) {
+
+            switch ( uart_event.type ) {
+
+                /* Data received */
+                case UART_DATA:
+
+                    /* Avoid overlapping between UART and Bluetooth */
+                    if( !obj->attributes.global_variables.bt_data->state ) {
+
+                        /* Data received flag HIGH */
+                        obj->attributes.global_variables.bt_data->state = true;
+
+                        /* Update data length */
+                        obj->attributes.global_variables.bt_data->len = uart_event.size;
+
+                        /* Store received data into drone's global variable */
+                        uart_read_bytes( uart_num, obj->attributes.global_variables.bt_data->data, uart_event.size, 100 );
+
+                        /* Echo received data */
+                        uart_write_bytes( uart_num, obj->attributes.global_variables.bt_data->data, uart_event.size );
+
+                        /* Clear UART Rx buffer */
+                        uart_flush( uart_num );
+                    }
+
+                    else{
+
+                        ESP_LOGW( "TASK4", "[ %s ] Bluetooth command is currently being prossesed.", __func__ );
+                    }
+
+                default:
+                    break;
+            }
+        }
+    }
+}
+
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
+
 void vTaskParseBluetooth( void * pvParameters ) {
 
     /* Cast parameter into Drone object */
     drone_t * obj = ( drone_t * ) pvParameters;
+
+    xTaskCreatePinnedToCore( vTaskUartEvent, "Task4", 1024 * 3, ( void * ) ( obj ), 0, NULL, CORE_0 );
 
     while( 1 ) {
 
@@ -395,6 +460,9 @@ void vTaskParseBluetooth( void * pvParameters ) {
 
                         obj->attributes.components.controllers[ index ]->gain.kp = atof( ptrArr[ 3 ] );
                         ESP_LOGW( "TASK3", "%s new kp [ %.2f ]", GetStateName( index ), obj->attributes.components.controllers[ index ]->gain.kp );
+                        // char tx[ 50 ];
+                        // sprintf( tx, "%f", obj->attributes.components.controllers[ index ]->gain.kp );
+                        // uart_write_bytes( UART_NUM_2, ( char * ) tx, strlen( ( char * ) tx ) );
                     }
 
                     /* If updating integral action */
