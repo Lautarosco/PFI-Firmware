@@ -37,10 +37,10 @@ void vTaskStateMachine_Run( void * pvParameters );
 void vTaskDroneMeasure( void * pvParameters );
 
 /**
- * @brief Freertos task to parse Bluetooth data | Format: [ <pid/state/(p/i/d/min_err)/value> ] => For <state> use states enum
+ * @brief Freertos task to parse serial data | Format: [ <pid/state/(p/i/d/min_err)/value> ] => For <state> use states enum
  * @param pvParameters: Any
  * @retval none
  */
-void vTaskParseBluetooth( void * pvParameters );
+void vTaskParseCommand( void * pvParameters );
 
 #endif

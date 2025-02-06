@@ -34,7 +34,7 @@ void app_main( void ) {
     xTaskCreatePinnedToCore( vTaskDroneMeasure, "Task2", 1024 * 3, ( void * ) ( drone ), 1, NULL, CORE_0 );
 
     /* Parse Bluetooth commands */
-    xTaskCreatePinnedToCore( vTaskParseBluetooth, "Task3", 1024 * 2, ( void * ) ( drone ), 1, NULL, CORE_0 );
+    xTaskCreatePinnedToCore( vTaskParseCommand, "Task3", 1024 * 2, ( void * ) ( drone ), 1, NULL, CORE_0 );
 
     float t = 0.0f;
 

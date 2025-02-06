@@ -331,7 +331,7 @@ static void vTaskUartEvent( void * pvParameters ) {
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
-void vTaskParseBluetooth( void * pvParameters ) {
+void vTaskParseCommand( void * pvParameters ) {
 
     /* Cast parameter into Drone object */
     drone_t * obj = ( drone_t * ) pvParameters;
