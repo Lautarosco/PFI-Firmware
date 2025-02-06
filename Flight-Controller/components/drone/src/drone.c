@@ -25,7 +25,7 @@ tx_buttons_t * GlobalTxButtons;
 /**
  * @brief Pointer to Bluetooth data global variable of a Drone object ( used in ps3 component | ps3_spp.c source file )
  */
-BluetoothData_t * GlobalBluetoothData;
+SerialData_t * GlobalSerialData;
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
@@ -710,12 +710,12 @@ drone_t * Drone( void ) {
     memset( drone->attributes.global_variables.tx_buttons, 0, sizeof( tx_buttons_t ) );
 
     /* Assign memory to Bluetooth data */
-    drone->attributes.global_variables.bt_data = malloc( sizeof( BluetoothData_t ) );
+    drone->attributes.global_variables.serial_data = malloc( sizeof( SerialData_t ) );
 
-    memset( drone->attributes.global_variables.bt_data, 0, sizeof( BluetoothData_t ) );
+    memset( drone->attributes.global_variables.serial_data, 0, sizeof( SerialData_t ) );
 
     /* Bluetooth data default values */
-    drone->attributes.global_variables.bt_data->data = malloc( 256 * sizeof( char ) );
+    drone->attributes.global_variables.serial_data->data = malloc( 256 * sizeof( char ) );
 
     /* Pointer to Drone functions ( methods ) */
     drone->methods.update_states    = UpdateStates;
@@ -848,8 +848,8 @@ drone_t * Drone( void ) {
     /* Assign Transmitter buttons global variable memmory address to 'GlobalTxButtons' variable */
     GlobalTxButtons = drone->attributes.global_variables.tx_buttons;
 
-    /* Assign Bluetooth data global variable memmory address to 'GlobalBluetoothData' variable */
-    GlobalBluetoothData = drone->attributes.global_variables.bt_data;
+    /* Assign Bluetooth data global variable memmory address to 'GlobalSerialData' variable */
+    GlobalSerialData = drone->attributes.global_variables.serial_data;
 
     /* Free memory used for csv object */
     /*

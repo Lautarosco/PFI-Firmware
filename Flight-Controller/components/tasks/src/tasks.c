@@ -286,9 +286,6 @@ static void vTaskUartEvent( void * pvParameters ) {
     /* UART event handler */
     uart_event_t uart_event;
 
-    /* Data received */
-    uint8_t data[ 128 ];
-
     while ( 1 ) {
 
         /* Wait until UART interrupt returns an UART event */
@@ -300,19 +297,19 @@ static void vTaskUartEvent( void * pvParameters ) {
                 case UART_DATA:
 
                     /* Avoid overlapping between UART and Bluetooth */
-                    if( !obj->attributes.global_variables.bt_data->state ) {
+                    if( !obj->attributes.global_variables.serial_data->state ) {
 
                         /* Data received flag HIGH */
-                        obj->attributes.global_variables.bt_data->state = true;
+                        obj->attributes.global_variables.serial_data->state = true;
 
                         /* Update data length */
-                        obj->attributes.global_variables.bt_data->len = uart_event.size;
+                        obj->attributes.global_variables.serial_data->len = uart_event.size;
 
                         /* Store received data into drone's global variable */
-                        uart_read_bytes( uart_num, obj->attributes.global_variables.bt_data->data, uart_event.size, 100 );
+                        uart_read_bytes( uart_num, obj->attributes.global_variables.serial_data->data, uart_event.size, 100 );
 
                         /* Echo received data */
-                        uart_write_bytes( uart_num, obj->attributes.global_variables.bt_data->data, uart_event.size );
+                        uart_write_bytes( uart_num, obj->attributes.global_variables.serial_data->data, uart_event.size );
 
                         /* Clear UART Rx buffer */
                         uart_flush( uart_num );
@@ -344,10 +341,10 @@ void vTaskParseBluetooth( void * pvParameters ) {
     while( 1 ) {
 
         /* If data received */
-        if( obj->attributes.global_variables.bt_data->state ) {
+        if( obj->attributes.global_variables.serial_data->state ) {
 
             /* Reset state to default value */
-            obj->attributes.global_variables.bt_data->state = false;
+            obj->attributes.global_variables.serial_data->state = false;
 
             /* Error detection flags */
             bool err = false;
@@ -366,7 +363,7 @@ void vTaskParseBluetooth( void * pvParameters ) {
             int ptrArrIndex = 0;
 
             /* Loop through data received */
-            for( int i = 0; i < obj->attributes.global_variables.bt_data->len; i++ ) {
+            for( int i = 0; i < obj->attributes.global_variables.serial_data->len; i++ ) {
 
                 /**
                  * Frame's format: <pid,state,( p | i | d | min_err )/value>
@@ -387,7 +384,7 @@ void vTaskParseBluetooth( void * pvParameters ) {
                  */
 
                 /* Get actual char */
-                char currChar = obj->attributes.global_variables.bt_data->data[ i ];
+                char currChar = obj->attributes.global_variables.serial_data->data[ i ];
 
                 /* Checek if start of frame is correct */
                 if( !i ) {
