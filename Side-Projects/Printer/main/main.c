@@ -104,7 +104,7 @@ void app_main(void) {
 
     while (1) {
         printf("printer:t,%.3f|roll_d,%.2f\n", time, roll);
-        printf("static:yaw/P,%.2f|yaw/I,%.2f|yaw/D,%.2f\n", yaw.P, yaw.I, yaw.D);
+        printf("static:yaw/P,%.2f|yaw/  I,%.2f|yaw/D,%.2f\n", yaw.P, yaw.I, yaw.D);
         vTaskDelay(pdMS_TO_TICKS(10));
         time += 0.010;
 
