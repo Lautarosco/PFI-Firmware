@@ -33,9 +33,9 @@ ControllerMap controller_map[] = {
     {"roll", 1},
     {"pitch", 2},
     {"yaw", 3},
-    {"roll_d", 1},
-    {"pitch_d", 2},
-    {"yaw_d", 3},
+    {"roll_d", 4},
+    {"pitch_d", 5},
+    {"yaw_d", 6},
     {NULL, -1} // Sentinel value to indicate the end of the array
 };
 

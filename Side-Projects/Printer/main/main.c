@@ -10,33 +10,52 @@
 #include "driver/uart.h"
 
 #define TIMER_INTERVAL_MS 10  // Timer interval in milliseconds
-#define ROLL_AMPLITUDE 1.0    // Amplitude of the sine wave
-#define ROLL_FREQUENCY 0.5    // Frequency of the sine wave in Hz
-
 #define UART_NUM UART_NUM_0   // Using default UART0 (USB serial)
 #define UART_BUFFER_SIZE 256  // Buffer size for incoming data
 
-void print_data_task(void *pvParameters) {
-    srand((unsigned int)time(NULL)); // Seed the random number generator
+// Structure to hold PID parameters
+typedef struct {
+    float P;
+    float I;
+    float D;
+    float d_filter_iir_coeff;
+    float i_anti_windup;
+} PID_Params;
 
-    while (true) {
-        // Get the current time in seconds
-        int64_t time_us = esp_timer_get_time();
-        float t = time_us / 1000000.0;
+// Global PID parameters in RAM
+PID_Params yaw = {1.0, 0.0, 0.0, 0.5, 10.0};
+PID_Params pitch = {1.0, 0.0, 0.0, 0.5, 10.0};
+PID_Params roll = {1.0, 0.0, 0.0, 0.5, 10.0};
 
-        // Generate random values for w1 and w2 (between 0 and 1)
-        float w1 = (float)rand() / RAND_MAX;
-        float w2 = (float)rand() / RAND_MAX;
-
-        // Generate the roll value as a sine wave
-        float roll = ROLL_AMPLITUDE * sin(2 * M_PI * ROLL_FREQUENCY * t);
-
-        // Print the values in the desired format
-        printf("printer:t,%.3f|w1,%.2f|w2,%.2f|roll,%.2f\n", t, w1, w2, roll);
-
-        // Wait for the next interval
-        vTaskDelay(pdMS_TO_TICKS(TIMER_INTERVAL_MS));
+// Function to update PID parameters
+void update_pid_parameter(const char *angle, const char *param, float value) {
+    PID_Params *target = NULL;
+    if (strcmp(angle, "yaw") == 0) {
+        target = &yaw;
+    } else if (strcmp(angle, "pitch") == 0) {
+        target = &pitch;
+    } else if (strcmp(angle, "roll") == 0) {
+        target = &roll;
+    } else {
+        printf("Unknown angle: %s\n", angle);
+        return;
     }
+
+    if (strcmp(param, "p") == 0) {
+        target->P = value;
+    } else if (strcmp(param, "i") == 0) {
+        target->I = value;
+    } else if (strcmp(param, "d") == 0) {
+        target->D = value;
+    } else if (strcmp(param, "d_filter_iir_coeff") == 0) {
+        target->d_filter_iir_coeff = value;
+    } else if (strcmp(param, "i_anti_windup") == 0) {
+        target->i_anti_windup = value;
+    } else {
+        printf("Unknown parameter: %s\n", param);
+        return;
+    }
+    printf("Updated %s %s to %.2f\n", angle, param, value);
 }
 
 // Task to handle incoming serial commands
@@ -47,15 +66,14 @@ void serial_command_task(void *pvParameters) {
         if (len > 0) {
             data[len] = '\0'; // Null-terminate the received string
             printf("Received command: %s\n", (char *)data);
-
-            // Handle commands
-            if (strncmp((char *)data, "RESET", 5) == 0) {
-                printf("Resetting system...\n");
-                esp_restart();
-            } else if (strncmp((char *)data, "STATUS", 6) == 0) {
-                printf("System is running fine.\n");
+            
+            // Parse command
+            char angle[10], param[20];
+            float value;
+            if (sscanf((char *)data, "<pid/%9[^/]/%19[^/]/%f>", angle, param, &value) == 3) {
+                update_pid_parameter(angle, param, value);
             } else {
-                printf("Unknown command: %s\n", (char *)data);
+                printf("Invalid command format\n");
             }
         }
     }
@@ -73,7 +91,32 @@ void app_main(void) {
     uart_param_config(UART_NUM, &uart_config);
     uart_driver_install(UART_NUM, UART_BUFFER_SIZE * 2, 0, 0, NULL, 0);
 
-    // Start tasks
-    xTaskCreate(print_data_task, "PrintDataTask", 4096, NULL, 1, NULL);
+    // Start serial task
     xTaskCreate(serial_command_task, "SerialCommandTask", 4096, NULL, 2, NULL);
+
+    float time = 0;
+    float roll = 0;
+
+    const int upper = 5;   // Upper limit
+    const int lower = -5;  // Lower limit
+    int step = 1;          // Direction and step size (+1 for up, -1 for down)
+
+
+    while (1) {
+        printf("printer:t,%.3f|roll_d,%.2f\n", time, roll);
+        printf("static:yaw/P,%.2f|yaw/I,%.2f|yaw/D,%.2f\n", yaw.P, yaw.I, yaw.D);
+        vTaskDelay(pdMS_TO_TICKS(10));
+        time += 0.010;
+
+        if ((roll == upper && step == 1) || (roll == lower && step == -1)) {
+            step = -step;
+        }
+        
+        roll += step; // Update the wave value
+
+    }
+
+        
+
+    
 }

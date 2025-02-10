@@ -1,7 +1,7 @@
 {
     "version":            "1.1",
     "project_name":       "Printer",
-    "project_version":    "60461b4-dirty",
+    "project_version":    "d673ece-dirty",
     "project_path":       "D:/ALau/Code/PFI-Repositorio/Firmware/Side-Projects/Printer",
     "idf_path":           "C:/Users/Lautarosco/esp/v5.3.1/esp-idf",
     "build_dir":          "D:/ALau/Code/PFI-Repositorio/Firmware/Side-Projects/Printer/build",
