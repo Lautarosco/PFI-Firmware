@@ -73,10 +73,10 @@ static float u2pwm( mma_t * obj, float u, float dc_min, float dc_max ) {
  */
 static void compute_obj( mma_t * obj, float dc_min, float dc_max ) {
     
-    obj->output[ u1 ] = u2pwm( obj, obj->input[ C_z ] + ( ( 0.5f ) * (   obj->input[ C_Roll ] + obj->input[ C_Pitch ] + obj->input[ C_Yaw ] ) ), dc_min, dc_max );
-    obj->output[ u2 ] = u2pwm( obj, obj->input[ C_z ] + ( ( 0.5f ) * ( - obj->input[ C_Roll ] + obj->input[ C_Pitch ] - obj->input[ C_Yaw ] ) ), dc_min, dc_max );
-    obj->output[ u3 ] = u2pwm( obj, obj->input[ C_z ] + ( ( 0.5f ) * ( - obj->input[ C_Roll ] - obj->input[ C_Pitch ] + obj->input[ C_Yaw ] ) ), dc_min, dc_max );
-    obj->output[ u4 ] = u2pwm( obj, obj->input[ C_z ] + ( ( 0.5f ) * (   obj->input[ C_Roll ] - obj->input[ C_Pitch ] - obj->input[ C_Yaw ] ) ), dc_min, dc_max );
+    obj->output[ U1 ] = u2pwm( obj, obj->input[ C_Z ] + ( ( 0.5f ) * (   obj->input[ C_ROLL ] + obj->input[ C_PITCH ] + obj->input[ C_YAW ] ) ), dc_min, dc_max );
+    obj->output[ U2 ] = u2pwm( obj, obj->input[ C_Z ] + ( ( 0.5f ) * ( - obj->input[ C_ROLL ] + obj->input[ C_PITCH ] - obj->input[ C_YAW ] ) ), dc_min, dc_max );
+    obj->output[ U3 ] = u2pwm( obj, obj->input[ C_Z ] + ( ( 0.5f ) * ( - obj->input[ C_ROLL ] - obj->input[ C_PITCH ] + obj->input[ C_YAW ] ) ), dc_min, dc_max );
+    obj->output[ U4 ] = u2pwm( obj, obj->input[ C_Z ] + ( ( 0.5f ) * (   obj->input[ C_ROLL ] - obj->input[ C_PITCH ] - obj->input[ C_YAW ] ) ), dc_min, dc_max );
 }
 
 

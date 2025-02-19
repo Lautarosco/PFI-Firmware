@@ -37,13 +37,13 @@ typedef struct stateSpecs {
 /* State's matrix */
 static stateSpecs_t state_specs[] = {
 
-    { .name = "z",       .index = z },
-    { .name = "roll",    .index = roll },
-    { .name = "pitch",   .index = pitch },
-    { .name = "yaw",     .index = yaw },
-    { .name = "roll_d",  .index = roll_dot },
-    { .name = "pitch_d", .index = pitch_dot },
-    { .name = "yaw_d",   .index = yaw_dot },
+    { .name = "z",       .index = Z },
+    { .name = "roll",    .index = ROLL },
+    { .name = "pitch",   .index = PITCH },
+    { .name = "yaw",     .index = YAW },
+    { .name = "roll_d",  .index = ROLL_D },
+    { .name = "pitch_d", .index = PITCH_D },
+    { .name = "yaw_d",   .index = YAW_D },
 };
 
 /**
@@ -242,7 +242,7 @@ void vTaskStateMachine_Run( void * pvParameters ) {
         /* Go to the next state and run it's respective function */
         StateMachine_RunIteration( &state_machine, obj );
         
-        vTaskDelay( pdMS_TO_TICKS( Droneconfigs.ControllersConfigs[ z ].ts ) );
+        vTaskDelay( pdMS_TO_TICKS( Droneconfigs.ControllersConfigs[ Z ].ts ) );
     }
     
 }
@@ -264,7 +264,7 @@ void vTaskDroneMeasure( void * pvParameters ) {
         /* Measure attitude and update bmi sensor internal registers with respective values */
         obj->attributes.components.bmi.measure( &( obj->attributes.components.bmi ) );
 
-        vTaskDelay( pdMS_TO_TICKS( Droneconfigs.ControllersConfigs[ z ].ts ) );
+        vTaskDelay( pdMS_TO_TICKS( Droneconfigs.ControllersConfigs[ Z ].ts ) );
     }
 }
 

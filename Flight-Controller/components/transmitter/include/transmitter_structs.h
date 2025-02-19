@@ -16,6 +16,7 @@
  * @brief Transmitter buttons
  */
 typedef struct tx_buttons {
+   
    bool cross;
    bool square;
    bool triangle;

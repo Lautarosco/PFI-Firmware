@@ -185,64 +185,64 @@ static drone_cfg_t DroneConfigs = {
     },
     .ControllersConfigs = {
         {
-            .tag       = z,
+            .tag       = Z,
             .fc        = 0,
             .ts        = 10,
-            .sat       = no_saturation,
+            .sat       = NO_SATURATION,
             .der_filter = 0,
             .gains     = { .kp = 0, .ki = 0, .kd = 0 },
             .intMinErr = 0.0f
         },
         {
-            .tag = roll,
+            .tag = ROLL,
             .fc  = 1.0f,
             .ts  = 10,
-            .sat = no_saturation,
+            .sat = NO_SATURATION,
             .der_filter = 0,
             .gains = { .kp = 0.0f, .ki = 0.0f, .kd = 0.0f },
             .intMinErr = 0.0f
         },
         {
-            .tag = pitch,
+            .tag = PITCH,
             .fc  = 0,
             .ts  = 10,
-            .sat = no_saturation,
+            .sat = NO_SATURATION,
             .der_filter = 0,
             .gains = { .kp = 0, .ki = 0, .kd = 0 },
             .intMinErr = 0.0f
         },
         {
-            .tag = yaw,
+            .tag = YAW,
             .fc  = 0,
             .ts  = 10,
-            .sat = no_saturation,
+            .sat = NO_SATURATION,
             .der_filter = 0,
             .gains = { .kp = 0, .ki = 0, .kd = 0 },
             .intMinErr = 0.0f
         },
         {
-            .tag = roll_dot,
+            .tag = ROLL_D,
             .fc  = 0.8f,
             .ts  = 10,
-            .sat = no_saturation,
+            .sat = NO_SATURATION,
             .der_filter = 0,
             .gains = { .kp = 0.0f, .ki = 0.0f, .kd = 0.0f },
             .intMinErr = 0.0f
         },
         {
-            .tag = pitch_dot,
+            .tag = PITCH_D,
             .fc  = 0,
             .ts  = 10,
-            .sat = no_saturation,
+            .sat = NO_SATURATION,
             .der_filter = 0,
             .gains = { .kp = 0, .ki = 0, .kd = 0 },
             .intMinErr = 0.0f
         },
         {
-            .tag = yaw_dot,
+            .tag = YAW_D,
             .fc  = 0,
             .ts  = 10,
-            .sat = no_saturation,
+            .sat = NO_SATURATION,
             .der_filter = 0,
             .gains = { .kp = 0, .ki = 0, .kd = 0 },
             .intMinErr = 0.0f

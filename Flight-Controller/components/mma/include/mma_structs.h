@@ -10,17 +10,17 @@
  */
 typedef enum mma_inputs {
     
-    /* z input */
-    C_z,
+    /* z input of mma block */
+    C_Z,
     
-    /* roll input */
-    C_Roll,
+    /* roll input of mma block */
+    C_ROLL,
     
-    /* pitch input */
-    C_Pitch,
+    /* pitch input of mma block */
+    C_PITCH,
     
-    /* yaw input */
-    C_Yaw,
+    /* yaw input of mma block */
+    C_YAW,
 
 } mma_inputs_t;
 
@@ -33,17 +33,17 @@ typedef enum mma_inputs {
  */
 typedef enum mma_outputs {
 
-    /* Output for pwm 1 */
-    u1,
+    /* Output of mma block for pwm 1 */
+    U1,
 
-    /* Output for pwm 2 */
-    u2,
+    /* Output of mma block for pwm 2 */
+    U2,
 
-    /* Output for pwm 3 */
-    u3,
+    /* Output of mma block for pwm 3 */
+    U3,
 
-    /* Output for pwm 4 */
-    u4,
+    /* Output of mma block for pwm 4 */
+    U4,
     
 } mma_outputs_t;
 

@@ -49,11 +49,8 @@ static void StInitFunc( drone_t * obj ) {
 
 static void StUpdateStatesFunc( drone_t * obj ) {
 
-    obj->methods.update_states( obj, GetDroneConfigs().ControllersConfigs[ z ].ts );
+    obj->methods.update_states( obj, GetDroneConfigs().ControllersConfigs[ Z ].ts );
 }
-
-/* Timer used to get sine values */
-static float timer = 0.0f;
 
 static void StControlFunc( drone_t * obj ) {
 
@@ -63,23 +60,20 @@ static void StControlFunc( drone_t * obj ) {
     /* Compute PID algorithm for all states */
 
     /* ROLL - Cascaded PID*/
-    float CRoll = obj->attributes.components.controllers[ roll ]->manual_pi_d(
-        obj->attributes.components.controllers[ roll ],
+    obj->attributes.sp.roll_dot = obj->attributes.components.controllers[ ROLL ]->pid(
+        obj->attributes.components.controllers[ ROLL ],
         obj->attributes.states.roll,
-        obj->attributes.sp.roll,
-        obj->attributes.states.roll_dot
+        obj->attributes.sp.roll
     );
 
-    obj->attributes.sp.roll_dot = CRoll;
-
-    float CRolld = obj->attributes.components.controllers[ roll_dot ]->pid(
-        obj->attributes.components.controllers[ roll_dot ],
+    float CRolld = obj->attributes.components.controllers[ ROLL_D ]->pid(
+        obj->attributes.components.controllers[ ROLL_D ],
         obj->attributes.states.roll_dot,
         obj->attributes.sp.roll_dot
     );
     
     /* Update MMA inputs with PID outputs */
-    obj->attributes.components.mma->input[ C_Roll ] = CRolld;
+    obj->attributes.components.mma->input[ C_ROLL ] = CRolld;
 
     /* Compute MMA algorithm */
     obj->attributes.components.mma->compute(
@@ -87,9 +81,6 @@ static void StControlFunc( drone_t * obj ) {
         obj->attributes.components.pwm[ 0 ]->dc_min,
         obj->attributes.components.pwm[ 0 ]->dc_max
     );
-
-
-
 
     /* Update all pwm duty cycle */
     for(int i = 0; i < ( ( sizeof( obj->attributes.components.mma->output ) ) / ( sizeof( obj->attributes.components.mma->output[ 0 ] ) ) ); i++) {

@@ -36,8 +36,6 @@ void app_main( void ) {
     /* Parse Bluetooth commands */
     xTaskCreatePinnedToCore( vTaskParseCommand, "Task3", 1024 * 2, ( void * ) ( drone ), 1, NULL, CORE_0 );
 
-    float t = 0.0f;
-
     while( 1 ) {
 
         printf( "Estado: %s\r\n", StateMachine_GetStateName( state_machine.curr_state ) );
@@ -63,7 +61,6 @@ void app_main( void ) {
             printf("|pid_roll,%.2f", pid_roll);
             printf("|lower_limit,%.2f", lower_limit);
             printf("|w1,%.2f|w2,%.2f|w3,%.2f|w4,%.2f\n", w1, w2, w3, w4);
-            t += 0.01f;
         }
         #endif
 

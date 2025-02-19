@@ -31,7 +31,7 @@ static float pid( pid_controller_t * obj, float pv, float sp ) {
     obj->error = sp - pv; /* Update error */
 
     /* Note: Roll, Pitch and Yaw SetPoints and measures are in angles but the model of the drone is in radians, so we need to convert them to radians */
-    if( obj->cfg.tag != z ) {
+    if( obj->cfg.tag != Z ) {
 
         obj->error *= ( M_PI / 180.0f );
     }
@@ -133,7 +133,7 @@ static float pid( pid_controller_t * obj, float pv, float sp ) {
     
     if( ( obj->gain.ki != 0 ) && ( fabs( obj->error ) > obj->cfg.intMinErr ) ) {
 
-        if( obj->cfg.sat == anti_windup ) {
+        if( obj->cfg.sat == ANTI_WINDUP ) {
 
             if( ( obj->error < 0 ) && ( obj->action.i > 0 ) ) {
 
@@ -146,7 +146,7 @@ static float pid( pid_controller_t * obj, float pv, float sp ) {
             }
         }
 
-        else if( obj->cfg.sat == back_propagation ) {
+        else if( obj->cfg.sat == BACK_PROPAGATION ) {
 
             /* Back-Propagation Algorithm */
         }
@@ -197,7 +197,7 @@ static float manual_pi_d( pid_controller_t * obj, float pv, float sp, float d_st
     obj->error = sp - pv; /* Update error */
 
     /* Note: Roll, Pitch and Yaw SetPoints and measures are in angles but the model of the drone is in radians, so we need to convert them to radians */
-    if( obj->cfg.tag != z ) {
+    if( obj->cfg.tag != Z ) {
 
         obj->error *= ( M_PI / 180.0f );
     }
@@ -269,7 +269,7 @@ static float manual_pi_d( pid_controller_t * obj, float pv, float sp, float d_st
     
     if( ( obj->gain.ki != 0 ) && ( fabs( obj->error ) > obj->cfg.intMinErr ) ) {
 
-        if( obj->cfg.sat == anti_windup ) {
+        if( obj->cfg.sat == ANTI_WINDUP ) {
 
             if( ( obj->error < 0 ) && ( obj->action.i > 0 ) ) {
 
@@ -282,7 +282,7 @@ static float manual_pi_d( pid_controller_t * obj, float pv, float sp, float d_st
             }
         }
 
-        else if( obj->cfg.sat == back_propagation ) {
+        else if( obj->cfg.sat == BACK_PROPAGATION ) {
 
             /* Back-Propagation Algorithm */
         }

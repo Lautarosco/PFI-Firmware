@@ -14,25 +14,25 @@
 typedef enum states {
 
     /* z index used in Arrays */
-    z,
+    Z,
     
     /* Roll index used in Arrays */
-    roll,
+    ROLL,
     
     /* Pitch index used in Arrays */
-    pitch,
+    PITCH,
     
     /* Yaw index used in Arrays */
-    yaw,
+    YAW,
     
-    /* Roll_dot index used in Arrays */
-    roll_dot,
+    /* Roll_d index used in Arrays */
+    ROLL_D,
     
-    /* Pitch_dot index used in Arrays */
-    pitch_dot,
+    /* Pitch_d index used in Arrays */
+    PITCH_D,
     
-    /* Yaw_dot index used in Arrays */
-    yaw_dot,
+    /* Yaw_d index used in Arrays */
+    YAW_D,
     
 } states_t;
 
@@ -46,10 +46,10 @@ typedef enum states {
 typedef enum filter_derivative {
 
     /* Do not filter derivative action */
-    no_filter,
+    NO_FILTER,
 
     /* Filter derivative action */
-    filter,
+    FILTER,
 
 } filter_derivative_t;
 
@@ -63,13 +63,13 @@ typedef enum filter_derivative {
 typedef enum int_sat {
 
     /* No integral saturation */
-    no_saturation,
+    NO_SATURATION,
     
     /* Anti-Windup saturation */
-    anti_windup,
+    ANTI_WINDUP,
     
     /* Back-Propagation saturation */
-    back_propagation,
+    BACK_PROPAGATION,
 
 } int_sat_t;
 
