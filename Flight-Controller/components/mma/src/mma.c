@@ -16,20 +16,23 @@ const char * MMA_TAG = "MMA";
 
 /**
  * @brief Saturate calculated duty cycle
- * @param input: Value to saturate
- * @param min: Minimum value
- * @param max: Maximum value
+ * @param dc: mma block output
+ * @param dc_min: Minimum duty cycle
+ * @param dc_max: Maximum duty cycle
  */
-static float saturate( mma_t * obj, float input, float min, float max ) {
+static float saturate( mma_t * obj, float dc, float dc_min, float dc_max ) {
 
-    if( input > max )      /* Upper saturation */
-        return max;
+#define UPPER_LIMIT dc_max * obj->limit.upper
+#define LOWER_LIMIT dc_min * obj->limit.lower
 
-    else if( input < min ) /* Lower saturation */
-        return min;
+    if( dc > UPPER_LIMIT )      /* Upper saturation */
+        return UPPER_LIMIT;
+
+    else if( dc < LOWER_LIMIT ) /* Lower saturation */
+        return LOWER_LIMIT;
     
     else                        /* No saturation */
-        return input;
+        return dc;
 }
 
 
@@ -37,18 +40,43 @@ static float saturate( mma_t * obj, float input, float min, float max ) {
 
 
 /**
+ * @brief Map mma output to duty cycle
+ * @param u: mma block output
+ * @param dc_min: Minimum duty cycle
+ * @param dc_max: Maximum duty cycle
+ */
+static float u2pwm( mma_t * obj, float u, float dc_min, float dc_max ) {
+
+    float Gu = ( U_MAX - U_MIN ) / ( W_MAX );
+    float u_n = u * Gu; /* Normalized controller action */
+
+    float m = 0;
+    float b = 0;
+
+    m = ( dc_max - dc_min ) / ( U_MAX - U_MIN );
+    b = dc_min - ( m * U_MIN );
+
+    return saturate( obj, ( m * u_n ) + b, dc_min, dc_max );
+}
+
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
+
+/**
+>>>>>>> parent of d673ece (Se resolvio el conflicto de merge entre local de juani y dev):Flight-Controller/components/mma/mma.c
  * @brief Compute MMA algorithm and update object outputs
  * @param obj: Address of Mma object
- * @param min: Minimum rpm
- * @param max: Maximum rpm
+ * @param dc_min: Minimum duty cycle
+ * @param dc_max: Maximum duty cycle
  * @retval none
  */
-static void compute_obj( mma_t * obj) {
+static void compute_obj( mma_t * obj, float dc_min, float dc_max ) {
     
-    obj->output[ u1 ] = saturate( obj, obj->input[ C_z ] + ( ( 0.5f ) * (   obj->input[ C_Roll ] + obj->input[ C_Pitch ] + obj->input[ C_Yaw ] ) ), obj->limit.lower, obj->limit.upper );
-    obj->output[ u2 ] = saturate( obj, obj->input[ C_z ] + ( ( 0.5f ) * ( - obj->input[ C_Roll ] + obj->input[ C_Pitch ] - obj->input[ C_Yaw ] ) ), obj->limit.lower, obj->limit.upper );
-    obj->output[ u3 ] = saturate( obj, obj->input[ C_z ] + ( ( 0.5f ) * ( - obj->input[ C_Roll ] - obj->input[ C_Pitch ] + obj->input[ C_Yaw ] ) ), obj->limit.lower, obj->limit.upper );
-    obj->output[ u4 ] = saturate( obj, obj->input[ C_z ] + ( ( 0.5f ) * (   obj->input[ C_Roll ] - obj->input[ C_Pitch ] - obj->input[ C_Yaw ] ) ), obj->limit.lower, obj->limit.upper );
+    obj->output[ u1 ] = u2pwm( obj, obj->input[ C_z ] + ( ( 0.5f ) * (   obj->input[ C_Roll ] + obj->input[ C_Pitch ] + obj->input[ C_Yaw ] ) ), dc_min, dc_max );
+    obj->output[ u2 ] = u2pwm( obj, obj->input[ C_z ] + ( ( 0.5f ) * ( - obj->input[ C_Roll ] + obj->input[ C_Pitch ] - obj->input[ C_Yaw ] ) ), dc_min, dc_max );
+    obj->output[ u3 ] = u2pwm( obj, obj->input[ C_z ] + ( ( 0.5f ) * ( - obj->input[ C_Roll ] - obj->input[ C_Pitch ] + obj->input[ C_Yaw ] ) ), dc_min, dc_max );
+    obj->output[ u4 ] = u2pwm( obj, obj->input[ C_z ] + ( ( 0.5f ) * (   obj->input[ C_Roll ] - obj->input[ C_Pitch ] - obj->input[ C_Yaw ] ) ), dc_min, dc_max );
 }
 
 

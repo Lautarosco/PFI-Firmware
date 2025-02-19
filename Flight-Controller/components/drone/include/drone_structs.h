@@ -8,60 +8,6 @@
 #include <controllers.h>
 #include <mma.h>
 
-#define FLASH_PARAMS 20 /* Total Drone parameters to be stored in flash memory */
-#define NVS_NAMESPACE "storage"
-
-
-/* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
-
-/** @brief Drone parameters stored and updated from flash memory */
-typedef enum drone_flash_params {
-
-    /* Gyro offset x */
-    GYRO_OFFSET_X,
-
-    /* Gyro offset y */
-    GYRO_OFFSET_Y,
-
-    /* Gyro offset z */
-    GYRO_OFFSET_Z,
-
-    /* Roll Kp gain */
-    PID_ROLL_KP,
-
-    /* Roll Ki gain */
-    PID_ROLL_KI,
-
-    /* Roll Kd gain */
-    PID_ROLL_KD,
-
-    /* Type of roll integral saturation */
-    PID_ROLL_I_SAT,
-
-    /* Cut off frequency for roll derivative action */
-    PID_ROLL_FC_D,
-
-    /* Rolld Kp gain */
-    PID_ROLLD_KP,
-
-    /* Rolld Ki gain */
-    PID_ROLLD_KI,
-
-    /* Rolld Kd gain */
-    PID_ROLLD_KD,
-    
-    /* Type of rolld integral saturation */
-    PID_ROLLD_I_SAT,
-
-    /* Cut off frequency for rolld derivative action */
-    PID_ROLLD_FC_D,
-
-    /* Rolld IIR filter coefficient */
-    ROLLD_IIR_COEFF,
-
-} drone_flash_params_t;
-
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
@@ -224,9 +170,6 @@ typedef struct drone_attributes {
     /* Drone's global variables */
     drone_globals_t global_variables;
 
-    /* Array of Drone parameters stored in flash memory */
-    void * flash_params_arr[ FLASH_PARAMS ];
-
     /* Drone's init flag */
     bool init_ok;
 
@@ -249,15 +192,6 @@ typedef struct drone_methods {
 
     /** @brief Seek devices in I2C bus @param none @retval bool */
     bool ( * i2c_scan )( void );
-
-    /** @brief Transform angular velocity to duty cycle @param dc_min: Minimum duty cycle @param dc_max: Maximum duty cycle @param w_max: Maximum angular velocity @param w: Angular velocity to be mapped */
-    float ( * rpm2dc )( float dc_min, float dc_max, float w_max, float w );
-
-    /** @brief Save Drone parameters to flash memory @param obj: Direction of Drone object @retval none */
-    void ( * save_to_nvs )( drone_t * obj );
-
-    /** @brief Read Drone parameters stored in flash memory @param obj: Direction of Drone object @retval none */
-    void ( * read_from_flash )( drone_t * obj );
 
 } drone_methods_t;
 

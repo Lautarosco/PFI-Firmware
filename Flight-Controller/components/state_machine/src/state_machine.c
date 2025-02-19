@@ -83,7 +83,9 @@ static void StControlFunc( drone_t * obj ) {
 
     /* Compute MMA algorithm */
     obj->attributes.components.mma->compute(
-        obj->attributes.components.mma
+        obj->attributes.components.mma,
+        obj->attributes.components.pwm[ 0 ]->dc_min,
+        obj->attributes.components.pwm[ 0 ]->dc_max
     );
 
 
@@ -94,12 +96,7 @@ static void StControlFunc( drone_t * obj ) {
         
         obj->attributes.components.pwm[ i ]->set_pwm_dc(
             obj->attributes.components.pwm[ i ],
-            obj->methods.rpm2dc(
-                obj->attributes.components.pwm[ i ]->dc_min,
-                obj->attributes.components.pwm[ i ]->dc_max,
-                1047.0f,
-                obj->attributes.components.mma->output[ i ]
-            )
+            obj->attributes.components.mma->output[ i ]
         );
     }
 }
