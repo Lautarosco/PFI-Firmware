@@ -20,7 +20,7 @@ const char * MMA_TAG = "MMA";
  * @param min: Minimum value
  * @param max: Maximum value
  */
-static float saturate( mma_t * obj, float input, float min, float max ) {
+static float saturate(float input, float min, float max ) {
 
     if( input > max )      /* Upper saturation */
         return max;
@@ -45,10 +45,10 @@ static float saturate( mma_t * obj, float input, float min, float max ) {
  */
 static void compute_obj( mma_t * obj) {
     
-    obj->output[ u1 ] = saturate( obj, obj->input[ C_z ] + ( ( 0.5f ) * (   obj->input[ C_Roll ] + obj->input[ C_Pitch ] + obj->input[ C_Yaw ] ) ), obj->limit.lower, obj->limit.upper );
-    obj->output[ u2 ] = saturate( obj, obj->input[ C_z ] + ( ( 0.5f ) * ( - obj->input[ C_Roll ] + obj->input[ C_Pitch ] - obj->input[ C_Yaw ] ) ), obj->limit.lower, obj->limit.upper );
-    obj->output[ u3 ] = saturate( obj, obj->input[ C_z ] + ( ( 0.5f ) * ( - obj->input[ C_Roll ] - obj->input[ C_Pitch ] + obj->input[ C_Yaw ] ) ), obj->limit.lower, obj->limit.upper );
-    obj->output[ u4 ] = saturate( obj, obj->input[ C_z ] + ( ( 0.5f ) * (   obj->input[ C_Roll ] - obj->input[ C_Pitch ] - obj->input[ C_Yaw ] ) ), obj->limit.lower, obj->limit.upper );
+    obj->output[ u1 ] = saturate(obj->input[ C_z ] + ( ( 0.5f ) * (   obj->input[ C_Roll ] + obj->input[ C_Pitch ] + obj->input[ C_Yaw ] ) ), obj->limit.lower, obj->limit.upper );
+    obj->output[ u2 ] = saturate(obj->input[ C_z ] + ( ( 0.5f ) * ( - obj->input[ C_Roll ] + obj->input[ C_Pitch ] - obj->input[ C_Yaw ] ) ), obj->limit.lower, obj->limit.upper );
+    obj->output[ u3 ] = saturate(obj->input[ C_z ] + ( ( 0.5f ) * ( - obj->input[ C_Roll ] - obj->input[ C_Pitch ] + obj->input[ C_Yaw ] ) ), obj->limit.lower, obj->limit.upper );
+    obj->output[ u4 ] = saturate(obj->input[ C_z ] + ( ( 0.5f ) * (   obj->input[ C_Roll ] - obj->input[ C_Pitch ] - obj->input[ C_Yaw ] ) ), obj->limit.lower, obj->limit.upper );
 }
 
 

@@ -4,6 +4,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <esp_log.h>
+#include <math.h>
 
 const char * STATE_MACHINE_TAG = "STATE_MACHINE";
 
@@ -52,9 +53,6 @@ static void StUpdateStatesFunc( drone_t * obj ) {
     obj->methods.update_states( obj, GetDroneConfigs().ControllersConfigs[ z ].ts );
 }
 
-/* Timer used to get sine values */
-static float timer = 0.0f;
-
 static void StControlFunc( drone_t * obj ) {
 
     /* Update sp */
@@ -63,14 +61,17 @@ static void StControlFunc( drone_t * obj ) {
     /* Compute PID algorithm for all states */
 
     /* ROLL - Cascaded PID*/
-    float CRoll = obj->attributes.components.controllers[ roll ]->manual_pi_d(
+    /*
+    float CRoll = obj->attributes.components.controllers[ roll ]->pid(
         obj->attributes.components.controllers[ roll ],
         obj->attributes.states.roll,
-        obj->attributes.sp.roll,
-        obj->attributes.states.roll_dot
+        obj->attributes.sp.roll
     );
+    */
 
-    obj->attributes.sp.roll_dot = CRoll;
+    float sine = __sin( 80.0f, 2*M_PI*(1 / 1.0f), 10 );
+
+    obj->attributes.sp.roll_dot = sine;
 
     float CRolld = obj->attributes.components.controllers[ roll_dot ]->pid(
         obj->attributes.components.controllers[ roll_dot ],

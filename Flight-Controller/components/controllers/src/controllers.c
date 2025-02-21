@@ -68,6 +68,8 @@ static float pid( pid_controller_t * obj, float pv, float sp ) {
     if( obj->gain.ki != 0 ) {
 
         obj->action.i += obj->error * obj->cfg.ts;
+    } else {
+        obj->action.i = 0;
     }
 
     if( obj->gain.kd != 0 ) {
@@ -135,7 +137,7 @@ static float pid( pid_controller_t * obj, float pv, float sp ) {
 
         if( obj->cfg.sat == anti_windup ) {
 
-            if( ( obj->error < 0 ) && ( obj->action.i > 0 ) ) {
+            if( (( obj->error < 0 ) && ( obj->action.i > 0 )) || (( obj->error > 0 ) && ( obj->action.i < 0 ))) {
 
                 c_i = 0;
             }
@@ -234,6 +236,8 @@ static float manual_pi_d( pid_controller_t * obj, float pv, float sp, float d_st
     if( obj->gain.ki != 0 ) {
 
         obj->action.i += obj->error * obj->cfg.ts;
+    } else {
+        obj->action.i = 0;
     }
 
     /* Derivative Action */
@@ -271,7 +275,7 @@ static float manual_pi_d( pid_controller_t * obj, float pv, float sp, float d_st
 
         if( obj->cfg.sat == anti_windup ) {
 
-            if( ( obj->error < 0 ) && ( obj->action.i > 0 ) ) {
+            if( (( obj->error < 0 ) && ( obj->action.i > 0 )) || (( obj->error > 0 ) && ( obj->action.i < 0 ))) {
 
                 c_i = 0;
             }

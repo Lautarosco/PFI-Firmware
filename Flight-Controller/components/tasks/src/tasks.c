@@ -366,19 +366,20 @@ void vTaskParseCommand( void * pvParameters ) {
             for( int i = 0; i < obj->attributes.global_variables.serial_data->len; i++ ) {
 
                 /**
-                 * Frame's format: <pid,state,( p | i | d | min_err )/value>
+                 * Frame's format: <pid/state/@/value>
+                 * where '@' could be 'p | i | d | min_err'
                  * 
-                 * i.e, <pid/1/p/10> which means
+                 * i.e, <pid/roll/p/10> which means
                  * 
                  * pid command
-                 * state 1 indicates roll ( see states_t enum defined in controllers_struct.h header file )
+                 * state roll
                  * p indicates proportional action
                  * 10 is the new value for roll Kp gain
                  * 
-                 * i.e, <pid,0,min_err,10> which means
+                 * i.e, <pid/z/min_err/10> which means
                  * 
                  * pid command
-                 * state 0 indicates z ( see states_t enum defined in controllers_struct.h header file )
+                 * state z
                  * min_err indicates new value for z integral minimum error
                  * 10 is the new minimum value for the integral error
                  */
@@ -415,7 +416,7 @@ void vTaskParseCommand( void * pvParameters ) {
                 }
 
                 /* Check if end of substring */
-                else if( currChar == ',' ) {
+                else if( currChar == '/' ) {
 
                     /* Store substring */
                     ptr[ ptrIndex ] = '\0';

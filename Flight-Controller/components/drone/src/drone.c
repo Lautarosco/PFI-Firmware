@@ -197,7 +197,7 @@ static drone_cfg_t DroneConfigs = {
             .tag = roll,
             .fc  = 1.0f,
             .ts  = 10,
-            .sat = no_saturation,
+            .sat = anti_windup,
             .der_filter = 0,
             .gains = { .kp = 0.0f, .ki = 0.0f, .kd = 0.0f },
             .intMinErr = 0.0f
@@ -224,7 +224,7 @@ static drone_cfg_t DroneConfigs = {
             .tag = roll_dot,
             .fc  = 0.8f,
             .ts  = 10,
-            .sat = no_saturation,
+            .sat = anti_windup,
             .der_filter = 0,
             .gains = { .kp = 0.0f, .ki = 0.0f, .kd = 0.0f },
             .intMinErr = 0.0f
@@ -903,8 +903,23 @@ drone_cfg_t GetDroneConfigs( void ) {
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
+static float timer = 0;
 
-float __sin( float A, float w, float t ) {
+float __sin( float A, float w, float dt_ms) {
 
-    return A * sin( w * t );
+
+
+    float retval = A * sin( w * ( timer ) );
+
+    if( timer*w > ( 2 * M_PI ) ) {
+
+        timer = 0.0f;
+    }
+
+    else {
+
+        timer += dt_ms / 1000.0f;
+    }
+
+    return retval;
 }
