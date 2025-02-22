@@ -79,7 +79,7 @@ typedef struct bmi160_t {
     // Device config
     i2c_params_t i2c;
 
-    esp_err_t (*init)(struct bmi160_t* self, int acc_mode, int acc_freq, int acc_range, int gyro_mode, int gyro_freq, int gyro_range, int gyro_offset_x, int gyro_offset_y, int gyro_offset_z);
+    esp_err_t (*init)(struct bmi160_t* self, int bmi_address, int acc_mode, int acc_freq, int acc_range, int gyro_mode, int gyro_freq, int gyro_range, int gyro_offset_x, int gyro_offset_y, int gyro_offset_z);
     esp_err_t (*measure)(struct bmi160_t* self);
     esp_err_t (*foc)(struct bmi160_t* self);
     
@@ -131,6 +131,7 @@ esp_err_t Bmi160( bmi160_t* bmi,
 /**
  * @brief Initialize Acelerometer and Gyroscope
  * @param self: Pointer to bmi160_t struct.
+ * @param bmi_address: Address of bmi register.
  * @param acc_mode:    Accelerometer mode.
  * @param acc_freq:    Accelerometer operation frequency.
  * @param acc_range:   Accelerometer range.
@@ -142,7 +143,7 @@ esp_err_t Bmi160( bmi160_t* bmi,
  * @param gyro_offset_z: Gyroscope z offset.
  * @retval esp_err_t
  */
-esp_err_t bmi_init( bmi160_t * self,
+esp_err_t bmi_init( bmi160_t * self, int bmi_address,
     int acc_mode,  int acc_freq,  int acc_range,
     int gyro_mode, int gyro_freq, int gyro_range,
     int gyro_offset_x, int gyro_offset_y, int gyro_offset_z

@@ -91,9 +91,9 @@ static drone_cfg_t DroneConfigs = {
         .gyro_freq   = BMI160_GYRO_CONF_100HZ_NORMAL,
         .gyro_range  = BMI160_GYRO_RANGE_250DPS,
         .gyro_offset = {
-            .x = 422.4f,
-            .y = -112.36f,
-            .z = -2002.06f,
+            .x = -250.38f,
+            .y = 8.55f,
+            .z = 4.64f,
         },
     },
     .esp_mac_addr = { 0xf0, 0xf0, 0x02, 0x43, 0x53, 0x53 },
@@ -197,7 +197,7 @@ static drone_cfg_t DroneConfigs = {
             .tag = ROLL,
             .fc  = 1.0f,
             .ts  = 10,
-            .sat = NO_SATURATION,
+            .sat = ANTI_WINDUP,
             .der_filter = NO_FILTER,
             .gains = { .kp = 0.0f, .ki = 0.0f, .kd = 0.0f },
             .intMinErr = 0.0f
@@ -224,7 +224,7 @@ static drone_cfg_t DroneConfigs = {
             .tag = ROLL_D,
             .fc  = 0.8f,
             .ts  = 10,
-            .sat = NO_SATURATION,
+            .sat = ANTI_WINDUP,
             .der_filter = NO_FILTER,
             .gains = { .kp = 0.0f, .ki = 0.0f, .kd = 0.0f },
             .intMinErr = 0.0f
@@ -530,16 +530,17 @@ static esp_err_t drone_init( drone_t * obj ) {
     #ifndef IGNORE_BMI
     /* Initialize Bmi160 object */
     ESP_ERROR_CHECK( obj->attributes.components.bmi.init(
-        &( obj->attributes.components.bmi ),
-        obj->attributes.config.imu_cfg.acc_mode,
-        obj->attributes.config.imu_cfg.acc_freq,
-        obj->attributes.config.imu_cfg.acc_range,
-        obj->attributes.config.imu_cfg.gyro_mode,
-        obj->attributes.config.imu_cfg.gyro_freq,
-        obj->attributes.config.imu_cfg.gyro_range,
-        0.0f,
-        0.0f,
-        0.0f
+            &( obj->attributes.components.bmi ),
+            BMI160_ADDR,
+            obj->attributes.config.imu_cfg.acc_mode,
+            obj->attributes.config.imu_cfg.acc_freq,
+            obj->attributes.config.imu_cfg.acc_range,
+            obj->attributes.config.imu_cfg.gyro_mode,
+            obj->attributes.config.imu_cfg.gyro_freq,
+            obj->attributes.config.imu_cfg.gyro_range,
+            0.0f,
+            0.0f,
+            0.0f
         )
     );
     
@@ -551,7 +552,7 @@ static esp_err_t drone_init( drone_t * obj ) {
     /* Fast offset compensation for bmi sensor */
     obj->attributes.components.bmi.foc( &( obj->attributes.components.bmi ) );
     #endif
-    // obj->attributes.components.bmi.Gyro.calibrate( &( obj->attributes.components.bmi.Gyro ), 2000 );
+    //obj->attributes.components.bmi.Gyro.calibrate( &( obj->attributes.components.bmi.Gyro ), 2000 );
 
     /* Initialize all Pwm objects */
     for( int i = 0; i < ( ( sizeof( obj->attributes.components.pwm ) ) / ( sizeof( obj->attributes.components.pwm[ 0 ] ) ) ); i++ ) {
@@ -604,17 +605,17 @@ static void UpdateStates( drone_t * obj, float ts ) {
 
         /* Update state's velocity */
 
-        #ifndef IGNORE_BMI
-        obj->attributes.states.roll_dot  = FirstOrderIIR( obj->attributes.components.bmi.Gyro.x, obj->attributes.states.roll_dot,  DroneConfigs.IIR_coeff_roll_dot );
+        // obj->attributes.states.roll_dot  = FirstOrderIIR( obj->attributes.components.bmi.Gyro.x, obj->attributes.states.roll_dot,  DroneConfigs.IIR_coeff_roll_dot );
+        obj->attributes.states.roll_dot  = obj->attributes.components.bmi.Gyro.x;
         obj->attributes.states.pitch_dot = FirstOrderIIR( obj->attributes.components.bmi.Gyro.y, obj->attributes.states.pitch_dot, DroneConfigs.IIR_coeff_pitch_dot );
         obj->attributes.states.yaw_dot   = FirstOrderIIR( obj->attributes.components.bmi.Gyro.z, obj->attributes.states.yaw_dot,   DroneConfigs.IIR_coeff_yaw_dot );
         
         /* Update state's position */
-        Kalman( obj, ts );
-        #endif
-        // float roll_acc = atan2( obj->attributes.components.bmi.Acc.y, obj->attributes.components.bmi.Acc.z ) * ( 180.0f / M_PI );
-        // float roll_gyro = obj->attributes.states.roll + ( obj->attributes.components.bmi.Gyro.x * ( ts / 1000.0f ) );
-        // obj->attributes.states.roll = ( 0.98f * roll_acc ) + ( 0.02f * roll_gyro );
+        // Kalman( obj, ts );
+
+        float roll_acc = atan2( obj->attributes.components.bmi.Acc.y, obj->attributes.components.bmi.Acc.z ) * ( 180.0f / M_PI );
+        float roll_gyro = obj->attributes.states.roll + ( obj->attributes.components.bmi.Gyro.x * ( ts / 1000.0f ) );
+        obj->attributes.states.roll = ( 0.98f * roll_acc ) + ( 0.02f * roll_gyro );
     }
 }
 

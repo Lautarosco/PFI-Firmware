@@ -74,12 +74,11 @@ static float pid( pid_controller_t * obj, float pv, float sp ) {
 
         obj->action.i += obj->error * ts;
     }
-    /*
+
     else {
 
         obj->action.i = 0;
     }
-    */
 
     if( obj->gain.kd != 0 ) {
 
@@ -143,7 +142,7 @@ static float pid( pid_controller_t * obj, float pv, float sp ) {
      * ***********************************
      */
     
-    if( ( obj->gain.ki != 0 ) ) {
+    if( ( obj->gain.ki != 0 ) && ( fabs( obj->error ) > obj->cfg.intMinErr ) ) {
 
         if( obj->cfg.sat == ANTI_WINDUP ) {
 

@@ -8,13 +8,18 @@
 #include "registers.h"
 #include "bmi160.h"
 
+#include "driver/uart.h"
 #include "string.h"
 
 static const char *TAG = "BMI160";
 
 // Device Methods
 /*Takes an empty bmi160_t struct and inits its functions and parameters*/
-esp_err_t Bmi160( bmi160_t* bmi, int i2c_address_param, int i2c_scl_param, int i2c_sda_param ) {
+esp_err_t Bmi160( bmi160_t* bmi,
+                        int i2c_address_param,
+                        int i2c_scl_param,
+                        int i2c_sda_param
+                ) {
 
     // Function pointers assignment
     bmi->init                 = bmi_init;
@@ -36,34 +41,27 @@ esp_err_t Bmi160( bmi160_t* bmi, int i2c_address_param, int i2c_scl_param, int i
         ESP_LOGI(TAG, "INIT->I2C ERROR: %d", i2c_ret);
     }
 
-    bmi->Acc.offset.x = 0.0f;
-    bmi->Acc.offset.y = 0.0f;
-    bmi->Acc.offset.z = 0.0f;
-
-    bmi->Gyro.offset.x = 0.0f;
-    bmi->Gyro.offset.y = 0.0f;
-    bmi->Gyro.offset.z = 0.0f;
-
     bmi->Acc.i2c = bmi->i2c;
     bmi->Gyro.i2c = bmi->i2c;
 
     return ESP_OK;
 }
 
-esp_err_t bmi_init( bmi160_t * self,
+esp_err_t bmi_init( bmi160_t * self, int bmi_address,
     int acc_mode,  int acc_freq,  int acc_range,
     int gyro_mode, int gyro_freq, int gyro_range,
-    int gyro_offset_x, int gyro_offset_y, int gyro_offset_z ) {
-
+    int gyro_offset_x, int gyro_offset_y, int gyro_offset_z
+)
+{
     /* Initialize Acelerometer */
-    ESP_ERROR_CHECK( bmi160_write_byte( self->i2c.address, BMI160_CMD_REG,   acc_mode ) );       
-    ESP_ERROR_CHECK( bmi160_write_byte( self->i2c.address, BMI160_ACC_CONF,  acc_freq ) );
-    ESP_ERROR_CHECK( bmi160_write_byte( self->i2c.address, BMI160_ACC_RANGE, acc_range ) );
+    ESP_ERROR_CHECK( bmi160_write_byte( bmi_address, BMI160_CMD_REG,   acc_mode ) );       
+    ESP_ERROR_CHECK( bmi160_write_byte( bmi_address, BMI160_ACC_CONF,  acc_freq ) );
+    ESP_ERROR_CHECK( bmi160_write_byte( bmi_address, BMI160_ACC_RANGE, acc_range ) );
     
     /* Initialize Gyroscope */
-    ESP_ERROR_CHECK( bmi160_write_byte( self->i2c.address, BMI160_CMD_REG,   gyro_mode ) );      
-    ESP_ERROR_CHECK( bmi160_write_byte( self->i2c.address, BMI160_ACC_CONF,  gyro_freq ) );
-    ESP_ERROR_CHECK( bmi160_write_byte( self->i2c.address, BMI160_ACC_RANGE, gyro_range ) );
+    ESP_ERROR_CHECK( bmi160_write_byte( bmi_address, BMI160_CMD_REG,   gyro_mode ) );      
+    ESP_ERROR_CHECK( bmi160_write_byte( bmi_address, BMI160_ACC_CONF,  gyro_freq ) );
+    ESP_ERROR_CHECK( bmi160_write_byte( bmi_address, BMI160_ACC_RANGE, gyro_range ) );
 
     /* Set initials offsets*/
     self->Gyro.offset.x = gyro_offset_x;
@@ -265,8 +263,8 @@ esp_err_t gyro_calibrate(gyro_t* gyro, uint32_t samples) {
 esp_err_t bmi160_foc(bmi160_t* bmi){
 
     // read offsets before FOC
-    uint8_t previous_offset[6];
-    bmi160_read_bytes(bmi->i2c.address, 0x71, previous_offset, 6);
+    int8_t previous_offset[6];
+    bmi160_read_bytes(bmi->i2c.address, 0x71, &previous_offset, 6);
 
     int8_t prev_acc_x = previous_offset[0];
     int8_t prev_acc_y = previous_offset[1];
