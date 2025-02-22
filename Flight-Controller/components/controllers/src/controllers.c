@@ -28,10 +28,15 @@ static float pid( pid_controller_t * obj, float pv, float sp ) {
     
     float w = 2 * M_PI * obj->cfg.fc;   /* Calculate Low Pass Filter coefficient in rad/s */
 
+    float ts = obj->cfg.ts / 1000.0f;
+
+    /* Store previous error to calculate derivative ( D ) action */
+    float error_previo = obj->error;
+
     obj->error = sp - pv; /* Update error */
 
     /* Note: Roll, Pitch and Yaw SetPoints and measures are in angles but the model of the drone is in radians, so we need to convert them to radians */
-    if( obj->cfg.tag != z ) {
+    if( obj->cfg.tag != Z ) {
 
         obj->error *= ( M_PI / 180.0f );
     }
@@ -67,10 +72,14 @@ static float pid( pid_controller_t * obj, float pv, float sp ) {
 
     if( obj->gain.ki != 0 ) {
 
-        obj->action.i += obj->error * obj->cfg.ts;
-    } else {
+        obj->action.i += obj->error * ts;
+    }
+    /*
+    else {
+
         obj->action.i = 0;
     }
+    */
 
     if( obj->gain.kd != 0 ) {
 
@@ -98,13 +107,14 @@ static float pid( pid_controller_t * obj, float pv, float sp ) {
              */
 
             obj->action.d.out = w * ( obj->error - obj->action.d.sum ); /* ( 1 ) */
-            obj->action.d.sum += obj->action.d.out * obj->cfg.ts; /* ( 2 ) */
+            obj->action.d.sum += obj->action.d.out * ts; /* ( 2 ) */
         }
 
         /* Compute derivative without filter */
         else {
 
-
+            /* Forward Euler derivative */
+            obj->action.d.out = ( obj->error - error_previo ) / ts;
         }
     }
 
@@ -133,9 +143,9 @@ static float pid( pid_controller_t * obj, float pv, float sp ) {
      * ***********************************
      */
     
-    if( ( obj->gain.ki != 0 ) && ( fabs( obj->error ) > obj->cfg.intMinErr ) ) {
+    if( ( obj->gain.ki != 0 ) ) {
 
-        if( obj->cfg.sat == anti_windup ) {
+        if( obj->cfg.sat == ANTI_WINDUP ) {
 
             if( (( obj->error < 0 ) && ( obj->action.i > 0 )) || (( obj->error > 0 ) && ( obj->action.i < 0 ))) {
 
@@ -148,7 +158,7 @@ static float pid( pid_controller_t * obj, float pv, float sp ) {
             }
         }
 
-        else if( obj->cfg.sat == back_propagation ) {
+        else if( obj->cfg.sat == BACK_PROPAGATION ) {
 
             /* Back-Propagation Algorithm */
         }
@@ -199,7 +209,7 @@ static float manual_pi_d( pid_controller_t * obj, float pv, float sp, float d_st
     obj->error = sp - pv; /* Update error */
 
     /* Note: Roll, Pitch and Yaw SetPoints and measures are in angles but the model of the drone is in radians, so we need to convert them to radians */
-    if( obj->cfg.tag != z ) {
+    if( obj->cfg.tag != Z ) {
 
         obj->error *= ( M_PI / 180.0f );
     }
@@ -235,7 +245,7 @@ static float manual_pi_d( pid_controller_t * obj, float pv, float sp, float d_st
 
     if( obj->gain.ki != 0 ) {
 
-        obj->action.i += obj->error * obj->cfg.ts;
+        obj->action.i += obj->error * ( obj->cfg.ts / 1000.0f );
     } else {
         obj->action.i = 0;
     }
@@ -273,7 +283,7 @@ static float manual_pi_d( pid_controller_t * obj, float pv, float sp, float d_st
     
     if( ( obj->gain.ki != 0 ) && ( fabs( obj->error ) > obj->cfg.intMinErr ) ) {
 
-        if( obj->cfg.sat == anti_windup ) {
+        if( obj->cfg.sat == ANTI_WINDUP ) {
 
             if( (( obj->error < 0 ) && ( obj->action.i > 0 )) || (( obj->error > 0 ) && ( obj->action.i < 0 ))) {
 
@@ -286,7 +296,7 @@ static float manual_pi_d( pid_controller_t * obj, float pv, float sp, float d_st
             }
         }
 
-        else if( obj->cfg.sat == back_propagation ) {
+        else if( obj->cfg.sat == BACK_PROPAGATION ) {
 
             /* Back-Propagation Algorithm */
         }

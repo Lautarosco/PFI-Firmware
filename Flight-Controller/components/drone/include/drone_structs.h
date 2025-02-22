@@ -224,11 +224,15 @@ typedef struct drone_attributes {
     /* Drone's global variables */
     drone_globals_t global_variables;
 
+    /* Drone's configuration parameters */
+    drone_cfg_t config;
+
     /* Array of Drone parameters stored in flash memory */
     void * flash_params_arr[ FLASH_PARAMS ];
 
     /* Drone's init flag */
     bool init_ok;
+
 
 } drone_attributes_t;
 
@@ -249,9 +253,6 @@ typedef struct drone_methods {
 
     /** @brief Seek devices in I2C bus @param none @retval bool */
     bool ( * i2c_scan )( void );
-
-    /** @brief Transform angular velocity to duty cycle @param dc_min: Minimum duty cycle @param dc_max: Maximum duty cycle @param w_max: Maximum angular velocity @param w: Angular velocity to be mapped */
-    float ( * rpm2dc )( float dc_min, float dc_max, float w_max, float w );
 
     /** @brief Save Drone parameters to flash memory @param obj: Direction of Drone object @retval none */
     void ( * save_to_nvs )( drone_t * obj );

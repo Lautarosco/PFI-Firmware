@@ -6,13 +6,6 @@
 
 
 /**
- * @brief Get Drone Class configs
- * @param none
- * @retval drone_cfg_t
- */
-drone_cfg_t GetDroneConfigs( void );
-
-/**
  * @brief Make an instance of Drone Class
  * @param none
  * @retval Pointer to Drone object

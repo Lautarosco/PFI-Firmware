@@ -63,7 +63,7 @@ esp_err_t bmi160_write_byte(uint8_t sensor_addr, uint8_t reg_addr, uint8_t data)
 /**
  * @brief Read a sequence of bytes from a sensor register
  */
- esp_err_t bmi160_read_bytes(uint8_t sensor_addr, uint8_t reg_addr, uint8_t *data, uint8_t len) {
+ esp_err_t bmi160_read_bytes(uint8_t sensor_addr, uint8_t reg_addr, uint8_t data[], uint8_t len) {
     int i2c_master_port = I2C_MASTER_NUM;
     esp_err_t ret;
     i2c_cmd_handle_t cmd;

@@ -5,10 +5,10 @@
  * @brief Machine states
  */
 typedef enum state_machine_states {
+    
     ST_IDLE,
     ST_INIT,
     ST_CALIBRATION,
-    ST_UPDATE_STATES,
     ST_CONTROL,
     ST_RESET
 
@@ -18,6 +18,7 @@ typedef enum state_machine_states {
  * @brief Events of machine
  */
 typedef enum state_machine_events {
+
     EV_ANY,
     EV_CROSS,
     EV_TRIANGLE,

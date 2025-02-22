@@ -10,17 +10,17 @@
  */
 typedef enum mma_inputs {
     
-    /* z input */
-    C_z,
+    /* z input of mma block */
+    C_Z,
     
-    /* roll input */
-    C_Roll,
+    /* roll input of mma block */
+    C_ROLL,
     
-    /* pitch input */
-    C_Pitch,
+    /* pitch input of mma block */
+    C_PITCH,
     
-    /* yaw input */
-    C_Yaw,
+    /* yaw input of mma block */
+    C_YAW,
 
 } mma_inputs_t;
 
@@ -33,17 +33,17 @@ typedef enum mma_inputs {
  */
 typedef enum mma_outputs {
 
-    /* Output for pwm 1 */
-    u1,
+    /* Output of mma block for pwm 1 */
+    U1,
 
-    /* Output for pwm 2 */
-    u2,
+    /* Output of mma block for pwm 2 */
+    U2,
 
-    /* Output for pwm 3 */
-    u3,
+    /* Output of mma block for pwm 3 */
+    U3,
 
-    /* Output for pwm 4 */
-    u4,
+    /* Output of mma block for pwm 4 */
+    U4,
     
 } mma_outputs_t;
 
@@ -73,20 +73,20 @@ typedef struct mma mma_t;
  * @brief Complete description of Mma Class
  */
 typedef struct mma {
-    /* [ A ] Mma object inputs ( controller action ) */
+    /* [ A ] Mma object inputs */
     float input[ 4 ];
 
-    /* [ A ] Mma object outputs ( rpm ) */
+    /* [ A ] Mma object outputs */
     float output[ 4 ];
 
-    /* Upper and lower limits of mma output */
+    /* Upper and lower limit of mma output */
     limits_t limit;
 
     /** @brief Initialize object of Mma Class @param obj: Mma object @param upper_limit: Upper limit of mma output @param lower_limit: Lower limit of mma output @retval none */
     void ( * init )( mma_t * obj, float upper_limit, float lower_limit );
 
-    /** @brief Compute MMA algorithm and update object outputs @param obj: Address of Mma object @param min: Minimum rpm @param max: Maximum rpm @retval none */
-    void ( * compute )( mma_t * obj);
+    /** @brief [ M ] Compute MMA algorithm and update object outputs @param obj: Address of Mma Object @param dc_min: Minimum duty cycle @param dc_max: Maximum duty cycle @retval none */
+    void ( * compute )( mma_t * obj, float dc_min, float dc_max );
 
 } mma_t;
 

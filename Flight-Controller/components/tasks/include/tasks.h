@@ -23,6 +23,13 @@ typedef enum cpu {
 
 
 /**
+ * @brief Freertos task to print drone related variables
+ * @param pvParameters: Any
+ * @retval none
+ */
+void vTaskprint(void * drone_);
+
+/**
  * @brief Freertos task to update next state of state machine
  * @param pvParameters: Any
  * @retval none

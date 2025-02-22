@@ -48,59 +48,50 @@ static void StInitFunc( drone_t * obj ) {
     #endif
 }
 
-static void StUpdateStatesFunc( drone_t * obj ) {
-
-    obj->methods.update_states( obj, GetDroneConfigs().ControllersConfigs[ z ].ts );
-}
-
 static void StControlFunc( drone_t * obj ) {
+
+    /* Update drone states */
+    obj->methods.update_states( obj, obj->attributes.config.ControllersConfigs[ Z ].ts );
 
     /* Update sp */
     obj->attributes.sp.roll = 0;
-
     /* Compute PID algorithm for all states */
 
     /* ROLL - Cascaded PID*/
-    /*
-    float CRoll = obj->attributes.components.controllers[ roll ]->pid(
-        obj->attributes.components.controllers[ roll ],
+    
+    float CRoll = obj->attributes.components.controllers[ ROLL ]->pid(
+        obj->attributes.components.controllers[ ROLL ],
         obj->attributes.states.roll,
         obj->attributes.sp.roll
     );
-    */
+    
 
-    float sine = __sin( 80.0f, 2*M_PI*(1 / 1.0f), 10 );
+    // float sine = __sin( 80.0f, 2*M_PI*(1 / 1.0f), 10 );
 
-    obj->attributes.sp.roll_dot = sine;
+    obj->attributes.sp.roll_dot = CRoll;
 
-    float CRolld = obj->attributes.components.controllers[ roll_dot ]->pid(
-        obj->attributes.components.controllers[ roll_dot ],
+    float CRolld = obj->attributes.components.controllers[ ROLL_D ]->pid(
+        obj->attributes.components.controllers[ ROLL_D ],
         obj->attributes.states.roll_dot,
         obj->attributes.sp.roll_dot
     );
     
     /* Update MMA inputs with PID outputs */
-    obj->attributes.components.mma->input[ C_Roll ] = CRolld;
+    obj->attributes.components.mma->input[ C_ROLL ] = CRolld;
 
     /* Compute MMA algorithm */
     obj->attributes.components.mma->compute(
-        obj->attributes.components.mma
+        obj->attributes.components.mma,
+        obj->attributes.components.pwm[ 0 ]->dc_min * obj->attributes.config.mma_out_limits.lower,
+        obj->attributes.components.pwm[ 0 ]->dc_max * obj->attributes.config.mma_out_limits.upper
     );
-
-
-
 
     /* Update all pwm duty cycle */
     for(int i = 0; i < ( ( sizeof( obj->attributes.components.mma->output ) ) / ( sizeof( obj->attributes.components.mma->output[ 0 ] ) ) ); i++) {
         
         obj->attributes.components.pwm[ i ]->set_pwm_dc(
             obj->attributes.components.pwm[ i ],
-            obj->methods.rpm2dc(
-                obj->attributes.components.pwm[ i ]->dc_min,
-                obj->attributes.components.pwm[ i ]->dc_max,
-                1047.0f,
-                obj->attributes.components.mma->output[ i ]
-            )
+            obj->attributes.components.mma->output[ i ]
         );
     }
 }
@@ -203,7 +194,6 @@ static state_func_row_t state_function_array[  ] = {
     { .name = "ST_IDLE",          .func = &StIdleFunc },
     { .name = "ST_INIT",          .func = &StInitFunc },
     { .name = "ST_CALIBRATION",   .func = &StCalibrationFunc },
-    { .name = "ST_UPDATE_STATES", .func = &StUpdateStatesFunc },
     { .name = "ST_CONTROL",       .func = &StControlFunc },
     { .name = "ST_RESET",         .func = &StResetFunc },
 
@@ -238,13 +228,11 @@ static const state_trans_row_t state_trans_matrix[  ] = {
     { .curr_state = ST_IDLE,          .event = EV_ANY,      .next_state = ST_IDLE },
     { .curr_state = ST_IDLE,          .event = EV_CROSS,    .next_state = ST_INIT },
     { .curr_state = ST_IDLE,          .event = EV_TRIANGLE, .next_state = ST_CALIBRATION },
-    { .curr_state = ST_IDLE,          .event = EV_CIRCLE,   .next_state = ST_UPDATE_STATES },
+    { .curr_state = ST_IDLE,          .event = EV_CIRCLE,   .next_state = ST_CONTROL },
     { .curr_state = ST_IDLE,          .event = EV_PS,       .next_state = ST_RESET },
     { .curr_state = ST_INIT,          .event = EV_ANY,      .next_state = ST_IDLE },
     { .curr_state = ST_CALIBRATION,   .event = EV_ANY,      .next_state = ST_IDLE },
-    { .curr_state = ST_UPDATE_STATES, .event = EV_ANY,      .next_state = ST_CONTROL },
-    { .curr_state = ST_UPDATE_STATES, .event = EV_PS,       .next_state = ST_RESET },
-    { .curr_state = ST_CONTROL,       .event = EV_ANY,      .next_state = ST_UPDATE_STATES },
+    { .curr_state = ST_CONTROL,       .event = EV_ANY,      .next_state = ST_CONTROL },
     { .curr_state = ST_CONTROL,       .event = EV_PS,       .next_state = ST_RESET },
 };
 

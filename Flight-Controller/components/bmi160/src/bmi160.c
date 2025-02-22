@@ -265,8 +265,8 @@ esp_err_t gyro_calibrate(gyro_t* gyro, uint32_t samples) {
 esp_err_t bmi160_foc(bmi160_t* bmi){
 
     // read offsets before FOC
-    int8_t previous_offset[6];
-    bmi160_read_bytes(bmi->i2c.address, 0x71, &previous_offset, 6);
+    uint8_t previous_offset[6];
+    bmi160_read_bytes(bmi->i2c.address, 0x71, previous_offset, 6);
 
     int8_t prev_acc_x = previous_offset[0];
     int8_t prev_acc_y = previous_offset[1];

@@ -15,7 +15,7 @@ typedef struct SerialData {
 
     /* Data */
     char * data;
-
+    
     /* Data length */
     int len;
 
