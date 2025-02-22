@@ -168,6 +168,25 @@ typedef struct drone_imu_cfg {
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
+typedef struct PidCfgs {
+
+    /* PID gains */
+    pid_gain_t pid_gains;
+
+    /* Integral saturation limits */
+    pid_limits_t integral_limits;
+
+    /* PID output saturation limits */
+    pid_limits_t pid_output_limits;
+
+    states_t tag;
+
+} PidCfgs_t;
+
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
+
 /** @brief Drone's cfgs */
 typedef struct drone_cfg {
     /* Kalman parameters for roll */
@@ -197,8 +216,7 @@ typedef struct drone_cfg {
     /* Pwm configs */
     pwm_cfg_t pwm_cfg[ 4 ];
 
-    /* Controllers configs */
-    ControllerCfgs_t ControllersConfigs[ 7 ];
+    PidCfgs_t pid_cfgs[ 7 ];
 
     /* Upper and lower limits of mma output */
     limits_t mma_out_limits;

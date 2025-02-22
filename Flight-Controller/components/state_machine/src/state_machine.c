@@ -51,7 +51,7 @@ static void StInitFunc( drone_t * obj ) {
 static void StControlFunc( drone_t * obj ) {
 
     /* Update drone states */
-    obj->methods.update_states( obj, obj->attributes.config.ControllersConfigs[ Z ].ts );
+    obj->methods.update_states( obj, 10 );
 
     /* Update sp */
     obj->attributes.sp.roll = 0;
@@ -59,18 +59,17 @@ static void StControlFunc( drone_t * obj ) {
 
     /* ROLL - Cascaded PID*/
     
-    float CRoll = obj->attributes.components.controllers[ ROLL ]->pid(
+    float CRoll = obj->attributes.components.controllers[ ROLL ]->pidUpdate(
         obj->attributes.components.controllers[ ROLL ],
         obj->attributes.states.roll,
         obj->attributes.sp.roll
     );
     
-
     // float sine = __sin( 80.0f, 2*M_PI*(1 / 1.0f), 10 );
 
     obj->attributes.sp.roll_dot = CRoll;
 
-    float CRolld = obj->attributes.components.controllers[ ROLL_D ]->pid(
+    float CRolld = obj->attributes.components.controllers[ ROLL_D ]->pidUpdate(
         obj->attributes.components.controllers[ ROLL_D ],
         obj->attributes.states.roll_dot,
         obj->attributes.sp.roll_dot

@@ -91,9 +91,9 @@ static drone_cfg_t DroneConfigs = {
         .gyro_freq   = BMI160_GYRO_CONF_100HZ_NORMAL,
         .gyro_range  = BMI160_GYRO_RANGE_250DPS,
         .gyro_offset = {
-            .x = -250.38f,
-            .y = 8.55f,
-            .z = 4.64f,
+            .x = 0,
+            .y = 0,
+            .z = 0,
         },
     },
     .esp_mac_addr = { 0xf0, 0xf0, 0x02, 0x43, 0x53, 0x53 },
@@ -183,70 +183,84 @@ static drone_cfg_t DroneConfigs = {
             .Ton_max = 1.94
         }
     },
-    .ControllersConfigs = {
+    .pid_cfgs = {
         {
-            .tag       = Z,
-            .fc        = 0,
-            .ts        = 10,
-            .sat       = NO_SATURATION,
-            .der_filter = NO_FILTER,
-            .gains     = { .kp = 0, .ki = 0, .kd = 0 },
-            .intMinErr = 0.0f
+            .tag = Z,
+            .pid_gains = {
+                .kp = 0.0f,
+                .ki = 0.0f,
+                .kd = 0.0f,
+                .Kb = 1.0f
+            },
+            .integral_limits = { .min = -125.0f, .max = 125.0f },
+            .pid_output_limits = { .min = -500.0f, .max = 500.0f }
         },
         {
             .tag = ROLL,
-            .fc  = 1.0f,
-            .ts  = 10,
-            .sat = ANTI_WINDUP,
-            .der_filter = NO_FILTER,
-            .gains = { .kp = 0.0f, .ki = 0.0f, .kd = 0.0f },
-            .intMinErr = 0.0f
+            .pid_gains = {
+                .kp = 0.0f,
+                .ki = 0.0f,
+                .kd = 0.0f,
+                .Kb = 1.0f
+            },
+            .integral_limits = { .min = -125.0f, .max = 125.0f },
+            .pid_output_limits = { .min = -500.0f, .max = 500.0f }
         },
         {
             .tag = PITCH,
-            .fc  = 0,
-            .ts  = 10,
-            .sat = NO_SATURATION,
-            .der_filter = 0,
-            .gains = { .kp = 0, .ki = 0, .kd = 0 },
-            .intMinErr = 0.0f
+            .pid_gains = {
+                .kp = 0.0f,
+                .ki = 0.0f,
+                .kd = 0.0f,
+                .Kb = 0.0f
+            },
+            .integral_limits = { .min = 0.0f, .max = 0.0f },
+            .pid_output_limits = { .min = 0.0f, .max = 0.0f }
         },
         {
             .tag = YAW,
-            .fc  = 0,
-            .ts  = 10,
-            .sat = NO_SATURATION,
-            .der_filter = 0,
-            .gains = { .kp = 0, .ki = 0, .kd = 0 },
-            .intMinErr = 0.0f
+            .pid_gains = {
+                .kp = 0.0f,
+                .ki = 0.0f,
+                .kd = 0.0f,
+                .Kb = 0.0f
+            },
+            .integral_limits = { .min = 0.0f, .max = 0.0f },
+            .pid_output_limits = { .min = 0.0f, .max = 0.0f }
         },
         {
             .tag = ROLL_D,
-            .fc  = 0.8f,
-            .ts  = 10,
-            .sat = ANTI_WINDUP,
-            .der_filter = NO_FILTER,
-            .gains = { .kp = 0.0f, .ki = 0.0f, .kd = 0.0f },
-            .intMinErr = 0.0f
+            .pid_gains = {
+                .kp = 0.0f,
+                .ki = 0.0f,
+                .kd = 0.0f,
+                .Kb = 1.0f
+            },
+            .integral_limits = { .min = -100000.0f, .max = 100000.0f },
+            .pid_output_limits = { .min = -100000.0f, .max = 100000.0f }
         },
         {
             .tag = PITCH_D,
-            .fc  = 0,
-            .ts  = 10,
-            .sat = NO_SATURATION,
-            .der_filter = 0,
-            .gains = { .kp = 0, .ki = 0, .kd = 0 },
-            .intMinErr = 0.0f
+            .pid_gains = {
+                .kp = 0.0f,
+                .ki = 0.0f,
+                .kd = 0.0f,
+                .Kb = 0.0f
+            },
+            .integral_limits = { .min = 0.0f, .max = 0.0f },
+            .pid_output_limits = { .min = 0.0f, .max = 0.0f }
         },
         {
             .tag = YAW_D,
-            .fc  = 0,
-            .ts  = 10,
-            .sat = NO_SATURATION,
-            .der_filter = 0,
-            .gains = { .kp = 0, .ki = 0, .kd = 0 },
-            .intMinErr = 0.0f
-        },
+            .pid_gains = {
+                .kp = 0.0f,
+                .ki = 0.0f,
+                .kd = 0.0f,
+                .Kb = 0.0f
+            },
+            .integral_limits = { .min = 0.0f, .max = 0.0f },
+            .pid_output_limits = { .min = 0.0f, .max = 0.0f }
+        }
     },
     .mma_out_limits = {
         .upper = 0.8f,
@@ -523,7 +537,7 @@ static csv_row_t get_csv_row( csv_row_t * csv_rows, int n_rows, const char * nam
 static esp_err_t drone_init( drone_t * obj ) {
 
     ESP_LOGI( DRONE_TAG, "Initializing Drone object..." );
-
+    
     /* Drone object is initialized */
     obj->attributes.init_ok = true;
 
@@ -563,7 +577,14 @@ static esp_err_t drone_init( drone_t * obj ) {
     /* Initialize all Pid objects */
     for( int i = 0; i < ( ( sizeof( obj->attributes.components.controllers ) ) / ( sizeof( obj->attributes.components.controllers[ 0 ] ) ) ); i++ ) {
 
-        obj->attributes.components.controllers[ i ]->init( obj->attributes.components.controllers[ i ], obj->attributes.config.ControllersConfigs[ i ] );
+        obj->attributes.components.controllers[ i ]->init(
+            obj->attributes.components.controllers[ i ],
+            i,
+            10.0f,
+            obj->attributes.config.pid_cfgs[ i ].pid_gains,
+            obj->attributes.config.pid_cfgs[ i ].integral_limits,
+            obj->attributes.config.pid_cfgs[ i ].pid_output_limits
+        );
     }
 
     /* Initialize Mma object */
@@ -749,7 +770,7 @@ drone_t * Drone( void ) {
 
     /* Make an instance of Pid Class for all controllers */
     for(int i = 0; i < ( ( sizeof( drone->attributes.components.controllers ) ) / ( sizeof( drone->attributes.components.controllers[ 0 ] ) ) ); i++) {
-        drone->attributes.components.controllers[ i ] = Pid();
+        drone->attributes.components.controllers[ i ] = Pid( P_Basic, I_BackCalc, D_Basic );
     }
 
     /* Make an instance of Pwm Class for all pwm signals */

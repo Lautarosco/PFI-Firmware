@@ -262,17 +262,20 @@ esp_err_t gyro_calibrate(gyro_t* gyro, uint32_t samples) {
 
 esp_err_t bmi160_foc(bmi160_t* bmi){
 
-    // read offsets before FOC
-    int8_t previous_offset[6];
-    bmi160_read_bytes(bmi->i2c.address, 0x71, &previous_offset, 6);
+    // Put gyro in normal mode
+    bmi160_write_byte(bmi->i2c.address, BMI160_CMD_REG, BMI160_CMD_GYRO_NORMAL_MODE);
+    vTaskDelay(50 / portTICK_PERIOD_MS);
+
+    uint8_t previous_offset[7]; 
+    bmi160_read_bytes(bmi->i2c.address, 0x71, previous_offset, 7);
+
+    int16_t prev_gyro_x = (int16_t)(((previous_offset[6] & 0b00000011) << 8) | previous_offset[3]);
+    int16_t prev_gyro_y = (int16_t)(((previous_offset[6] & 0b00001100) << 6) | previous_offset[4]);
+    int16_t prev_gyro_z = (int16_t)(((previous_offset[6] & 0b00110000) << 4) | previous_offset[5]);
 
     int8_t prev_acc_x = previous_offset[0];
     int8_t prev_acc_y = previous_offset[1];
     int8_t prev_acc_z = previous_offset[2];
-
-    int16_t prev_gyro_x = (int16_t)((previous_offset[6] & 0b00000011) << 8) | previous_offset[3];
-    int16_t prev_gyro_y = (int16_t)((previous_offset[6] & 0b00001100) << 6) | previous_offset[4];
-    int16_t prev_gyro_z = (int16_t)((previous_offset[6] & 0b00110000) << 4) | previous_offset[5];
 
     // handle sign extension for 10-bit values (two's complement)
     if (prev_gyro_x & 0x0200) prev_gyro_x |= 0xFC00;  // Sign-extend if negative
@@ -287,14 +290,13 @@ esp_err_t bmi160_foc(bmi160_t* bmi){
     float prev_acc_y_g = prev_acc_y * 0.00391;
     float prev_acc_z_g = prev_acc_z * 0.00391;
 
-
     ESP_LOGI(TAG, "acc_x_off: %.2fG - acc_y_off: %.2fG - acc_z_off: %.2fG\n", prev_acc_x_g, prev_acc_y_g, prev_acc_z_g);
 
     ESP_LOGI(TAG, "gyro_x_off: %.2f°/s - gyro_y_off: %.2f°/s - gyro_z_off: %.2f°/s", prev_gyro_x_dps, prev_gyro_y_dps, prev_gyro_z_dps);
 
     // configure FOC
-    uint8_t foc_config = BMI160_FOC_GYRO_ENABLE || (BMI160_FOC_ACC_DISABLED << BMI160_FOC_ACC_X_SHIFT) || (BMI160_FOC_ACC_DISABLED << BMI160_FOC_ACC_Y_SHIFT) || (BMI160_FOC_ACC_DISABLED << BMI160_FOC_ACC_Z_SHIFT)  ;
-
+    uint8_t foc_config = BMI160_FOC_GYRO_ENABLE | (BMI160_FOC_ACC_DISABLED << BMI160_FOC_ACC_X_SHIFT) | (BMI160_FOC_ACC_DISABLED << BMI160_FOC_ACC_Y_SHIFT) | (BMI160_FOC_ACC_DISABLED << BMI160_FOC_ACC_Z_SHIFT)  ;
+    printf("0x%02X\n", foc_config);
     bmi160_write_byte(bmi->i2c.address, BMI160_FOC_CONF_REG, foc_config);
 
     // trigger FOC by cmd
@@ -316,11 +318,11 @@ esp_err_t bmi160_foc(bmi160_t* bmi){
     // enable offset
     uint8_t current_offset_bit;
     bmi160_read_bytes(bmi->i2c.address, 0x77, &current_offset_bit, 1);
-    bmi160_write_byte(bmi->i2c.address, 0x77, 0b11000000 | current_offset_bit);
+    bmi160_write_byte(bmi->i2c.address, 0x77, 0b10000000 | current_offset_bit);
 
     // get and print offsets
-    uint8_t offset_data[6];
-    bmi160_read_bytes(bmi->i2c.address, 0x71, &offset_data, 6);
+    uint8_t offset_data[7];
+    bmi160_read_bytes(bmi->i2c.address, 0x71, &offset_data, 7);
 
     int8_t acc_x = offset_data[0];
     int8_t acc_y = offset_data[1];

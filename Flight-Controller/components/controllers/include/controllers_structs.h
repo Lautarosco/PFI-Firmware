@@ -37,42 +37,6 @@ typedef enum states {
 } states_t;
 
 
-/* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
-
-/**
- * @brief Filter derivative action options
- */
-typedef enum filter_derivative {
-
-    /* Do not filter derivative action */
-    NO_FILTER,
-
-    /* Filter derivative action */
-    FILTER,
-
-} filter_derivative_t;
-
-
-/* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
-
-/**
- * @brief Integral action saturation options
- */
-typedef enum int_sat {
-
-    /* No integral saturation */
-    NO_SATURATION,
-    
-    /* Anti-Windup saturation */
-    ANTI_WINDUP,
-    
-    /* Back-Propagation saturation */
-    BACK_PROPAGATION,
-
-} int_sat_t;
-
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
@@ -91,24 +55,24 @@ typedef struct pid_gain {
     /* Derivative gain */
     float kd;
 
+    /* Back Calculation gain */
+    float Kb;
+
 } pid_gain_t;
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
-/**
- * @brief Struct of an integral
- */
-typedef struct derivative {
+typedef struct pid_limits {
 
-    /* Accumulation of the integral */
-    float sum;
+    /* Minimum value */
+    float min;
 
-    /* Actual value of the integral */
-    float out;
+    /* Maximum value */
+    float max;
 
-} derivative_t;
+} pid_limits_t;
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
@@ -126,41 +90,9 @@ typedef struct pid_action {
     float i;
     
     /* Derivative action */
-    derivative_t d;
+    float d;
     
 } pid_action_t;
-
-
-/* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
-
-/**
- * @brief PID configs
- */
-typedef struct ControllerCfgs {
-
-    /* Controller TAG */
-    states_t tag;
-
-    /* LPF cut-off frequency ( D action ) */
-    float fc;
-
-    /* Sampling time in milliseconds for discrete blocks */
-    float ts;
-
-    /* Integral saturation */
-    int_sat_t sat;
-
-    /* Derivative filter */
-    filter_derivative_t der_filter;
-
-    /* PID gains */
-    pid_gain_t gains;
-
-    /* Minimum error to start using integral action */
-    float intMinErr;
-
-} ControllerCfgs_t;
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
@@ -169,6 +101,7 @@ typedef struct ControllerCfgs {
 /** @details Forward declaration to avoid warning in function pointers */
 
 typedef struct pid_controller pid_controller_t;
+typedef float ControllerFunction(pid_controller_t*, float);
 
 /**
  * @brief Complete definition of Pid Class
@@ -178,31 +111,42 @@ typedef struct pid_controller {
     /* [ A ] Error */
     float error;
 
+    /* [ A ] Previous error */
+    float prev_error;
+
+    /* [ A ] Controller TAG */
+    states_t tag;
+
+    /* [ A ] Sampling time in milliseconds */
+    float ts_ms;
+
     /* [ A ] Controller gains struct */
     pid_gain_t gain;
 
-    /* [ A ] Controller actions struct */
-    pid_action_t action;
+    /* [ A ] Integrator state */
+    float integrator;
 
-    /* [ A ] Controller cfgs */
-    ControllerCfgs_t cfg;
+    /* [ A ] Integral limits */
+    pid_limits_t integral_limits;
+
+    /* [ A ] PID Output limits */
+    pid_limits_t pid_out_limits;
 
     /* [ A ] Flag to check if object was initialized */
     bool init_ok;
 
-    /** @brief [ M ] Initialize Pid object @param obj: Address of Pid object @param cfg: Controller configs @retval none */
-    void ( * init )( pid_controller_t * obj, ControllerCfgs_t cfg );
+    /** @brief [ M ] Initialize Pid object @param obj: Address of Pid object @retval none */
+    void ( * init )( pid_controller_t * obj, states_t tag, float ts_ms, pid_gain_t pid_gains, pid_limits_t integral_limits, pid_limits_t pid_limits );
 
-    /** @brief [ M ] Calculate Controller action @param obj: Address of Pid object @param pv: Process value @param sp: Set point @retval PID calculation */
-    float ( * pid )( pid_controller_t * obj, float pv, float sp );
+    float ( * pidUpdate )( pid_controller_t * obj, float pv, float sp );
 
-    /** @brief Calculate Controller PI-D action
-     * @param obj: Address of Pid object 
-     * @param pv: Process value 
-     * @param sp: Set point
-     * @param d_state: D value  
-     * @retval PID calculation */
-    float ( * manual_pi_d )( pid_controller_t * obj, float pv, float sp, float d_state );
+    ControllerFunction* pFunc;
+    ControllerFunction* iFunc;
+    ControllerFunction* dFunc;
+
+    void ( * PidSetActionP )( pid_controller_t* obj, float ( * pFunc )( float, pid_controller_t * ) );
+    void ( * PidSetActionI )( pid_controller_t* obj, float ( * pFunc )( float, pid_controller_t * ) );
+    void ( * PidSetActionD )( pid_controller_t* obj, float ( * pFunc )( float, pid_controller_t * ) );
 
 } pid_controller_t;
 

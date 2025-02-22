@@ -225,7 +225,7 @@ void vTaskStateMachine_Run( void * pvParameters ) {
         /* Go to the next state and run it's respective function */
         StateMachine_RunIteration( &state_machine, obj );
         
-        vTaskDelay( pdMS_TO_TICKS( obj->attributes.config.ControllersConfigs[ Z ].ts ) );
+        vTaskDelay( pdMS_TO_TICKS( 10 ) );
     }
     
 }
@@ -244,7 +244,7 @@ void vTaskDroneMeasure( void * pvParameters ) {
         /* Measure attitude and update bmi sensor internal registers with respective values */
         obj->attributes.components.bmi.measure( &( obj->attributes.components.bmi ) );
 
-        vTaskDelay( pdMS_TO_TICKS( obj->attributes.config.ControllersConfigs[ Z ].ts ) );
+        vTaskDelay( pdMS_TO_TICKS( 10 ) );
     }
 }
 
@@ -276,6 +276,10 @@ void vTaskprint(void * drone_) {
                 float lower_limit = drone->attributes.components.mma->limit.lower;
 
                 printf("printer:t,%.3f|roll,%.2f|roll_d,%.2f|sp_roll,%.2f|sp_roll_d,%.2f", t, vroll, vroll_d, sp_roll, sp_roll_d);
+                printf( "|pid_roll_max,%.2f", drone->attributes.config.pid_cfgs[ ROLL ].pid_output_limits.max );
+                printf( "|pid_roll_min,%.2f", drone->attributes.config.pid_cfgs[ ROLL ].pid_output_limits.min );
+                printf( "|pid_roll_d_max,%.2f", drone->attributes.config.pid_cfgs[ ROLL_D ].pid_output_limits.max );
+                printf( "|pid_roll_d_min,%.2f", drone->attributes.config.pid_cfgs[ ROLL_D ].pid_output_limits.min );
                 printf("|pid_roll,%.2f", pid_roll);
                 printf("|lower_limit,%.2f", lower_limit);
                 printf("|w1,%.2f|w2,%.2f|w3,%.2f|w4,%.2f\n", w1, w2, w3, w4);
@@ -516,6 +520,7 @@ void vTaskParseCommand( void * pvParameters ) {
                     }
 
                     /* If updating minimum integral error */
+                    /*
                     else if( !strcmp( ptrArr[ 2 ], "min_err" ) ) {
 
                         obj->attributes.components.controllers[ index ]->cfg.intMinErr = atof( ptrArr[ 3 ] );
@@ -524,6 +529,7 @@ void vTaskParseCommand( void * pvParameters ) {
                             obj->attributes.components.controllers[ index ]->cfg.intMinErr
                         );
                     }
+                    */
 
                     else {
 

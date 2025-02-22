@@ -11,315 +11,140 @@ const char * CONTROLLER_TAG = "CONTROLLER";
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
-/**
- * @brief Calculate Controller PID action
- * @param obj: Address of Pid object
- * @param pv: Process value
- * @param sp: Set point
- * @retval PID calculation
- */
-static float pid( pid_controller_t * obj, float pv, float sp ) {
+float pidUpdate( pid_controller_t * obj, float pv, float sp ) {
 
+    /* Check if PID object is initialized */
     if( !obj->init_ok ) {
 
         ESP_LOGE( CONTROLLER_TAG, "Object is not initialized!" );
         esp_restart();
     }
-    
-    float w = 2 * M_PI * obj->cfg.fc;   /* Calculate Low Pass Filter coefficient in rad/s */
 
-    float ts = obj->cfg.ts / 1000.0f;
+    obj->error = sp - pv;   /* Update actual error */
 
-    /* Store previous error to calculate derivative ( D ) action */
-    float error_previo = obj->error;
-
-    obj->error = sp - pv; /* Update error */
-
-    /* Note: Roll, Pitch and Yaw SetPoints and measures are in angles but the model of the drone is in radians, so we need to convert them to radians */
-    if( obj->cfg.tag != Z ) {
+    /* Convert angles to radians */
+    if( obj->tag != Z ) {
 
         obj->error *= ( M_PI / 180.0f );
     }
 
-    if( obj->gain.kp != 0 ) {
+    float pAction = obj->pFunc( obj, obj->error );  /* Compute Proportional Action */
+    float iAction = obj->iFunc( obj, obj->error );  /* Compute Integral Action */
+    float dAction = obj->dFunc( obj, obj->error );  /* Compute Derivative Action */
 
-        obj->action.p = obj->error; /* Update Proportional value */
+    float pid_out = pAction + iAction + dAction;    /* Compute PID output */
+
+    /* Saturate PID output */
+    if( pid_out > obj->pid_out_limits.max ) {
+
+        pid_out = obj->pid_out_limits.max;
+    } else if( pid_out < obj->pid_out_limits.min ) {
+
+        pid_out = obj->pid_out_limits.min;
     }
 
+    obj->prev_error = obj->error;
 
-
-
-    /**
-     * *********************************************************************************
-     * 
-     *         Controller Discretization with Bilinear ( Tustin ) Approximation
-     * 
-     * *********************************************************************************
-     */
-
-    /** Integral Discretization:
-     * 
-     *        _____
-     *       |     |
-     *   e   |  1  |   y
-     * ----> | --- | ---->
-     *       |  s  |
-     *       |_____|
-     * 
-     * y = y + ( x * dt )
-     * 
-     */
-
-    if( obj->gain.ki != 0 ) {
-
-        obj->action.i += obj->error * ts;
-    }
-
-    else {
-
-        obj->action.i = 0;
-    }
-
-    if( obj->gain.kd != 0 ) {
-
-        /* Compute derivative with filter */
-        if( obj->cfg.der_filter ) {
-            
-            /**
-             * Derivative Discretization:
-             * 
-             *                 _____
-             *   e  +         |     |       y'
-             * ----->◯ ----> |  w  | ------------>
-             *     - ^        |_____|        |
-             *       |                       |
-             *       |         _____         |
-             *       |        |     |        |
-             *       |        |  1  |        |
-             *       |<-------| --- |<-------|
-             *           y    |  s  |
-             *                |_____|
-             * 
-             * ( 1 ) y' = w * ( e - y ) => Update out of the algorithm
-             * ( 2 ) y = sum + ( y' * dt ) => Update [ y is the integral of y' ]
-             * 
-             */
-
-            obj->action.d.out = w * ( obj->error - obj->action.d.sum ); /* ( 1 ) */
-            obj->action.d.sum += obj->action.d.out * ts; /* ( 2 ) */
-        }
-
-        /* Compute derivative without filter */
-        else {
-
-            /* Forward Euler derivative */
-            obj->action.d.out = ( obj->error - error_previo ) / ts;
-        }
-    }
-
-    float c_p = 0;
-    float c_i = 0;
-    float c_d = 0;
-
-    /**
-     * ***********************************
-     * 
-     *         Proportional Action
-     * 
-     * ***********************************
-     */
-    
-    if( obj->gain.kp != 0 ) {
-
-        c_p = obj->action.p * obj->gain.kp;
-    }
-
-    /**
-     * ***********************************
-     * 
-     *         Integral Action
-     * 
-     * ***********************************
-     */
-    
-    if( ( obj->gain.ki != 0 ) && ( fabs( obj->error ) > obj->cfg.intMinErr ) ) {
-
-        if( obj->cfg.sat == ANTI_WINDUP ) {
-
-            if( (( obj->error < 0 ) && ( obj->action.i > 0 )) || (( obj->error > 0 ) && ( obj->action.i < 0 ))) {
-
-                c_i = 0;
-            }
-
-            else {
-
-                c_i = obj->action.i * obj->gain.ki;
-            }
-        }
-
-        else if( obj->cfg.sat == BACK_PROPAGATION ) {
-
-            /* Back-Propagation Algorithm */
-        }
-
-        else {
-
-            c_i = obj->action.i * obj->gain.ki;
-        }
-    }
-
-    /**
-     * ***********************************
-     * 
-     *         Derivative Action
-     * 
-     * ***********************************
-     */
-
-    if( obj->gain.kd != 0 ) {
-
-        c_d = obj->action.d.out * obj->gain.kd;
-    }
-
-    return c_p + c_i + c_d;
+    return pid_out;
 }
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
-/**
- * @brief Calculate Controller PI-D action
- * @param obj: Address of Pid object
- * @param pv: Process value
- * @param sp: Set point
- * @retval PID calculation
- */
-static float manual_pi_d( pid_controller_t * obj, float pv, float sp, float d_state ) {
+static void Local_PidSetActionP( pid_controller_t * obj, float ( * pFunc )( float, pid_controller_t * ) ) {
 
-    if( !obj->init_ok ) {
-
-        ESP_LOGE( CONTROLLER_TAG, "Object is not initialized!" );
-        esp_restart();
-    }
-    
-    float w = 2 * M_PI * obj->cfg.fc;   /* Calculate Low Pass Filter coefficient in rad/s */
-
-    obj->error = sp - pv; /* Update error */
-
-    /* Note: Roll, Pitch and Yaw SetPoints and measures are in angles but the model of the drone is in radians, so we need to convert them to radians */
-    if( obj->cfg.tag != Z ) {
-
-        obj->error *= ( M_PI / 180.0f );
-    }
-
-    if( obj->gain.kp != 0 ) {
-
-        obj->action.p = obj->error; /* Update Proportional value */
-    }
+    obj->pFunc = pFunc;
+}
 
 
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
-    /**
-     * *********************************************************************************
-     * 
-     *         Controller Discretization with Bilinear ( Tustin ) Approximation
-     * 
-     * *********************************************************************************
-     */
+static void Local_PidSetActionI( pid_controller_t * obj, float ( * iFunc )( float, pid_controller_t * ) ) {
 
-    /** Integral Discretization:
-     * 
-     *        _____
-     *       |     |
-     *   e   |  1  |   y
-     * ----> | --- | ---->
-     *       |  s  |
-     *       |_____|
-     * 
-     * y = y + ( x * dt )
-     * 
-     */
+    obj->iFunc = iFunc;
+}
 
-    if( obj->gain.ki != 0 ) {
 
-        obj->action.i += obj->error * ( obj->cfg.ts / 1000.0f );
-    } else {
-        obj->action.i = 0;
-    }
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
-    /* Derivative Action */
-    if( obj->gain.kd != 0 ) {
 
-        obj->action.d.out = d_state;
-    }
+static void Local_PidSetActionD( pid_controller_t * obj, float ( * dFunc )( float, pid_controller_t * ) ) {
 
-    float c_p = 0;
-    float c_i = 0;
-    float c_d = 0;
+    obj->dFunc = dFunc;
+}
 
-    /**
-     * ***********************************
-     * 
-     *         Proportional Action
-     * 
-     * ***********************************
-     */
-    
-    if( obj->gain.kp != 0 ) {
 
-        c_p = obj->action.p * obj->gain.kp;
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
+
+float P_Basic( pid_controller_t * obj, float error ) {
+
+    return obj->gain.kp * error;
+}
+
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
+
+float I_Basic( pid_controller_t * obj, float error )
+{
+    obj->integrator += error * obj->ts_ms;
+
+    return obj->gain.ki * obj->integrator;
+}
+
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
+
+float I_BackCalc( pid_controller_t * obj, float error ) {
+
+    float pAction = obj->pFunc( obj, error );
+    float dAction = obj->dFunc( obj, error );
+
+    /* Compute the unsaturated output */
+    float iAction = obj->gain.ki * obj->integrator;
+    float uUnsat = pAction + iAction + dAction;
+
+    /* Saturate PID output */
+    float uSat = uUnsat;
+    if ( uSat > obj->pid_out_limits.max ) {
+
+        uSat = obj->pid_out_limits.max;
+    } else if ( uSat < obj->pid_out_limits.min ) {
+
+        uSat = obj->pid_out_limits.min;
     }
 
-    /**
-     * ***********************************
-     * 
-     *         Integral Action
-     * 
-     * ***********************************
-     */
-    
-    if( ( obj->gain.ki != 0 ) && ( fabs( obj->error ) > obj->cfg.intMinErr ) ) {
+    /* Saturate the error */
+    float eSat = uSat - uUnsat;
 
-        if( obj->cfg.sat == ANTI_WINDUP ) {
+    /* Update integrator */
+    obj->integrator += ( error * obj->ts_ms ) + obj->gain.Kb * eSat;
 
-            if( (( obj->error < 0 ) && ( obj->action.i > 0 )) || (( obj->error > 0 ) && ( obj->action.i < 0 ))) {
+    /* Additionally clamp integrator */
+    if ( obj->integrator > obj->integral_limits.max ) {
 
-                c_i = 0;
-            }
+        obj->integrator = obj->integral_limits.max;
+    } else if ( obj->integrator < obj->integral_limits.min ) {
 
-            else {
-
-                c_i = obj->action.i * obj->gain.ki;
-            }
-        }
-
-        else if( obj->cfg.sat == BACK_PROPAGATION ) {
-
-            /* Back-Propagation Algorithm */
-        }
-
-        else {
-
-            c_i = obj->action.i * obj->gain.ki;
-        }
+        obj->integrator = obj->integral_limits.min;
     }
 
-    /**
-     * ***********************************
-     * 
-     *         Derivative Action
-     * 
-     * ***********************************
-     */
+    return obj->gain.ki * obj->integrator;
+}
 
-    if( obj->gain.kd != 0 ) {
 
-        c_d = obj->action.d.out * obj->gain.kd;
-    }
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
-    return c_p + c_i - c_d;
+
+float D_Basic( pid_controller_t * obj, float error ) {
+
+    float derivative = ( error - obj->prev_error ) / obj->ts_ms;
+
+    return obj->gain.kd * derivative;
 }
 
 
@@ -332,21 +157,27 @@ static float manual_pi_d( pid_controller_t * obj, float pv, float sp, float d_st
  * @param cfg: Controller configs
  * @retval none
  */
-static void pid_init( pid_controller_t * obj, ControllerCfgs_t cfg ) {
+static void pid_init( pid_controller_t * obj, states_t tag, float ts_ms, pid_gain_t pid_gains, pid_limits_t integral_limits, pid_limits_t pid_limits ) {
 
     ESP_LOGI( CONTROLLER_TAG, "Initializing Pid object..." );
-    
-    /* Set configs */
-    obj->cfg = cfg;
 
     /* Check if cut off frequency ensures numerical stability */
+    /*
     if( obj->cfg.fc > ( 0.90f / ( M_PI * ( obj->cfg.ts / 1000.0f ) ) ) ) {
 
         obj->cfg.fc = 0.90f / ( M_PI * ( obj->cfg.ts / 1000.0f ) );
     }
+    */
 
-    /* Set gains */
-    obj->gain = obj->cfg.gains;
+    obj->tag = tag;
+    obj->ts_ms = ts_ms;
+    obj->gain = pid_gains;
+    obj->integral_limits = integral_limits;
+    obj->pid_out_limits = pid_limits;
+
+    obj->integrator = 0.0f;
+    obj->error      = 0.0f;
+    obj->prev_error = 0.0f;
 
     /* Pid object initialized */
     obj->init_ok = true;
@@ -357,8 +188,7 @@ static void pid_init( pid_controller_t * obj, ControllerCfgs_t cfg ) {
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
-
-pid_controller_t * Pid( void ) {
+pid_controller_t * Pid( ControllerFunction* pFunc, ControllerFunction* iFunc, ControllerFunction* dFunc ) {
 
     ESP_LOGI( CONTROLLER_TAG, "Making an instance of Pid Class..." );
 
@@ -369,9 +199,16 @@ pid_controller_t * Pid( void ) {
     memset( controller, 0, sizeof( * controller ) );
 
     /* Pointer assignment to Pid Class functions ( methods ) */
-    controller->pid         = pid;
-    controller->init        = pid_init;
-    controller->manual_pi_d = manual_pi_d;
+    controller->init = pid_init;
+    controller->pidUpdate = pidUpdate;
+    
+    controller->PidSetActionP = Local_PidSetActionP;
+    controller->PidSetActionI = Local_PidSetActionI;
+    controller->PidSetActionD = Local_PidSetActionD;
+    
+    controller->pFunc = pFunc;
+    controller->iFunc = iFunc;
+    controller->dFunc = dFunc;
 
     ESP_LOGI( CONTROLLER_TAG, "Instance successfully made" );
 

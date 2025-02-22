@@ -15,6 +15,11 @@
  * @param none
  * @retval Pointer Pid object
  */
-pid_controller_t * Pid( void );
+pid_controller_t * Pid( ControllerFunction* pFunc, ControllerFunction* iFunc, ControllerFunction* dFunc );
+
+float P_Basic( pid_controller_t * obj, float error );
+float I_Basic( pid_controller_t * obj, float error );
+float I_BackCalc( pid_controller_t * obj, float error );
+float D_Basic( pid_controller_t * obj, float error );
 
 #endif
