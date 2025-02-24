@@ -52,7 +52,7 @@ float pidUpdate( pid_controller_t * obj, float pv, float sp ) {
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
-static void Local_PidSetActionP( pid_controller_t * obj, float ( * pFunc )( float, pid_controller_t * ) ) {
+static void Local_PidSetActionP( pid_controller_t * obj, float ( * pFunc )( pid_controller_t * obj, float error ) ) {
 
     obj->pFunc = pFunc;
 }
@@ -61,7 +61,7 @@ static void Local_PidSetActionP( pid_controller_t * obj, float ( * pFunc )( floa
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
-static void Local_PidSetActionI( pid_controller_t * obj, float ( * iFunc )( float, pid_controller_t * ) ) {
+static void Local_PidSetActionI( pid_controller_t * obj, float ( * iFunc )( pid_controller_t * obj, float error ) ) {
 
     obj->iFunc = iFunc;
 }
@@ -70,7 +70,7 @@ static void Local_PidSetActionI( pid_controller_t * obj, float ( * iFunc )( floa
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
-static void Local_PidSetActionD( pid_controller_t * obj, float ( * dFunc )( float, pid_controller_t * ) ) {
+static void Local_PidSetActionD( pid_controller_t * obj, float ( * dFunc )( pid_controller_t * obj, float error ) ) {
 
     obj->dFunc = dFunc;
 }

@@ -36,29 +36,23 @@ typedef enum drone_flash_params {
     /* Roll Kd gain */
     PID_ROLL_KD,
 
-    /* Type of roll integral saturation */
-    PID_ROLL_I_SAT,
+    /* Roll KB gain */
+    PID_ROLL_KB,
 
-    /* Cut off frequency for roll derivative action */
-    PID_ROLL_FC_D,
+    /* Roll_d Kp gain */
+    PID_ROLL_D_KP,
 
-    /* Rolld Kp gain */
-    PID_ROLLD_KP,
+    /* Roll_d Ki gain */
+    PID_ROLL_D_KI,
 
-    /* Rolld Ki gain */
-    PID_ROLLD_KI,
+    /* Roll_d Kd gain */
+    PID_ROLL_D_KD,
 
-    /* Rolld Kd gain */
-    PID_ROLLD_KD,
-    
-    /* Type of rolld integral saturation */
-    PID_ROLLD_I_SAT,
+    /* Roll_d KB gain */
+    PID_ROLL_D_KB,
 
-    /* Cut off frequency for rolld derivative action */
-    PID_ROLLD_FC_D,
-
-    /* Rolld IIR filter coefficient */
-    ROLLD_IIR_COEFF,
+    /* Roll_d IIR filter coefficient */
+    ROLL_D_IIR_COEFF,
 
 } drone_flash_params_t;
 

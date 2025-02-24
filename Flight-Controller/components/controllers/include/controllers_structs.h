@@ -101,7 +101,7 @@ typedef struct pid_action {
 /** @details Forward declaration to avoid warning in function pointers */
 
 typedef struct pid_controller pid_controller_t;
-typedef float ControllerFunction(pid_controller_t*, float);
+typedef float ControllerFunction( pid_controller_t * obj, float error );
 
 /**
  * @brief Complete definition of Pid Class
@@ -144,9 +144,9 @@ typedef struct pid_controller {
     ControllerFunction* iFunc;
     ControllerFunction* dFunc;
 
-    void ( * PidSetActionP )( pid_controller_t* obj, float ( * pFunc )( float, pid_controller_t * ) );
-    void ( * PidSetActionI )( pid_controller_t* obj, float ( * pFunc )( float, pid_controller_t * ) );
-    void ( * PidSetActionD )( pid_controller_t* obj, float ( * pFunc )( float, pid_controller_t * ) );
+    void ( * PidSetActionP )( pid_controller_t* obj, float ( * pFunc )( pid_controller_t * obj, float error ) );
+    void ( * PidSetActionI )( pid_controller_t* obj, float ( * pFunc )( pid_controller_t * obj, float error ) );
+    void ( * PidSetActionD )( pid_controller_t* obj, float ( * pFunc )( pid_controller_t * obj, float error ) );
 
 } pid_controller_t;
 

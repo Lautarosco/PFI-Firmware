@@ -2,7 +2,8 @@
 #define DRONE_H
 
 #include <esp_err.h>
-#include <drone_structs.h>
+// #include <drone_structs.h>
+#include <drone_configs.h>  /* This header file already includes drone_structs.h */
 
 
 /**
