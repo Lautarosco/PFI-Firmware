@@ -664,23 +664,24 @@ drone_t * Drone( void ) {
     // }
     // free( csv_rows );
 
-    /* Initialize flash parameters pointers to NULL */
+    /* Initialize flash variable pointers to NULL */
     for( int i = 0; i < FLASH_PARAMS; i++ ) {
 
         drone->attributes.flash_params_arr[ i ] = NULL;
     };
 
-    drone->attributes.flash_params_arr[ GYRO_OFFSET_X ]   = &( drone->attributes.components.bmi.Gyro.offset.x );
-    drone->attributes.flash_params_arr[ GYRO_OFFSET_Y ]   = &( drone->attributes.components.bmi.Gyro.offset.y );
-    drone->attributes.flash_params_arr[ GYRO_OFFSET_Z ]   = &( drone->attributes.components.bmi.Gyro.offset.z );
-    drone->attributes.flash_params_arr[ PID_ROLL_KP ]     = &( drone->attributes.components.controllers[ ROLL ]->gain.kp );
-    drone->attributes.flash_params_arr[ PID_ROLL_KI ]     = &( drone->attributes.components.controllers[ ROLL ]->gain.ki );
-    drone->attributes.flash_params_arr[ PID_ROLL_KD ]     = &( drone->attributes.components.controllers[ ROLL ]->gain.kd );
-    drone->attributes.flash_params_arr[ PID_ROLL_D_KB ]   = &( drone->attributes.components.controllers[ ROLL ]->gain.Kb );
-    drone->attributes.flash_params_arr[ PID_ROLL_D_KP ]     = &( drone->attributes.components.controllers[ ROLL_D ]->gain.kp );
-    drone->attributes.flash_params_arr[ PID_ROLL_D_KI ]     = &( drone->attributes.components.controllers[ ROLL_D ]->gain.ki );
-    drone->attributes.flash_params_arr[ PID_ROLL_D_KD ]     = &( drone->attributes.components.controllers[ ROLL_D ]->gain.kd );
-    drone->attributes.flash_params_arr[ PID_ROLL_D_KB ]   = &( drone->attributes.components.controllers[ ROLL_D ]->gain.Kb );
+    /* Variables stored in NVS memory */
+    drone->attributes.flash_params_arr[ GYRO_OFFSET_X ] = &( drone->attributes.components.bmi.Gyro.offset.x );
+    drone->attributes.flash_params_arr[ GYRO_OFFSET_Y ] = &( drone->attributes.components.bmi.Gyro.offset.y );
+    drone->attributes.flash_params_arr[ GYRO_OFFSET_Z ] = &( drone->attributes.components.bmi.Gyro.offset.z );
+    drone->attributes.flash_params_arr[ PID_ROLL_KP ]   = &( drone->attributes.components.controllers[ ROLL ]->gain.kp );
+    drone->attributes.flash_params_arr[ PID_ROLL_KI ]   = &( drone->attributes.components.controllers[ ROLL ]->gain.ki );
+    drone->attributes.flash_params_arr[ PID_ROLL_KD ]   = &( drone->attributes.components.controllers[ ROLL ]->gain.kd );
+    drone->attributes.flash_params_arr[ PID_ROLL_D_KB ] = &( drone->attributes.components.controllers[ ROLL ]->gain.kb );
+    drone->attributes.flash_params_arr[ PID_ROLL_D_KP ] = &( drone->attributes.components.controllers[ ROLL_D ]->gain.kp );
+    drone->attributes.flash_params_arr[ PID_ROLL_D_KI ] = &( drone->attributes.components.controllers[ ROLL_D ]->gain.ki );
+    drone->attributes.flash_params_arr[ PID_ROLL_D_KD ] = &( drone->attributes.components.controllers[ ROLL_D ]->gain.kd );
+    drone->attributes.flash_params_arr[ PID_ROLL_D_KB ] = &( drone->attributes.components.controllers[ ROLL_D ]->gain.kb );
 
     /* Blink MCU internal LED to indicate Transmitter object is ready to receive commands */
     gpio_set_level( GPIO_NUM_2, false );
@@ -695,9 +696,7 @@ drone_t * Drone( void ) {
 
 static float timer = 0;
 
-float __sin( float A, float w, float dt_ms) {
-
-
+float __sin( float A, float w, float dt_ms ) {
 
     float retval = A * sin( w * ( timer ) );
 

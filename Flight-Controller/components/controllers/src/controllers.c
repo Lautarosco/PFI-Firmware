@@ -52,7 +52,7 @@ float pidUpdate( pid_controller_t * obj, float pv, float sp ) {
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
-static void Local_PidSetActionP( pid_controller_t * obj, float ( * pFunc )( pid_controller_t * obj, float error ) ) {
+void PidSetActionP( pid_controller_t * obj, ControllerFunction * pFunc ) {
 
     obj->pFunc = pFunc;
 }
@@ -61,7 +61,7 @@ static void Local_PidSetActionP( pid_controller_t * obj, float ( * pFunc )( pid_
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
-static void Local_PidSetActionI( pid_controller_t * obj, float ( * iFunc )( pid_controller_t * obj, float error ) ) {
+void PidSetActionI( pid_controller_t * obj, ControllerFunction * iFunc ) {
 
     obj->iFunc = iFunc;
 }
@@ -70,7 +70,7 @@ static void Local_PidSetActionI( pid_controller_t * obj, float ( * iFunc )( pid_
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
-static void Local_PidSetActionD( pid_controller_t * obj, float ( * dFunc )( pid_controller_t * obj, float error ) ) {
+void PidSetActionD( pid_controller_t * obj, ControllerFunction * dFunc ) {
 
     obj->dFunc = dFunc;
 }
@@ -88,9 +88,60 @@ float P_Basic( pid_controller_t * obj, float error ) {
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
-float I_Basic( pid_controller_t * obj, float error )
-{
+float I_Basic( pid_controller_t * obj, float error ) {
+
     obj->integrator += error * obj->ts_ms;
+
+    return obj->gain.ki * obj->integrator;
+}
+
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
+
+float I_Clamping( pid_controller_t * obj, float error ) {
+
+    bool int_update = true; /* Flag to decide if integral should be updated or not */
+
+    /* Compute Proportional Action */
+    float pAction = obj->pFunc( obj, error );
+
+    /* Compute Derivative Action */
+    float dAction = obj->dFunc( obj, error );
+
+    /* Compute Integral Action without updating the integrator yet */
+    float iAction = obj->gain.ki * ( obj->integrator + ( error * obj->ts_ms ) );
+
+    /* Compute controller output */
+    float u = pAction + iAction + dAction;
+
+    /* Check for positive saturation */
+    if( u > obj->pid_out_limits.max ) {
+
+        u = obj->pid_out_limits.max;    /* Saturate output */
+
+        /* Check error sign */
+        if( error > 0 ) {
+
+            int_update = false; /* Don't update integrator */
+        }
+
+    } else if( u < obj->pid_out_limits.min ) {  /* Check for negative saturation */
+        
+        u = obj->pid_out_limits.min;    /* Saturate output */
+
+        /* Check error sign */
+        if( error < 0 ) {
+
+            int_update = false; /* Don't update integrator */
+        }
+    }
+
+    /* Check if integrator must be updated */
+    if( int_update ) {
+
+        obj->integrator += error * obj->ts_ms;  /* Update integrator */
+    }
 
     return obj->gain.ki * obj->integrator;
 }
@@ -110,10 +161,10 @@ float I_BackCalc( pid_controller_t * obj, float error ) {
 
     /* Saturate PID output */
     float uSat = uUnsat;
-    if ( uSat > obj->pid_out_limits.max ) {
+    if( uSat > obj->pid_out_limits.max ) {
 
         uSat = obj->pid_out_limits.max;
-    } else if ( uSat < obj->pid_out_limits.min ) {
+    } else if( uSat < obj->pid_out_limits.min ) {
 
         uSat = obj->pid_out_limits.min;
     }
@@ -122,13 +173,13 @@ float I_BackCalc( pid_controller_t * obj, float error ) {
     float eSat = uSat - uUnsat;
 
     /* Update integrator */
-    obj->integrator += ( error * obj->ts_ms ) + obj->gain.Kb * eSat;
+    obj->integrator += ( error * obj->ts_ms ) + ( obj->gain.kb * eSat * obj->ts_ms );
 
     /* Additionally clamp integrator */
-    if ( obj->integrator > obj->integral_limits.max ) {
+    if( obj->integrator > obj->integral_limits.max ) {
 
         obj->integrator = obj->integral_limits.max;
-    } else if ( obj->integrator < obj->integral_limits.min ) {
+    } else if( obj->integrator < obj->integral_limits.min ) {
 
         obj->integrator = obj->integral_limits.min;
     }
@@ -143,6 +194,23 @@ float I_BackCalc( pid_controller_t * obj, float error ) {
 float D_Basic( pid_controller_t * obj, float error ) {
 
     float derivative = ( error - obj->prev_error ) / obj->ts_ms;
+
+    return obj->gain.kd * derivative;
+}
+
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
+
+float D_LPF( pid_controller_t * obj, float error ) {
+
+    float derivative = ( error - obj->prev_error ) / obj->ts_ms;
+
+    /* Low Pass Filter coefficient */
+    float a = obj->ts_ms / ( obj->ts_ms + obj->derivative_lpf.tau_s );
+
+    /* Filtered value = ( α * New input ) + [ ( 1 - α ) * Previous output ] */
+    obj->derivative_lpf.out = ( a * derivative ) + ( ( 1 - a ) * obj->derivative_lpf.out );
 
     return obj->gain.kd * derivative;
 }
@@ -169,11 +237,11 @@ static void pid_init( pid_controller_t * obj, states_t tag, float ts_ms, pid_gai
     }
     */
 
-    obj->tag = tag;
-    obj->ts_ms = ts_ms;
-    obj->gain = pid_gains;
+    obj->tag             = tag;
+    obj->ts_ms           = ts_ms;
+    obj->gain            = pid_gains;
     obj->integral_limits = integral_limits;
-    obj->pid_out_limits = pid_limits;
+    obj->pid_out_limits  = pid_limits;
 
     obj->integrator = 0.0f;
     obj->error      = 0.0f;
@@ -188,7 +256,7 @@ static void pid_init( pid_controller_t * obj, states_t tag, float ts_ms, pid_gai
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
-pid_controller_t * Pid( ControllerFunction* pFunc, ControllerFunction* iFunc, ControllerFunction* dFunc ) {
+pid_controller_t * Pid( ControllerFunction * pFunc, ControllerFunction * iFunc, ControllerFunction * dFunc ) {
 
     ESP_LOGI( CONTROLLER_TAG, "Making an instance of Pid Class..." );
 
@@ -199,12 +267,11 @@ pid_controller_t * Pid( ControllerFunction* pFunc, ControllerFunction* iFunc, Co
     memset( controller, 0, sizeof( * controller ) );
 
     /* Pointer assignment to Pid Class functions ( methods ) */
-    controller->init = pid_init;
-    controller->pidUpdate = pidUpdate;
-    
-    controller->PidSetActionP = Local_PidSetActionP;
-    controller->PidSetActionI = Local_PidSetActionI;
-    controller->PidSetActionD = Local_PidSetActionD;
+    controller->init          = pid_init;
+    controller->pidUpdate     = pidUpdate;
+    controller->PidSetActionP = PidSetActionP;
+    controller->PidSetActionI = PidSetActionI;
+    controller->PidSetActionD = PidSetActionD;
     
     controller->pFunc = pFunc;
     controller->iFunc = iFunc;

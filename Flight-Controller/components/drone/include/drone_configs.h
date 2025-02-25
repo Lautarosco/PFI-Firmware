@@ -137,7 +137,7 @@ static drone_cfg_t DroneConfigs = {
                 .kp = 0.0f,
                 .ki = 0.0f,
                 .kd = 0.0f,
-                .Kb = 1.0f
+                .kb = 1.0f
             },
             .integral_limits = { .min = -125.0f, .max = 125.0f },
             .pid_output_limits = { .min = -500.0f, .max = 500.0f }
@@ -148,7 +148,7 @@ static drone_cfg_t DroneConfigs = {
                 .kp = 0.0f,
                 .ki = 0.0f,
                 .kd = 0.0f,
-                .Kb = 1.0f
+                .kb = 1.0f
             },
             .integral_limits = { .min = -125.0f, .max = 125.0f },
             .pid_output_limits = { .min = -500.0f, .max = 500.0f }
@@ -159,7 +159,7 @@ static drone_cfg_t DroneConfigs = {
                 .kp = 0.0f,
                 .ki = 0.0f,
                 .kd = 0.0f,
-                .Kb = 0.0f
+                .kb = 0.0f
             },
             .integral_limits = { .min = 0.0f, .max = 0.0f },
             .pid_output_limits = { .min = 0.0f, .max = 0.0f }
@@ -170,7 +170,7 @@ static drone_cfg_t DroneConfigs = {
                 .kp = 0.0f,
                 .ki = 0.0f,
                 .kd = 0.0f,
-                .Kb = 0.0f
+                .kb = 0.0f
             },
             .integral_limits = { .min = 0.0f, .max = 0.0f },
             .pid_output_limits = { .min = 0.0f, .max = 0.0f }
@@ -181,7 +181,7 @@ static drone_cfg_t DroneConfigs = {
                 .kp = 0.0f,
                 .ki = 0.0f,
                 .kd = 0.0f,
-                .Kb = 1.0f
+                .kb = 1.0f
             },
             .integral_limits = { .min = -100000.0f, .max = 100000.0f },
             .pid_output_limits = { .min = -100000.0f, .max = 100000.0f }
@@ -192,7 +192,7 @@ static drone_cfg_t DroneConfigs = {
                 .kp = 0.0f,
                 .ki = 0.0f,
                 .kd = 0.0f,
-                .Kb = 0.0f
+                .kb = 0.0f
             },
             .integral_limits = { .min = 0.0f, .max = 0.0f },
             .pid_output_limits = { .min = 0.0f, .max = 0.0f }
@@ -203,7 +203,7 @@ static drone_cfg_t DroneConfigs = {
                 .kp = 0.0f,
                 .ki = 0.0f,
                 .kd = 0.0f,
-                .Kb = 0.0f
+                .kb = 0.0f
             },
             .integral_limits = { .min = 0.0f, .max = 0.0f },
             .pid_output_limits = { .min = 0.0f, .max = 0.0f }

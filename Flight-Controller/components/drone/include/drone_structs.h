@@ -91,6 +91,7 @@ typedef struct drone_states {
 
 /** @brief Drone's components */
 typedef struct drone_components {
+    
     /* bmi160 component ( PENDIENTE PASARLO A PUNTERO ) */
     bmi160_t bmi;
 
