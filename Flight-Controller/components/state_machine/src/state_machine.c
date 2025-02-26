@@ -48,6 +48,11 @@ static void StInitFunc( drone_t * obj ) {
     #endif
 }
 
+static void StWaitingFunc( drone_t * obj ) {
+
+    // printf( "WAITING\r\n" );
+}
+
 static void StControlFunc( drone_t * obj ) {
 
     /* Update drone states */
@@ -59,6 +64,7 @@ static void StControlFunc( drone_t * obj ) {
 
     /* ROLL - Cascaded PID*/
     
+    printf( "\n\nPRINTING ROLL PID ACTIONS\r\n" );
     float CRoll = obj->attributes.components.controllers[ ROLL ]->pidUpdate(
         obj->attributes.components.controllers[ ROLL ],
         obj->attributes.states.roll,
@@ -69,6 +75,7 @@ static void StControlFunc( drone_t * obj ) {
 
     obj->attributes.sp.roll_dot = CRoll;
 
+    printf( "\nPRINTING ROLL_D PID ACTIONS\r\n" );
     float CRolld = obj->attributes.components.controllers[ ROLL_D ]->pidUpdate(
         obj->attributes.components.controllers[ ROLL_D ],
         obj->attributes.states.roll_dot,
@@ -93,6 +100,11 @@ static void StControlFunc( drone_t * obj ) {
             obj->attributes.components.mma->output[ i ]
         );
     }
+}
+
+static void StPropCalibrationFunc( drone_t * obj ) {
+
+    // printf( "Calibrating propellers\r\n" );
 }
 
 static void StCalibrationFunc( drone_t * obj ) {
@@ -188,13 +200,15 @@ static void StResetFunc( drone_t * obj ) {
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
-static state_func_row_t state_function_array[  ] = {
+static state_func_row_t state_function_array[] = {
 
-    { .name = "ST_IDLE",          .func = &StIdleFunc },
-    { .name = "ST_INIT",          .func = &StInitFunc },
-    { .name = "ST_CALIBRATION",   .func = &StCalibrationFunc },
-    { .name = "ST_CONTROL",       .func = &StControlFunc },
-    { .name = "ST_RESET",         .func = &StResetFunc },
+    { .name = "ST_IDLE",                  .func = &StIdleFunc },
+    { .name = "ST_INIT",                  .func = &StInitFunc },
+    { .name = "ST_WAITING",               .func = &StWaitingFunc },
+    { .name = "ST_CALIBRATION",           .func = &StCalibrationFunc },
+    { .name = "ST_CONTROL",               .func = &StControlFunc },
+    { .name = "ST_PROPELLER_CALIBRATION", .func = &StPropCalibrationFunc },
+    { .name = "ST_RESET",                 .func = &StResetFunc },
 
 };
 

@@ -7,8 +7,31 @@
 
 const char * CONTROLLER_TAG = "CONTROLLER";
 
+#define GET_FUNC_NAME( func ) #func
+
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
+
+
+    typedef struct FunctionsMap {
+
+        ControllerFunction * ActionFunc;
+        const char * FuncName;
+
+    } FunctionsMap_t;
+
+    FunctionsMap_t functionTable[] = {
+
+        { .ActionFunc = P_Basic,    .FuncName = "P_Basic"},
+        { .ActionFunc = I_Basic,    .FuncName = "I_Basic"},
+        { .ActionFunc = I_BackCalc, .FuncName = "I_BackCalc"},
+        { .ActionFunc = I_Clamping, .FuncName = "I_Clamping"},
+        { .ActionFunc = D_Basic,    .FuncName = "D_Basic"},
+        { .ActionFunc = D_LPF,      .FuncName = "D_LPF"},
+        { .ActionFunc = NULL,       .FuncName = NULL },
+
+    };
 
 
 float pidUpdate( pid_controller_t * obj, float pv, float sp ) {
@@ -31,6 +54,24 @@ float pidUpdate( pid_controller_t * obj, float pv, float sp ) {
     float pAction = obj->pFunc( obj, obj->error );  /* Compute Proportional Action */
     float iAction = obj->iFunc( obj, obj->error );  /* Compute Integral Action */
     float dAction = obj->dFunc( obj, obj->error );  /* Compute Derivative Action */
+
+
+        for( int i = 0; functionTable[ i ].ActionFunc != NULL; i++ ) {
+
+            if( functionTable[ i ].ActionFunc == obj->pFunc ) {
+
+                printf( "P func: %s\r\n", functionTable[ i ].FuncName );
+
+            } else if( functionTable[ i ].ActionFunc == obj->iFunc ) {
+
+                printf( "I func: %s\r\n", functionTable[ i ].FuncName );
+
+            } else if( functionTable[ i ].ActionFunc == obj->dFunc ) {
+
+                printf( "D func: %s\r\n", functionTable[ i ].FuncName );
+            }
+        }
+
 
     float pid_out = pAction + iAction + dAction;    /* Compute PID output */
 

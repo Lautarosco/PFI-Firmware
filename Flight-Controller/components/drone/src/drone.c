@@ -636,7 +636,7 @@ drone_t * Drone( void ) {
     /* Check if playstation joystick is used as transmitter */
     #elif PLAYSTATION_TX
         /* Initialize Transmitter object */
-        drone->attributes.components.Tx->init( drone->attributes.components.Tx, obj->attributes.config.esp_mac_addr );
+        drone->attributes.components.Tx->init( drone->attributes.components.Tx, drone->attributes.config.esp_mac_addr );
         
     /* Check if HTTP server is used as transmitter */
     #elif WEBSV_TX

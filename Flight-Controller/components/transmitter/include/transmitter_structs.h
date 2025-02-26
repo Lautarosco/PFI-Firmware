@@ -3,8 +3,8 @@
 
 #include <ps3.h>
 
-#define PLAYSTATION_TX     0  /* Use playstation transmitter */
-#define WEBSV_TX           1  /* Use web server transmitter */
+#define PLAYSTATION_TX     1  /* Use playstation transmitter */
+#define WEBSV_TX           0  /* Use web server transmitter */
 
 #define MAC_ADDR_SIZE      6  /* Total bytes of MCU MAC Address */
 
