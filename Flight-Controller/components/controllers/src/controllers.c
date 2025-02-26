@@ -188,7 +188,7 @@ static void pid_init( pid_controller_t * obj, states_t tag, float ts_ms, pid_gai
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
-pid_controller_t * Pid( ControllerFunction* pFunc, ControllerFunction* iFunc, ControllerFunction* dFunc ) {
+pid_controller_t * Pid( ControllerFunction * pFunc, ControllerFunction * iFunc, ControllerFunction * dFunc ) {
 
     ESP_LOGI( CONTROLLER_TAG, "Making an instance of Pid Class..." );
 

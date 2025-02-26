@@ -98,10 +98,16 @@ typedef struct pid_action {
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
-/** @details Forward declaration to avoid warning in function pointers */
-
+/* Forward declaration to avoid warning in function pointers */
 typedef struct pid_controller pid_controller_t;
-typedef float ControllerFunction(pid_controller_t*, float);
+
+/**
+ * @brief Function for controller Actions
+ * @param pid: Address of PID controller
+ * @param error: Error
+ * @retval Controller action output
+ */
+typedef float ControllerFunction( pid_controller_t * pid, float error );
 
 /**
  * @brief Complete definition of Pid Class
@@ -138,15 +144,26 @@ typedef struct pid_controller {
     /** @brief [ M ] Initialize Pid object @param obj: Address of Pid object @retval none */
     void ( * init )( pid_controller_t * obj, states_t tag, float ts_ms, pid_gain_t pid_gains, pid_limits_t integral_limits, pid_limits_t pid_limits );
 
+    /** @brief [ M ] Update PID controller @param obj: Address of Pid object @param pv: Process value @param sp: Set Point */
     float ( * pidUpdate )( pid_controller_t * obj, float pv, float sp );
 
-    ControllerFunction* pFunc;
-    ControllerFunction* iFunc;
-    ControllerFunction* dFunc;
+    /* Pointer to Proportional action function */
+    ControllerFunction * pFunc;
 
-    void ( * PidSetActionP )( pid_controller_t* obj, float ( * pFunc )( float, pid_controller_t * ) );
-    void ( * PidSetActionI )( pid_controller_t* obj, float ( * pFunc )( float, pid_controller_t * ) );
-    void ( * PidSetActionD )( pid_controller_t* obj, float ( * pFunc )( float, pid_controller_t * ) );
+    /* Pointer to Integral action function */
+    ControllerFunction * iFunc;
+
+    /* Pointer to Derivative action function */
+    ControllerFunction * dFunc;
+
+    /** @brief Set Proportional action function @param obj: Address of Pid object @param pFunc: Pointer to Proportional action function */
+    void ( * PidSetActionP )( pid_controller_t * obj, float ( * pFunc )( float error, pid_controller_t * obj ) );
+
+    /** @brief Set Integral action function @param obj: Address of Pid object @param pFunc: Pointer to Integral action function */
+    void ( * PidSetActionI )( pid_controller_t * obj, float ( * pFunc )( float error, pid_controller_t * obj ) );
+
+    /** @brief Set Derivative action function @param obj: Address of Pid object @param pFunc: Pointer to Derivative action function */
+    void ( * PidSetActionD )( pid_controller_t * obj, float ( * pFunc )( float error, pid_controller_t * obj ) );
 
 } pid_controller_t;
 

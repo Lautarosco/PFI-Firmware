@@ -121,38 +121,6 @@ static void getEvent( sm_state_machine_t * state_machine, drone_t obj ) {
                 state_machine->event = EV_CROSS;
             }
 
-            /* If user pressed △ */
-            else if( obj.attributes.global_variables.tx_buttons->triangle ) {
-
-                /* If drone isn't initialized */
-                if( !obj.attributes.init_ok ) {
-
-                    state_machine->event = EV_CROSS;
-                }
-
-                /* If drone is already initialized */
-                else {
-
-                    state_machine->event = EV_TRIANGLE;
-                }
-            }
-
-            /* If user pressed ◯ */
-            else if( obj.attributes.global_variables.tx_buttons->circle ) {
-
-                /* If drone isn't initialized */
-                if( !obj.attributes.init_ok ) {
-
-                    state_machine->event = EV_CROSS;
-                }
-
-                /* If drone is already initialized */
-                else {
-
-                    state_machine->event = EV_CIRCLE;
-                }
-            }
-
             /* If user pressed PS */
             else if( ( obj.attributes.global_variables.tx_buttons->ps ) ) {
 
@@ -168,11 +136,57 @@ static void getEvent( sm_state_machine_t * state_machine, drone_t obj ) {
             break;
 
         case ST_INIT:
-            state_machine->event = EV_ANY;
+
+            /* If user pressed PS */
+            if( ( obj.attributes.global_variables.tx_buttons->ps ) ) {
+
+                state_machine->event = EV_PS;
+
+            } else {
+
+                state_machine->event = EV_ANY;
+            }
+
+            break;
+
+        case ST_WAITING:
+
+            /* If user pressed PS */
+            if( ( obj.attributes.global_variables.tx_buttons->ps ) ) {
+
+                state_machine->event = EV_PS;
+
+            } else if( obj.attributes.global_variables.tx_buttons->cross ) {
+
+                state_machine->event = EV_CROSS;
+
+            } else if( obj.attributes.global_variables.tx_buttons->circle ) {
+
+                state_machine->event = EV_CIRCLE;
+
+            } else if( obj.attributes.global_variables.tx_buttons->triangle ) {
+
+                state_machine->event = EV_TRIANGLE;
+
+            } else {
+
+                state_machine->event = EV_ANY;
+            }
+
             break;
 
         case ST_CALIBRATION:
-            state_machine->event = EV_ANY;
+
+            /* If user pressed PS */
+            if( ( obj.attributes.global_variables.tx_buttons->ps ) ) {
+
+                state_machine->event = EV_PS;
+
+            } else {
+            
+                state_machine->event = EV_ANY;
+            }
+
             break;
 
         case ST_CONTROL:
@@ -180,9 +194,22 @@ static void getEvent( sm_state_machine_t * state_machine, drone_t obj ) {
             if( obj.attributes.global_variables.tx_buttons->ps ) {
 
                 state_machine->event = EV_PS;
+
+            } else {
+
+                state_machine->event = EV_ANY;
             }
 
-            else {
+            break;
+
+        case ST_PROPELLER_CALIBRATION:
+            
+            /* If user pressed PS */
+            if( ( obj.attributes.global_variables.tx_buttons->ps ) ) {
+
+                state_machine->event = EV_PS;
+
+            } else {
 
                 state_machine->event = EV_ANY;
             }

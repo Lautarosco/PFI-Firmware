@@ -8,8 +8,10 @@ typedef enum state_machine_states {
     
     ST_IDLE,
     ST_INIT,
+    ST_WAITING,
     ST_CALIBRATION,
     ST_CONTROL,
+    ST_PROPELLER_CALIBRATION,
     ST_RESET
 
 } sm_state_t;

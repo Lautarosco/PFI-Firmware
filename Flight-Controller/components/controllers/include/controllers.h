@@ -17,9 +17,36 @@
  */
 pid_controller_t * Pid( ControllerFunction* pFunc, ControllerFunction* iFunc, ControllerFunction* dFunc );
 
+/**
+ * @brief Proportional action basic algorithm
+ * @param obj: Address of Pid object
+ * @param error: Error
+ * @retval Controller action output
+ */
 float P_Basic( pid_controller_t * obj, float error );
+
+/**
+ * @brief Integral action basic algorithm
+ * @param obj: Address of Pid object
+ * @param error: Error
+ * @retval Controller action output
+ */
 float I_Basic( pid_controller_t * obj, float error );
+
+/**
+ * @brief Integral action with Back Calculation ( feedback ) algorithm
+ * @param obj: Address of Pid object
+ * @param error: Error
+ * @retval Controller action output
+ */
 float I_BackCalc( pid_controller_t * obj, float error );
+
+/**
+ * @brief Derivative action basic algorithm
+ * @param obj: Address of Pid object
+ * @param error: Error
+ * @retval Controller action output
+ */
 float D_Basic( pid_controller_t * obj, float error );
 
 #endif
