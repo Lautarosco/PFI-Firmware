@@ -311,7 +311,7 @@ esp_err_t bmi160_foc(bmi160_t* bmi){
 
     // read data to clear data ready bit
     uint8_t dummy_sensor_data[12];
-    bmi160_read_bytes(bmi->i2c.address, BMI160_GYRO_REGISTER, &dummy_sensor_data, 12);
+    bmi160_read_bytes(bmi->i2c.address, BMI160_GYRO_REGISTER, dummy_sensor_data, 12);
 
     ESP_LOGI(TAG, "Fast Offset Compensation completed.");
 
@@ -322,7 +322,7 @@ esp_err_t bmi160_foc(bmi160_t* bmi){
 
     // get and print offsets
     uint8_t offset_data[7];
-    bmi160_read_bytes(bmi->i2c.address, 0x71, &offset_data, 7);
+    bmi160_read_bytes(bmi->i2c.address, 0x71, offset_data, 7);
 
     int8_t acc_x = offset_data[0];
     int8_t acc_y = offset_data[1];

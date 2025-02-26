@@ -7,6 +7,7 @@
 #include <string.h>
 #include <esp_spiffs.h>
 #include <freertos/FreeRTOS.h>
+#include <drone_flash.h>
 
 const char * DRONE_TAG = "DRONE";
 
@@ -56,217 +57,6 @@ typedef struct csv_row {
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
-/**
- * @brief Drone Class generic configs
- */
-static drone_cfg_t DroneConfigs = {
-    .roll = {
-        .P = 1.0f,
-        .Q = 0.1f,
-        .R = 0.5f,
-    },
-    .pitch = {
-        .P = 0.0f,
-        .Q = 0.0f,
-        .R = 0.0f,
-    },
-    .yaw = {
-        .P = 0.0f,
-        .Q = 0.0f,
-        .R = 0.0f,
-    },
-    .IIR_coeff_roll_dot  = 0.0f,
-    .IIR_coeff_pitch_dot = 0.0f,
-    .IIR_coeff_yaw_dot   = 0.0f,
-    .imu_cfg = {
-        .imu_i2c_cfg = {
-            .address = BMI160_ADDR,
-            .scl     = 22,
-            .sda     = 21,
-        },
-        .acc_mode    = BMI160_CMD_ACC_NORMAL_MODE,
-        .acc_freq    = BMI160_ACC_CONF_100HZ_NORMAL,
-        .acc_range   = BMI160_ACC_RANGE_4G,
-        .gyro_mode   = BMI160_CMD_GYRO_NORMAL_MODE,
-        .gyro_freq   = BMI160_GYRO_CONF_100HZ_NORMAL,
-        .gyro_range  = BMI160_GYRO_RANGE_250DPS,
-        .gyro_offset = {
-            .x = 0,
-            .y = 0,
-            .z = 0,
-        },
-    },
-    .esp_mac_addr = { 0xf0, 0xf0, 0x02, 0x43, 0x53, 0x53 },
-    .pwm_cfg = {
-        {
-            .timer_cfg = {
-                .speed_mode      = LEDC_LOW_SPEED_MODE,
-                .timer_num       = LEDC_TIMER_0,
-                .freq_hz         = 50,
-                .duty_resolution = LEDC_TIMER_20_BIT,
-                .clk_cfg         = LEDC_APB_CLK
-            },
-            .channel_cfg = {
-                .gpio_num            = GPIO_NUM_26,
-                .speed_mode          = LEDC_LOW_SPEED_MODE,
-                .channel             = LEDC_CHANNEL_0,
-                .intr_type           = LEDC_INTR_DISABLE,
-                .timer_sel           = LEDC_TIMER_0,
-                .duty                = PULSE_WIDTH_TO_DUTY( 1.1, 50, 20 ),
-                .hpoint              = 0,
-                .flags.output_invert = 0
-            },
-            .Ton_min = 1.1,
-            .Ton_max = 1.94
-        },
-        {
-            .timer_cfg = {
-                .speed_mode      = LEDC_LOW_SPEED_MODE,
-                .timer_num       = LEDC_TIMER_0,
-                .freq_hz         = 50,
-                .duty_resolution = LEDC_TIMER_20_BIT,
-                .clk_cfg         = LEDC_APB_CLK
-            },
-            .channel_cfg = {
-                .gpio_num            = GPIO_NUM_5,
-                .speed_mode          = LEDC_LOW_SPEED_MODE,
-                .channel             = LEDC_CHANNEL_1,
-                .intr_type           = LEDC_INTR_DISABLE,
-                .timer_sel           = LEDC_TIMER_0,
-                .duty                = PULSE_WIDTH_TO_DUTY( 1.1, 50, 20 ),
-                .hpoint              = 0,
-                .flags.output_invert = 0
-            },
-            .Ton_min = 1.1,
-            .Ton_max = 1.94
-        },
-        {
-            .timer_cfg = {
-                .speed_mode      = LEDC_LOW_SPEED_MODE,
-                .timer_num       = LEDC_TIMER_0,
-                .freq_hz         = 50,
-                .duty_resolution = LEDC_TIMER_20_BIT,
-                .clk_cfg         = LEDC_APB_CLK
-            },
-            .channel_cfg = {
-                .gpio_num            = GPIO_NUM_15,
-                .speed_mode          = LEDC_LOW_SPEED_MODE,
-                .channel             = LEDC_CHANNEL_2,
-                .intr_type           = LEDC_INTR_DISABLE,
-                .timer_sel           = LEDC_TIMER_0,
-                .duty                = PULSE_WIDTH_TO_DUTY( 1.1, 50, 20 ),
-                .hpoint              = 0,
-                .flags.output_invert = 0
-            },
-            .Ton_min = 1.1,
-            .Ton_max = 1.94
-        },
-        {
-            .timer_cfg = {
-                .speed_mode      = LEDC_LOW_SPEED_MODE,
-                .timer_num       = LEDC_TIMER_0,
-                .freq_hz         = 50,
-                .duty_resolution = LEDC_TIMER_20_BIT,
-                .clk_cfg         = LEDC_APB_CLK
-            },
-            .channel_cfg = {
-                .gpio_num            = GPIO_NUM_18,
-                .speed_mode          = LEDC_LOW_SPEED_MODE,
-                .channel             = LEDC_CHANNEL_3,
-                .intr_type           = LEDC_INTR_DISABLE,
-                .timer_sel           = LEDC_TIMER_0,
-                .duty                = PULSE_WIDTH_TO_DUTY( 1.1, 50, 20 ),
-                .hpoint              = 0,
-                .flags.output_invert = 0
-            },
-            .Ton_min = 1.1,
-            .Ton_max = 1.94
-        }
-    },
-    .pid_cfgs = {
-        {
-            .tag = Z,
-            .pid_gains = {
-                .kp = 0.0f,
-                .ki = 0.0f,
-                .kd = 0.0f,
-                .Kb = 1.0f
-            },
-            .integral_limits = { .min = -125.0f, .max = 125.0f },
-            .pid_output_limits = { .min = -500.0f, .max = 500.0f }
-        },
-        {
-            .tag = ROLL,
-            .pid_gains = {
-                .kp = 0.0f,
-                .ki = 0.0f,
-                .kd = 0.0f,
-                .Kb = 1.0f
-            },
-            .integral_limits = { .min = -125.0f, .max = 125.0f },
-            .pid_output_limits = { .min = -500.0f, .max = 500.0f }
-        },
-        {
-            .tag = PITCH,
-            .pid_gains = {
-                .kp = 0.0f,
-                .ki = 0.0f,
-                .kd = 0.0f,
-                .Kb = 0.0f
-            },
-            .integral_limits = { .min = 0.0f, .max = 0.0f },
-            .pid_output_limits = { .min = 0.0f, .max = 0.0f }
-        },
-        {
-            .tag = YAW,
-            .pid_gains = {
-                .kp = 0.0f,
-                .ki = 0.0f,
-                .kd = 0.0f,
-                .Kb = 0.0f
-            },
-            .integral_limits = { .min = 0.0f, .max = 0.0f },
-            .pid_output_limits = { .min = 0.0f, .max = 0.0f }
-        },
-        {
-            .tag = ROLL_D,
-            .pid_gains = {
-                .kp = 0.0f,
-                .ki = 0.0f,
-                .kd = 0.0f,
-                .Kb = 1.0f
-            },
-            .integral_limits = { .min = -100000.0f, .max = 100000.0f },
-            .pid_output_limits = { .min = -100000.0f, .max = 100000.0f }
-        },
-        {
-            .tag = PITCH_D,
-            .pid_gains = {
-                .kp = 0.0f,
-                .ki = 0.0f,
-                .kd = 0.0f,
-                .Kb = 0.0f
-            },
-            .integral_limits = { .min = 0.0f, .max = 0.0f },
-            .pid_output_limits = { .min = 0.0f, .max = 0.0f }
-        },
-        {
-            .tag = YAW_D,
-            .pid_gains = {
-                .kp = 0.0f,
-                .ki = 0.0f,
-                .kd = 0.0f,
-                .Kb = 0.0f
-            },
-            .integral_limits = { .min = 0.0f, .max = 0.0f },
-            .pid_output_limits = { .min = 0.0f, .max = 0.0f }
-        }
-    },
-    .mma_out_limits = {
-        .upper = 0.8f,
-        .lower = 1.3f
-    }
-};
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
@@ -530,6 +320,61 @@ static csv_row_t get_csv_row( csv_row_t * csv_rows, int n_rows, const char * nam
 
 
 /**
+ * @brief Save Drone parameters to flash memory
+ * @param obj: Direction of Drone object
+ * @retval none
+ */
+static void save_to_nvs( drone_t * obj ) {
+
+    /* Loop through all flash parameters */
+    for( int i = 0; i < FLASH_PARAMS; i++ ) {
+
+        /* If parameter direction if NULL, then all parameters have been saved */
+        if( obj->attributes.flash_params_arr[ i ] == NULL ) {
+
+            break;
+        }
+
+        /* Continue updating NVS with Drone parameters */
+        else {
+
+            /* Store "i" parameter to NVS, according to drone_flash_params_t enum */
+            __write_to_flash( NVS_NAMESPACE, i, obj->attributes.flash_params_arr[ i ], sizeof( obj->attributes.flash_params_arr[ i ] ) );
+        }
+    }
+}
+
+/**
+ * @brief Read Drone parameters stored in flash memory
+ * @param obj: Direction of Drone object
+ * @retval none
+ */
+static void read_from_nvs( drone_t * obj ) {
+
+    float read_var = 0.0f;
+
+    for( int i = 0; i < FLASH_PARAMS; i++ ) {
+
+        /* If parameter direction if NULL, then all parameters have been read */
+        if( obj->attributes.flash_params_arr[ i ] == NULL ) {
+
+            break;
+        }
+
+        /* Continue reading NVS */
+        else {
+
+            __read_from_flash( NVS_NAMESPACE, i, &read_var, sizeof( read_var ) );
+            ESP_LOGI( DRONE_TAG, "%s: %.2f", GetKeyName( i ), read_var );
+        }
+    }
+}
+
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
+
+/**
  * @brief Initialize an object of Drone Class
  * @param obj: Address of Drone object
  * @retval ESP_OK if success - ESP_FAIL
@@ -679,6 +524,8 @@ drone_t * Drone( void ) {
     drone->methods.update_states    = UpdateStates;
     drone->methods.init             = drone_init;
     drone->methods.i2c_scan         = i2c_scan;
+    drone->methods.read_from_flash  = read_from_nvs;
+    drone->methods.save_to_nvs      = save_to_nvs;
 
     /* Initialize spiffs */
     esp_vfs_spiffs_conf_t config = {
@@ -817,6 +664,25 @@ drone_t * Drone( void ) {
     // }
     // free( csv_rows );
 
+    /* Initialize flash variable pointers to NULL */
+    for( int i = 0; i < FLASH_PARAMS; i++ ) {
+
+        drone->attributes.flash_params_arr[ i ] = NULL;
+    };
+
+    /* Variables stored in NVS memory */
+    drone->attributes.flash_params_arr[ GYRO_OFFSET_X ] = &( drone->attributes.components.bmi.Gyro.offset.x );
+    drone->attributes.flash_params_arr[ GYRO_OFFSET_Y ] = &( drone->attributes.components.bmi.Gyro.offset.y );
+    drone->attributes.flash_params_arr[ GYRO_OFFSET_Z ] = &( drone->attributes.components.bmi.Gyro.offset.z );
+    drone->attributes.flash_params_arr[ PID_ROLL_KP ]   = &( drone->attributes.components.controllers[ ROLL ]->gain.kp );
+    drone->attributes.flash_params_arr[ PID_ROLL_KI ]   = &( drone->attributes.components.controllers[ ROLL ]->gain.ki );
+    drone->attributes.flash_params_arr[ PID_ROLL_KD ]   = &( drone->attributes.components.controllers[ ROLL ]->gain.kd );
+    drone->attributes.flash_params_arr[ PID_ROLL_D_KB ] = &( drone->attributes.components.controllers[ ROLL ]->gain.kb );
+    drone->attributes.flash_params_arr[ PID_ROLL_D_KP ] = &( drone->attributes.components.controllers[ ROLL_D ]->gain.kp );
+    drone->attributes.flash_params_arr[ PID_ROLL_D_KI ] = &( drone->attributes.components.controllers[ ROLL_D ]->gain.ki );
+    drone->attributes.flash_params_arr[ PID_ROLL_D_KD ] = &( drone->attributes.components.controllers[ ROLL_D ]->gain.kd );
+    drone->attributes.flash_params_arr[ PID_ROLL_D_KB ] = &( drone->attributes.components.controllers[ ROLL_D ]->gain.kb );
+
     /* Blink MCU internal LED to indicate Transmitter object is ready to receive commands */
     gpio_set_level( GPIO_NUM_2, false );
     vTaskDelay( pdMS_TO_TICKS( 1000 ) );
@@ -830,9 +696,7 @@ drone_t * Drone( void ) {
 
 static float timer = 0;
 
-float __sin( float A, float w, float dt_ms) {
-
-
+float __sin( float A, float w, float dt_ms ) {
 
     float retval = A * sin( w * ( timer ) );
 

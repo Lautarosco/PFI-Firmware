@@ -82,36 +82,24 @@ const char * GetKeyName( drone_flash_params_t key ) {
             return "pid_roll_kd";
             break;
 
-        case PID_ROLL_I_SAT:
-            return "pid_roll_i_sat";
-            break;
-        
-        case PID_ROLL_FC_D:
-            return "pid_roll_fc_d";
+        case PID_ROLL_KB:
+            return "pid_roll_kb";
             break;
 
-        case PID_ROLLD_KP:
-            return "pid_rolld_kp";
+        case PID_ROLL_D_KP:
+            return "pid_roll_d_kp";
             break;
 
-        case PID_ROLLD_KI:
-            return "pid_rolld_ki";
+        case PID_ROLL_D_KI:
+            return "pid_roll_d_ki";
             break;
 
-        case PID_ROLLD_KD:
-            return "pid_rolld_kd";
+        case PID_ROLL_D_KD:
+            return "pid_roll_d_kd";
             break;
 
-        case PID_ROLLD_I_SAT:
-            return "pid_rolld_i_sat";
-            break;
-        
-        case PID_ROLLD_FC_D:
-            return "pid_rolld_fc_d";
-            break;
-
-        case ROLLD_IIR_COEFF:
-            return "rolld_iir_coeff";
+        case PID_ROLL_D_KB:
+            return "pid_roll_d_kb";
             break;
 
         default:

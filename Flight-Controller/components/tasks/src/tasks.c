@@ -34,20 +34,37 @@ typedef struct stateSpecs {
 
 } stateSpecs_t;
 
-/* State's matrix */
-static stateSpecs_t state_specs[] = {
+/**
+ * @brief Command function
+ */
+typedef struct cmd_function {
 
-    { .name = "z",       .index = Z },
-    { .name = "roll",    .index = ROLL },
-    { .name = "pitch",   .index = PITCH },
-    { .name = "yaw",     .index = YAW },
-    { .name = "roll_d",  .index = ROLL_D },
-    { .name = "pitch_d", .index = PITCH_D },
-    { .name = "yaw_d",   .index = YAW_D },
-};
+    /* Name of the command */
+    const char * cmd_name;
+
+    /** @brief Compute the function of a given command @param obj: Address of Drone object @param arr: Array containing processed data from the original command */
+    void ( * func )( drone_t * obj, char * arr[ 4 ] );
+
+} cmd_function_t;
 
 /**
- * @brief Get state's index given it's name
+ * @brief Update Pid actions with received command
+ */
+typedef struct pid_action_function {
+
+    /* Action name */
+    const char * action_name;
+
+    /* Pointer to Pid Class set action method */
+    void ( * pid_setterFunc )( pid_controller_t * obj, ControllerFunction * actionFunc );
+
+    /* Pointer to controller action function */
+    float ( * actionFunc )( pid_controller_t * obj, float error );
+
+} pid_action_function_t;
+
+/**
+ * @brief Get state's index ( states enum ) given it's name
  * @param stateName: State's name
  * @retval State's index
  */
@@ -277,12 +294,13 @@ void vTaskDroneMeasure( void * pvParameters ) {
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
-void vTaskprint(void * drone_) {
+void vTaskprint( void * drone_ ) {
     float t = 0.0f;
 
-    drone_t* drone = (drone_t*) drone_;
+    drone_t* drone = ( drone_t * ) drone_;
 
     while( 1 ) {
+
         // printf( "Estado: %s\r\n", StateMachine_GetStateName( state_machine.curr_state ) );
         #define PRINTER
         #ifdef PRINTER
@@ -399,11 +417,126 @@ static void vTaskUartEvent( void * pvParameters ) {
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
+/* Enum containing index of a cmd frame */
+typedef enum cmd_index {
+
+    /* Command index */
+    CMD_INDEX,
+
+    /* State index */
+    STATE_INDEX,
+
+    /* Variable to be updated index */
+    VAR_INDEX,
+
+    /* New value index */
+    VALUE_INDEX
+
+} cmd_index_t;
+
+
+static void PidGainsCmdFunc( drone_t * obj, char * arr[ 4 ] ) {
+
+    /* Get index ( states enum ) of received state */
+    int index = GetStateIndex( arr[ STATE_INDEX ] );
+
+    /* Check if received state is valid */
+    if( PID_INDEX_CHECK( index, sizeof( obj->attributes.components.controllers ) / ( sizeof( obj->attributes.components.controllers[ 0 ] ) ), __func__, __LINE__ ) ) {
+
+        /* If updating proportional gain ( Kp ) */
+        if( !strcmp( arr[ VAR_INDEX ], "p" ) ) {
+
+            obj->attributes.components.controllers[ index ]->gain.kp = atof( arr[ VALUE_INDEX ] );
+            ESP_LOGW( "TASK3", "%s new Kp [ %.2f ]", GetStateName( index ), obj->attributes.components.controllers[ index ]->gain.kp );
+        }
+
+        /* If updating integral gain ( Ki ) */
+        else if( !strcmp( arr[ VAR_INDEX ], "i" ) ) {
+
+            obj->attributes.components.controllers[ index ]->gain.ki = atof( arr[ VALUE_INDEX ] );
+            ESP_LOGW( "TASK3", "%s new Ki [ %.2f ]", GetStateName( index ), obj->attributes.components.controllers[ index ]->gain.ki );
+        }
+
+
+        /* If updating derivative gain ( Kd ) */
+        else if( !strcmp( arr[ VAR_INDEX ], "d" ) ) {
+
+            obj->attributes.components.controllers[ index ]->gain.kd = atof( arr[ VALUE_INDEX ] );
+            ESP_LOGW( "TASK3", "%s new Kd [ %.2f ]", GetStateName( index ), obj->attributes.components.controllers[ index ]->gain.kd );
+        }
+
+        /* If updating back calculation gain ( Kb ) */
+        else if( !strcmp( arr[ VAR_INDEX ], "b" ) ) {
+
+            obj->attributes.components.controllers[ index ]->gain.kd = atof( arr[ VALUE_INDEX ] );
+            ESP_LOGW( "TASK3", "%s new Kd [ %.2f ]", GetStateName( index ), obj->attributes.components.controllers[ index ]->gain.kb );
+        }
+
+        else {
+
+            ESP_LOGE( "TASK3", "Third parameter of frame must be one of the following 'p, i, d, b' " );
+        }
+    }
+}
+
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
+
+static pid_action_function_t pid_actions_array[] = {
+
+    { .action_name = "P_Basic",    .pid_setterFunc = &PidSetActionP, .actionFunc = P_Basic },
+    { .action_name = "I_Basic",    .pid_setterFunc = &PidSetActionI, .actionFunc = I_Basic },
+    { .action_name = "I_Clamping", .pid_setterFunc = &PidSetActionI, .actionFunc = I_Clamping },
+    { .action_name = "I_BackCalc", .pid_setterFunc = &PidSetActionI, .actionFunc = I_BackCalc },
+    { .action_name = "D_Basic",    .pid_setterFunc = &PidSetActionD, .actionFunc = D_Basic },
+    { .action_name = "D_LPF",      .pid_setterFunc = &PidSetActionD, .actionFunc = D_LPF },
+};
+
+static void PidActionsCmdFunc( drone_t * obj, char * arr[ 4 ] ) {
+
+    /* Get index ( states enum ) of received state */
+    int index = GetStateIndex( arr[ STATE_INDEX ] );
+
+    bool found = false;
+
+    /* Check if received state is valid */
+    if( PID_INDEX_CHECK( index, sizeof( obj->attributes.components.controllers ) / ( sizeof( obj->attributes.components.controllers[ 0 ] ) ), __func__, __LINE__ ) ) {
+
+        for( int i = 0; i < ( ( sizeof( pid_actions_array ) ) / ( sizeof( pid_actions_array[ 0 ] ) ) ); i++ ) {
+
+            if( !strcmp( pid_actions_array->action_name, arr[ VALUE_INDEX ] ) ){
+
+                pid_actions_array->pid_setterFunc( obj->attributes.components.controllers[ index ], pid_actions_array->actionFunc );
+                found = true;
+            }
+        }
+
+        /* Check if action was found */
+        if( !found ) {
+
+            ESP_LOGW( "TASK3", "PID action name was not found.\n[ Details ] See func %s, in line %d", __func__, __LINE__ );
+        }
+    }
+}
+
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
+
+static cmd_function_t cmd_function_array[] = {
+
+    { .cmd_name = "pid gains",   .func = &PidGainsCmdFunc },
+    { .cmd_name = "pid actions", .func = &PidActionsCmdFunc },   
+};
+
+
 void vTaskParseCommand( void * pvParameters ) {
 
     /* Cast parameter into Drone object */
     drone_t * obj = ( drone_t * ) pvParameters;
 
+    /* Start UART cmd detection task */
     xTaskCreatePinnedToCore( vTaskUartEvent, "Task4", 1024 * 3, ( void * ) ( obj ), 0, NULL, CORE_0 );
 
     while( 1 ) {
@@ -419,7 +552,7 @@ void vTaskParseCommand( void * pvParameters ) {
             bool eof = false;
 
             /* Pointer to store each char of substring */
-            char * ptr = ( char * ) malloc( 256 * sizeof( char ) );
+            char * ptr = ( char * ) malloc( 256 * sizeof( char ) ); /* PENDIENTE REEMPLAZAR POR 'char * ptr[ 256 ];' */
 
             /* Pointer of char ( array of 4 strings ) */
             char * ptrArr[ 4 ] = { 0 };
@@ -435,7 +568,7 @@ void vTaskParseCommand( void * pvParameters ) {
 
                 /**
                  * Frame's format: <pid/state/@/value>
-                 * where '@' could be 'p | i | d | min_err'
+                 * where '@' could be 'p | i | d | b'
                  * 
                  * i.e, <pid/roll/p/10> which means
                  * 
@@ -443,13 +576,6 @@ void vTaskParseCommand( void * pvParameters ) {
                  * state roll
                  * p indicates proportional action
                  * 10 is the new value for roll Kp gain
-                 * 
-                 * i.e, <pid/z/min_err/10> which means
-                 * 
-                 * pid command
-                 * state z
-                 * min_err indicates new value for z integral minimum error
-                 * 10 is the new minimum value for the integral error
                  */
 
                 /* Get actual char */
@@ -513,56 +639,23 @@ void vTaskParseCommand( void * pvParameters ) {
                 continue;
             }
 
-            /* Check if it's a PID command */
-            if( !strcmp( ptrArr[ 0 ], "pid" ) ) {
-                
-                /* Get state's index */
-                int index = GetStateIndex( ptrArr[ 1 ] );
+            bool found = false;
 
-                if( PID_INDEX_CHECK( index, sizeof( obj->attributes.components.controllers ) / ( sizeof( obj->attributes.components.controllers[ 0 ] ) ), __func__, __LINE__ ) ) {
+            /* Loop through the cmd function array */
+            for( int i = 0; i < ( ( sizeof( cmd_function_array ) ) / ( sizeof( cmd_function_array[ 0 ] ) ) ); i++ ) {
 
-                    /* If updating proportional action */
-                    if( !strcmp( ptrArr[ 2 ], "p" ) ) {
+                /* Check if recevied command matches listed commands in the array */
+                if( !strcmp( ptrArr[ CMD_INDEX ], cmd_function_array->cmd_name ) ) {
 
-                        obj->attributes.components.controllers[ index ]->gain.kp = atof( ptrArr[ 3 ] );
-                        ESP_LOGW( "TASK3", "%s new kp [ %.2f ]", GetStateName( index ), obj->attributes.components.controllers[ index ]->gain.kp );
-                        // char tx[ 50 ];
-                        // sprintf( tx, "%f", obj->attributes.components.controllers[ index ]->gain.kp );
-                        // uart_write_bytes( UART_NUM_2, ( char * ) tx, strlen( ( char * ) tx ) );
-                    }
-
-                    /* If updating integral action */
-                    else if( !strcmp( ptrArr[ 2 ], "i" ) ) {
-
-                        obj->attributes.components.controllers[ index ]->gain.ki = atof( ptrArr[ 3 ] );
-                        ESP_LOGW( "TASK3", "%s new ki [ %.2f ]", GetStateName( index ), obj->attributes.components.controllers[ index ]->gain.ki );
-                    }
-
-
-                    /* If updating derivative action */
-                    else if( !strcmp( ptrArr[ 2 ], "d" ) ) {
-
-                        obj->attributes.components.controllers[ index ]->gain.kd = atof( ptrArr[ 3 ] );
-                        ESP_LOGW( "TASK3", "%s new kd [ %.2f ]", GetStateName( index ), obj->attributes.components.controllers[ index ]->gain.kd );
-                    }
-
-                    /* If updating minimum integral error */
-                    /*
-                    else if( !strcmp( ptrArr[ 2 ], "min_err" ) ) {
-
-                        obj->attributes.components.controllers[ index ]->cfg.intMinErr = atof( ptrArr[ 3 ] );
-                        ESP_LOGW( "TASK3", "%s new integral minimum error [ %.2f ]",
-                            GetStateName( index ),
-                            obj->attributes.components.controllers[ index ]->cfg.intMinErr
-                        );
-                    }
-                    */
-
-                    else {
-
-                        ESP_LOGE( "TASK3", "Third parameter of bluetooth frame must be 'p' or 'i' or 'd' or 'min_err' " );
-                    }
+                    cmd_function_array->func( obj, ptrArr );
+                    found = true;
                 }
+            }
+
+            /* Check if received cmd was not found in cmds array */
+            if( !found ) {
+
+                ESP_LOGW( "TASK3", "Command not found.\n[ Details ] See func: %s, in line %d", __func__, __LINE__ );
             }
         }
 
@@ -572,6 +665,19 @@ void vTaskParseCommand( void * pvParameters ) {
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
+
+/* State's matrix */
+static stateSpecs_t state_specs[] = {
+
+    { .name = "z",       .index = Z },
+    { .name = "roll",    .index = ROLL },
+    { .name = "pitch",   .index = PITCH },
+    { .name = "yaw",     .index = YAW },
+    { .name = "roll_d",  .index = ROLL_D },
+    { .name = "pitch_d", .index = PITCH_D },
+    { .name = "yaw_d",   .index = YAW_D },
+};
 
 
 static const char * GetStateName( int stateIndex ) {
