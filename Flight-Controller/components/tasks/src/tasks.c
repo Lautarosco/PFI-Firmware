@@ -161,7 +161,7 @@ void vTaskStateMachine_Run( void * pvParameters ) {
         /* Go to the next state and run it's respective function */
         StateMachine_RunIteration( &state_machine, obj );
         
-        vTaskDelay( pdMS_TO_TICKS( 1000 ) );
+        vTaskDelay( pdMS_TO_TICKS( 10 ) );
     }
     
 }
@@ -198,6 +198,9 @@ void vTaskprint( void * drone_ ) {
         #ifdef PRINTER
             if( drone->attributes.init_ok) {
 
+                printf( "printer:%f\r\n", drone->attributes.states.roll );
+
+                /*
                 float vroll = drone->attributes.states.roll;
                 float vroll_d = drone->attributes.states.roll_dot;
                 float sp_roll = drone->attributes.sp.roll;
@@ -236,6 +239,7 @@ void vTaskprint( void * drone_ ) {
                 printf("static:roll/P,%.2f|roll/I,%.2f|roll/D,%.2f|", roll_P, roll_I, roll_D);
                 printf("roll_d/P,%.2f|roll_d/I,%.2f|roll_d/D,%.2f|roll_d/d_filter_iir_coeff,%.2f\n", roll_d_P, roll_d_I, roll_d_D, d_filter_iir_coeff);
                 t += 0.010f;
+                */
             }
         #endif
 

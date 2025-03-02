@@ -63,8 +63,7 @@ static void StControlFunc( drone_t * obj ) {
     /* Compute PID algorithm for all states */
 
     /* ROLL - Cascaded PID*/
-    
-    printf( "\n\nPRINTING ROLL PID ACTIONS\r\n" );
+
     float CRoll = obj->attributes.components.controllers[ ROLL ]->pidUpdate(
         obj->attributes.components.controllers[ ROLL ],
         obj->attributes.states.roll,
@@ -75,7 +74,6 @@ static void StControlFunc( drone_t * obj ) {
 
     obj->attributes.sp.roll_dot = CRoll;
 
-    printf( "\nPRINTING ROLL_D PID ACTIONS\r\n" );
     float CRolld = obj->attributes.components.controllers[ ROLL_D ]->pidUpdate(
         obj->attributes.components.controllers[ ROLL_D ],
         obj->attributes.states.roll_dot,

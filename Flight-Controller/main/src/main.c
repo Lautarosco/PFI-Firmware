@@ -27,7 +27,7 @@ void app_main( void ) {
         esp_restart();
     }
 
-    /* Run state machine */
+    /* Run state machine */     
     xTaskCreatePinnedToCore( vTaskStateMachine_Run, "Task1", 1024 * 10, ( void * ) ( drone ), 1, NULL, CORE_1 );
 
     /* Update sensor measures */
@@ -37,12 +37,5 @@ void app_main( void ) {
     xTaskCreatePinnedToCore( vTaskParseCommand, "Task3", 1024 * 3, ( void * ) ( drone ), 1, NULL, CORE_0 );
 
     /* Print values over serial */
-    // xTaskCreatePinnedToCore( vTaskprint, "Task4", 1024*2, ( void * ) ( drone ), 1, NULL, CORE_0 );
-
-    while( 1 ) {
-
-        printf( "State: %s\r\n", StateMachine_GetStateName( state_machine.curr_state ) );
-
-        vTaskDelay( pdMS_TO_TICKS( 1000 ) );
-    }
+    xTaskCreatePinnedToCore( vTaskprint, "Task4", 1024*2, ( void * ) ( drone ), 1, NULL, CORE_0 );
 }

@@ -159,7 +159,7 @@ typedef struct pid_controller {
     bool init_ok;
 
     /** @brief [ M ] Initialize Pid object @param obj: Address of Pid object @retval none */
-    void ( * init )( pid_controller_t * obj, states_t tag, float ts_ms, pid_gain_t pid_gains, pid_limits_t integral_limits, pid_limits_t pid_limits );
+    void ( * init )( pid_controller_t * obj, states_t tag, float ts_ms, float tau_s, pid_gain_t pid_gains, pid_limits_t integral_limits, pid_limits_t pid_limits );
 
     /** @brief [ M ] Update PID controller @param obj: Address of Pid object @param pv: Process value @param sp: Set Point */
     float ( * pidUpdate )( pid_controller_t * obj, float pv, float sp );

@@ -118,6 +118,19 @@ static int GetStateIndex( const char * stateName ) {
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
+/**
+ * @brief Update drone variables such as pid gains or filers coefficient.
+ */
+typedef struct vars_update {
+
+    /* Name of variable */
+    const char * name;
+
+    /* Address of variable */
+    void * addr;
+
+} vars_update_t;
+
 void PidGainsCmdFunc( drone_t * obj, char * arr[ 4 ] ) {
 
     /* Get index ( states enum ) of received state */
@@ -126,38 +139,31 @@ void PidGainsCmdFunc( drone_t * obj, char * arr[ 4 ] ) {
     /* Check if received state is valid */
     if( PID_INDEX_CHECK( index, sizeof( obj->attributes.components.controllers ) / ( sizeof( obj->attributes.components.controllers[ 0 ] ) ), __func__, __LINE__ ) ) {
 
-        /* If updating proportional gain ( Kp ) */
-        if( !strcmp( arr[ VAR_INDEX ], "p" ) ) {
+        vars_update_t vars_arr[] = {
 
-            obj->attributes.components.controllers[ index ]->gain.kp = atof( arr[ VALUE_INDEX ] );
-            ESP_LOGW( "TASK3", "%s new Kp [ %.2f ]", GetStateName( index ), obj->attributes.components.controllers[ index ]->gain.kp );
+            { .name = "p",   .addr = &( obj->attributes.components.controllers[ index ]->gain.kp ) },
+            { .name = "i",   .addr = &( obj->attributes.components.controllers[ index ]->gain.ki ) },
+            { .name = "d",   .addr = &( obj->attributes.components.controllers[ index ]->gain.kd ) },
+            { .name = "b",   .addr = &( obj->attributes.components.controllers[ index ]->gain.kb ) },
+            { .name = "tau", .addr = &( obj->attributes.components.controllers[ index ]->derivative_lpf.tau_s ) },
+            { .name = NULL,  .addr = NULL },
+        
+        };
+
+        bool found = false;
+
+        for( int i = 0; vars_arr[ i ].name != NULL; i++ ) {
+
+            if( !strcmp( arr[ VAR_INDEX ], vars_arr[ i ].name ) ) {
+
+                *( float * ) vars_arr[ i ].addr = ( float ) atof( arr[ VALUE_INDEX ] );
+                found = true;
+            }
         }
 
-        /* If updating integral gain ( Ki ) */
-        else if( !strcmp( arr[ VAR_INDEX ], "i" ) ) {
+        if( !found ) {
 
-            obj->attributes.components.controllers[ index ]->gain.ki = atof( arr[ VALUE_INDEX ] );
-            ESP_LOGW( "TASK3", "%s new Ki [ %.2f ]", GetStateName( index ), obj->attributes.components.controllers[ index ]->gain.ki );
-        }
-
-
-        /* If updating derivative gain ( Kd ) */
-        else if( !strcmp( arr[ VAR_INDEX ], "d" ) ) {
-
-            obj->attributes.components.controllers[ index ]->gain.kd = atof( arr[ VALUE_INDEX ] );
-            ESP_LOGW( "TASK3", "%s new Kd [ %.2f ]", GetStateName( index ), obj->attributes.components.controllers[ index ]->gain.kd );
-        }
-
-        /* If updating back calculation gain ( Kb ) */
-        else if( !strcmp( arr[ VAR_INDEX ], "b" ) ) {
-
-            obj->attributes.components.controllers[ index ]->gain.kb = atof( arr[ VALUE_INDEX ] );
-            ESP_LOGW( "TASK3", "%s new Kb [ %.2f ]", GetStateName( index ), obj->attributes.components.controllers[ index ]->gain.kb );
-        }
-
-        else {
-
-            ESP_LOGE( "TASK3", "Third parameter of frame must be one of the following 'p, i, d, b' " );
+            ESP_LOGW( "TASK3", "Drone's variable name was not found.\n[ Details ] See func %s, in line %d", __func__, __LINE__ );
         }
     }
 }

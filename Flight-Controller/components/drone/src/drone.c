@@ -426,6 +426,7 @@ static esp_err_t drone_init( drone_t * obj ) {
             obj->attributes.components.controllers[ i ],
             i,
             10.0f,
+            1.0f,
             obj->attributes.config.pid_cfgs[ i ].pid_gains,
             obj->attributes.config.pid_cfgs[ i ].integral_limits,
             obj->attributes.config.pid_cfgs[ i ].pid_output_limits
