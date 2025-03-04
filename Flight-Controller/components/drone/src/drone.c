@@ -89,15 +89,15 @@ inline bool GPIO_INIT( gpio_num_t GPIOx, gpio_mode_t io_mode, gpio_pull_mode_t u
  * @brief Compute first order IIR filter algorithm
  * @param in: New input to filter
  * @param out: Previous output of filter 
- * @param a: Filter coefficient, 0 <= a <= 1
- * @retval float
+ * @param ts_s: Sampling time in seconds
+ * @param tau_s: Time constant of filter in seconds
+ * @return float
  */
-static float FirstOrderIIR( float in, float out, float a ) {
+static float FirstOrderIIR( float in, float out, float ts_s, float tau_s ) {
     
-    if( ( a < 0.0f ) || ( a > 1.0f ) )  /* Assume default value if 'a' parameter is wrong */
-        a =  0.5f;
+    float alpha = ts_s / ( ts_s + tau_s );
 
-    return ( ( 1 - a ) * in ) + ( a * out );
+    return ( ( 1 - alpha ) * in ) + ( alpha * out );
 }
 
 
@@ -107,17 +107,20 @@ static float FirstOrderIIR( float in, float out, float a ) {
 /**
  * @brief Kalman filter for drone's attitude
  * @param drone: Address of drone object
- * @param ts: Sampling time in milliseconds
+ * @param ts_ms: Sampling time in milliseconds
  * @retval none
  */
-static void Kalman( drone_t * obj, float ts ) {
+static void Kalman( drone_t * obj, float ts_ms ) {
     /* -------------------------------------------------------------------------------- */
 
 
     /* Prediction step */
 
+    /* Convert sampling time to seconds */
+    float ts_s = ts_ms / 1000.0f;
+
     /* Use Gyroscope as mathematical model of IMU sensor */
-    float estimated_roll = obj->attributes.states.roll + ( ts / 1000.0f ) * obj->attributes.components.bmi.Gyro.x;
+    float estimated_roll = obj->attributes.states.roll + ( ts_s * obj->attributes.components.bmi.Gyro.x );
 
     /* Predict uncertainty of estimation */
     float estimated_P = obj->attributes.config.roll.P + obj->attributes.config.roll.Q;
@@ -135,10 +138,10 @@ static void Kalman( drone_t * obj, float ts ) {
     float roll_sensor = atan2( obj->attributes.components.bmi.Acc.y, obj->attributes.components.bmi.Acc.z ) * ( 180.0f / M_PI );
 
     /* Update states */
-    obj->attributes.states.roll = ( estimated_roll * ( 1 - roll_K ) ) + ( roll_K * roll_sensor );
+    obj->attributes.states.roll = estimated_roll + ( roll_K * ( roll_sensor - estimated_roll ) );
 
     /* Update P uncertainty */
-    obj->attributes.config.roll.P = ( 1 - roll_K ) * estimated_P;
+    obj->attributes.config.roll.P = ( ( 1 - roll_K ) * estimated_P + obj->attributes.config.roll.Q );
 }
 
 
@@ -474,15 +477,18 @@ static void UpdateStates( drone_t * obj, float ts ) {
 
         // obj->attributes.states.roll_dot  = FirstOrderIIR( obj->attributes.components.bmi.Gyro.x, obj->attributes.states.roll_dot,  DroneConfigs.IIR_coeff_roll_dot );
         obj->attributes.states.roll_dot  = obj->attributes.components.bmi.Gyro.x;
-        obj->attributes.states.pitch_dot = FirstOrderIIR( obj->attributes.components.bmi.Gyro.y, obj->attributes.states.pitch_dot, DroneConfigs.IIR_coeff_pitch_dot );
-        obj->attributes.states.yaw_dot   = FirstOrderIIR( obj->attributes.components.bmi.Gyro.z, obj->attributes.states.yaw_dot,   DroneConfigs.IIR_coeff_yaw_dot );
+        // obj->attributes.states.pitch_dot = FirstOrderIIR( obj->attributes.components.bmi.Gyro.y, obj->attributes.states.pitch_dot, DroneConfigs.IIR_coeff_pitch_dot );
+        // obj->attributes.states.yaw_dot   = FirstOrderIIR( obj->attributes.components.bmi.Gyro.z, obj->attributes.states.yaw_dot,   DroneConfigs.IIR_coeff_yaw_dot );
         
         /* Update state's position */
-        // Kalman( obj, ts );
 
+        Kalman( obj, ts );
+
+        /*
         float roll_acc = atan2( obj->attributes.components.bmi.Acc.y, obj->attributes.components.bmi.Acc.z ) * ( 180.0f / M_PI );
         float roll_gyro = obj->attributes.states.roll + ( obj->attributes.components.bmi.Gyro.x * ( ts / 1000.0f ) );
         obj->attributes.states.roll = ( 0.98f * roll_acc ) + ( 0.02f * roll_gyro );
+        */
     }
 }
 

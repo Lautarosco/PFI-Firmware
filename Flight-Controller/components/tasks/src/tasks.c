@@ -187,61 +187,41 @@ void vTaskDroneMeasure( void * pvParameters ) {
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 void vTaskprint( void * drone_ ) {
-    float t = 0.0f;
 
+    float t = 0.0f;
     drone_t* drone = ( drone_t * ) drone_;
+
+    /**
+     * @brief Variable format: <printer:time,%f|var,%f\n>
+     * @details Used for sending variables such as drone states, pid values, etc.
+     * @example i.e, <printer:t,%f|roll,%f>  This will send roll values to plotter app
+     * 
+     * 
+     * @brief Static format: <static:var_name/var_attr,%f|\n>
+     * @details Used for sending static variables
+     * @example i.e, <static:roll/P,%f>  This will send proportional action of roll pid to plotter app
+     */
 
     while( 1 ) {
 
         // printf( "Estado: %s\r\n", StateMachine_GetStateName( state_machine.curr_state ) );
-        #define PRINTER
-        #ifdef PRINTER
-            if( drone->attributes.init_ok) {
 
-                printf( "printer:%f\r\n", drone->attributes.states.roll );
+        if( drone->attributes.init_ok) {
 
-                /*
-                float vroll = drone->attributes.states.roll;
-                float vroll_d = drone->attributes.states.roll_dot;
-                float sp_roll = drone->attributes.sp.roll;
-                float sp_roll_d = drone->attributes.sp.roll_dot;
+            printf(
+                "printer:t,%f|roll,%f\n",
+                t, drone->attributes.states.roll
+            );
 
-                float pid_roll = drone->attributes.components.mma->input[ C_ROLL ];
-
-                float w1 = drone->attributes.components.mma->output[ U1 ];
-                float w2 = drone->attributes.components.mma->output[ U2 ];
-                float w3 = drone->attributes.components.mma->output[ U3 ];
-                float w4 = drone->attributes.components.mma->output[ U4 ];
-
-                float lower_limit = drone->attributes.components.mma->limit.lower;
-
-                printf("printer:t,%.3f|roll,%.2f|roll_d,%.2f|sp_roll,%.2f|sp_roll_d,%.2f", t, vroll, vroll_d, sp_roll, sp_roll_d);
-                printf( "|pid_roll_max,%.2f", drone->attributes.config.pid_cfgs[ ROLL ].pid_output_limits.max );
-                printf( "|pid_roll_min,%.2f", drone->attributes.config.pid_cfgs[ ROLL ].pid_output_limits.min );
-                printf( "|pid_roll_d_max,%.2f", drone->attributes.config.pid_cfgs[ ROLL_D ].pid_output_limits.max );
-                printf( "|pid_roll_d_min,%.2f", drone->attributes.config.pid_cfgs[ ROLL_D ].pid_output_limits.min );
-                printf("|pid_roll,%.2f", pid_roll);
-                printf("|lower_limit,%.2f", lower_limit);
-                printf("|w1,%.2f|w2,%.2f|w3,%.2f|w4,%.2f\n", w1, w2, w3, w4);
-
-                // Prints de variables estáticas
-
-                float roll_P = drone->attributes.components.controllers[ROLL]->gain.kp;
-                float roll_I = drone->attributes.components.controllers[ROLL]->gain.ki;
-                float roll_D = drone->attributes.components.controllers[ROLL]->gain.kd;
-
-                float roll_d_P = drone->attributes.components.controllers[ROLL_D]->gain.kp;
-                float roll_d_I = drone->attributes.components.controllers[ROLL_D]->gain.ki;
-                float roll_d_D = drone->attributes.components.controllers[ROLL_D]->gain.kd;
-                float d_filter_iir_coeff = drone->attributes.config.IIR_coeff_roll_dot;
-
-
-                printf("static:roll/P,%.2f|roll/I,%.2f|roll/D,%.2f|", roll_P, roll_I, roll_D);
-                printf("roll_d/P,%.2f|roll_d/I,%.2f|roll_d/D,%.2f|roll_d/d_filter_iir_coeff,%.2f\n", roll_d_P, roll_d_I, roll_d_D, d_filter_iir_coeff);
-                t += 0.010f;
-                */
-            }
-        #endif
+            printf(
+                "static:roll/P,%.2f|roll/I,%.2f|roll/D,%.2f\n",
+                drone->attributes.components.controllers[ ROLL ]->gain.kp,
+                drone->attributes.components.controllers[ ROLL ]->gain.ki,
+                drone->attributes.components.controllers[ ROLL ]->gain.kd
+            );
+        
+            t += 0.01f;      
+        }
 
         vTaskDelay( pdMS_TO_TICKS( 10 ) );
     }
