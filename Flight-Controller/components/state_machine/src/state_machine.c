@@ -48,6 +48,11 @@ static void StInitFunc( drone_t * obj ) {
     #endif
 }
 
+static void StWaitingFunc( drone_t * obj ) {
+
+    // printf( "WAITING\r\n" );
+}
+
 static void StControlFunc( drone_t * obj ) {
 
     /* Update drone states */
@@ -58,7 +63,7 @@ static void StControlFunc( drone_t * obj ) {
     /* Compute PID algorithm for all states */
 
     /* ROLL - Cascaded PID*/
-    
+
     float CRoll = obj->attributes.components.controllers[ ROLL ]->pidUpdate(
         obj->attributes.components.controllers[ ROLL ],
         obj->attributes.states.roll,
@@ -93,6 +98,11 @@ static void StControlFunc( drone_t * obj ) {
             obj->attributes.components.mma->output[ i ]
         );
     }
+}
+
+static void StPropCalibrationFunc( drone_t * obj ) {
+
+    // printf( "Calibrating propellers\r\n" );
 }
 
 static void StCalibrationFunc( drone_t * obj ) {
@@ -188,13 +198,15 @@ static void StResetFunc( drone_t * obj ) {
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
-static state_func_row_t state_function_array[  ] = {
+static state_func_row_t state_function_array[] = {
 
-    { .name = "ST_IDLE",          .func = &StIdleFunc },
-    { .name = "ST_INIT",          .func = &StInitFunc },
-    { .name = "ST_CALIBRATION",   .func = &StCalibrationFunc },
-    { .name = "ST_CONTROL",       .func = &StControlFunc },
-    { .name = "ST_RESET",         .func = &StResetFunc },
+    { .name = "ST_IDLE",                  .func = &StIdleFunc },
+    { .name = "ST_INIT",                  .func = &StInitFunc },
+    { .name = "ST_WAITING",               .func = &StWaitingFunc },
+    { .name = "ST_CALIBRATION",           .func = &StCalibrationFunc },
+    { .name = "ST_CONTROL",               .func = &StControlFunc },
+    { .name = "ST_PROPELLER_CALIBRATION", .func = &StPropCalibrationFunc },
+    { .name = "ST_RESET",                 .func = &StResetFunc },
 
 };
 
@@ -222,17 +234,36 @@ typedef struct state_transition_row {
 /**
  * @brief State transition matrix
  */
-static const state_trans_row_t state_trans_matrix[  ] = {
+static const state_trans_row_t state_trans_matrix[] = {
 
-    { .curr_state = ST_IDLE,          .event = EV_ANY,      .next_state = ST_IDLE },
-    { .curr_state = ST_IDLE,          .event = EV_CROSS,    .next_state = ST_INIT },
-    { .curr_state = ST_IDLE,          .event = EV_TRIANGLE, .next_state = ST_CALIBRATION },
-    { .curr_state = ST_IDLE,          .event = EV_CIRCLE,   .next_state = ST_CONTROL },
-    { .curr_state = ST_IDLE,          .event = EV_PS,       .next_state = ST_RESET },
-    { .curr_state = ST_INIT,          .event = EV_ANY,      .next_state = ST_IDLE },
-    { .curr_state = ST_CALIBRATION,   .event = EV_ANY,      .next_state = ST_IDLE },
-    { .curr_state = ST_CONTROL,       .event = EV_ANY,      .next_state = ST_CONTROL },
-    { .curr_state = ST_CONTROL,       .event = EV_PS,       .next_state = ST_RESET },
+    /* From IDLE to ... */
+    { .curr_state = ST_IDLE,                  .event = EV_ANY,      .next_state = ST_IDLE },
+    { .curr_state = ST_IDLE,                  .event = EV_CROSS,    .next_state = ST_INIT },
+    { .curr_state = ST_IDLE,                  .event = EV_PS,       .next_state = ST_RESET },
+
+    /* From INIT to ... */
+    { .curr_state = ST_INIT,                  .event = EV_ANY,      .next_state = ST_WAITING },
+    { .curr_state = ST_INIT,                  .event = EV_PS,       .next_state = ST_RESET },
+
+    /* From WAITING to ... */
+    { .curr_state = ST_WAITING,               .event = EV_ANY,      .next_state = ST_WAITING },
+    { .curr_state = ST_WAITING,               .event = EV_TRIANGLE, .next_state = ST_CALIBRATION },
+    { .curr_state = ST_WAITING,               .event = EV_CIRCLE,   .next_state = ST_CONTROL },
+    { .curr_state = ST_WAITING,               .event = EV_CROSS,    .next_state = ST_PROPELLER_CALIBRATION },
+    { .curr_state = ST_WAITING,               .event = EV_PS,       .next_state = ST_RESET },
+
+    /* From CALIBRATION to ... */
+    { .curr_state = ST_CALIBRATION,           .event = EV_ANY,      .next_state = ST_WAITING },
+    { .curr_state = ST_CALIBRATION,           .event = EV_PS,       .next_state = ST_RESET },
+
+
+    /* From CONTROL to ... */
+    { .curr_state = ST_CONTROL,               .event = EV_ANY,      .next_state = ST_CONTROL },
+    { .curr_state = ST_CONTROL,               .event = EV_PS,       .next_state = ST_RESET },
+
+    /* From PROPELLER CALIBRATION to ... */
+    { .curr_state = ST_PROPELLER_CALIBRATION, .event = EV_ANY,      .next_state = ST_WAITING },
+    { .curr_state = ST_PROPELLER_CALIBRATION, .event = EV_PS,       .next_state = ST_RESET },
 };
 
 
