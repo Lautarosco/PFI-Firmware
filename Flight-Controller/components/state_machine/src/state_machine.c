@@ -53,6 +53,9 @@ static void StWaitingFunc( drone_t * obj ) {
     // printf( "WAITING\r\n" );
 }
 
+
+float filtered_roll = 0.0f;
+
 static void StControlFunc( drone_t * obj ) {
 
     /* Update drone states */
@@ -64,9 +67,12 @@ static void StControlFunc( drone_t * obj ) {
 
     /* ROLL - Cascaded PID*/
 
+    float alpha_ema = 2/(200.0+1);
+    filtered_roll = alpha_ema*obj->attributes.states.roll + (1-alpha_ema)*filtered_roll;
+
     float CRoll = obj->attributes.components.controllers[ ROLL ]->pidUpdate(
         obj->attributes.components.controllers[ ROLL ],
-        obj->attributes.states.roll,
+        filtered_roll,
         obj->attributes.sp.roll
     );
     
