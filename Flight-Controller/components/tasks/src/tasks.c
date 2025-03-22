@@ -209,15 +209,18 @@ void vTaskprint( void * drone_ ) {
         if( drone->attributes.init_ok) {
 
             printf(
-                "printer:t,%f|roll,%f\n",
-                t, drone->attributes.states.roll
+                "printer:t,%.2f|roll,%.2f|roll_d,%.2f|\n",
+                t, drone->attributes.states.roll, drone->attributes.states.roll_dot
             );
 
             printf(
-                "static:roll/P,%.2f|roll/I,%.2f|roll/D,%.2f\n",
+                "static:roll/P,%.2f|roll/I,%.2f|roll/D,%.2f|roll_d/P,%.2f|roll_d/I,%.2f|roll_d/D,%.2f\n",
                 drone->attributes.components.controllers[ ROLL ]->gain.kp,
                 drone->attributes.components.controllers[ ROLL ]->gain.ki,
-                drone->attributes.components.controllers[ ROLL ]->gain.kd
+                drone->attributes.components.controllers[ ROLL ]->gain.kd,
+                drone->attributes.components.controllers[ ROLL_D ]->gain.kp,
+                drone->attributes.components.controllers[ ROLL_D ]->gain.ki,
+                drone->attributes.components.controllers[ ROLL_D ]->gain.kd,
             );
         
             t += 0.01f;      
@@ -425,10 +428,11 @@ void vTaskParseCommand( void * pvParameters ) {
 
             /* Loop through the cmd function array */
             for( int i = 0; i < ( ( sizeof( cmd_function_array ) ) / ( sizeof( cmd_function_array[ 0 ] ) ) ); i++ ) {
-
+                printf("%s\n", ptrArr[ CMD_INDEX ]);
                 /* Check if recevied command matches listed commands in the array */
                 if( !strcmp( ptrArr[ CMD_INDEX ], cmd_function_array[ i ].cmd_name ) ) {
 
+                    printf("%s\n", cmd_function_array[ i ].cmd_name);
                     cmd_function_array[ i ].func( obj, ptrArr );
                     found = true;
                 }
