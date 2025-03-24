@@ -67,7 +67,7 @@ static void StControlFunc( drone_t * obj ) {
 
     /* ROLL - Cascaded PID*/
 
-    float alpha_ema = 2/(200.0+1);
+    float alpha_ema = 2/(obj->attributes.global_variables.ema_filter_roll+1);
     filtered_roll = alpha_ema*obj->attributes.states.roll + (1-alpha_ema)*filtered_roll;
 
     float CRoll = obj->attributes.components.controllers[ ROLL ]->pidUpdate(
