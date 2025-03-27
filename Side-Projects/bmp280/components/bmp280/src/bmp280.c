@@ -1,5 +1,9 @@
 #include <stdio.h>
+#include <com.h>
 #include <bmp280.h>
+#include <registers.h>
+#include <string.h>
+#include <esp_log.h>
 
 /**
  * NOTES:
@@ -384,41 +388,107 @@
  *          must be sent in write mode. Then, either a stop or a repeated start
  *          condition must be generated
  *              After this, the slave is addressed in read mode (RW = 1) 1111011x1
- */     
-
-
-
-
-/**
- * Settings
- * 
- * REGISTER: <config> 0xF5
- *  set t_sb bits (7, 6, 5) to 000 (default value), but in forced mode => hence it has no action
- *  set filter bits (4, 3, 2) to 100 ? CHECK:
- *  set spi3w_en to 0 (default value => disabled)
- * 
- * REGISTER: <ctrl_meas> 0xF4
- *  set osrs_t bits (7, 6, 5) to 010 (x2 just to improve a little pressure measurements)
- *  set osrs_p bits (4, 3, 2) to 101 (Ultra high resolution) CHECK:
- *  set mode bits (1, 0) to 01 (Forced mode) => @attention always set force mode again before taking a new measurement (See @b Power_modes)
  */
 
 
+static const char * bmp280_tag = "BMP280";
 
+
+/* #################### PROTOTYPES #################### */
 /**
- * I2C Read
+ * @brief Initialize an Bmp280 object
  * 
- * 1. Send 111011x0 (write mode) to register address (0xF6)
- * 2. Wait for a stop or repeated start condition HOW: can i detect this?
- * 3. Send 111011x1 (read mode) to register address (0xF6)
- * 4. Read bytes 0xF6 and 0xF7 simmultaneously
+ * @param bmp: Pointer to Bmp280 object
+ * @param addr: Address of bmp280 sensor
+ * @param sda: I2C SDA data
+ * @param scl: I2C SCL clock
+ * 
+ * @return none
  */
+static esp_err_t bmp280_Init(bmp280_t * bmp, int addr, int sda, int scl);
 
 
-/**
- * I2C Write
- * 
- * 1. Send 111011x0 (write mode) to register address
- * 2. First, send 8-bit data to 0xA0 register, then send again 8-bit data to 0xA1
- * 3. Wait for a stop condition HOW: can i detect this?
- */
+/* #################### STRUCTS #################### */
+/*
+struct __i2c_cfg {
+    int sda;
+    int scl;
+};
+*/
+
+
+/* #################### DEFINITIONS #################### */
+bmp280_t * Bmp280(void) {
+    bmp280_t * bmp = (bmp280_t *) malloc(sizeof(bmp280_t));
+
+    memset(bmp, 0, sizeof(bmp280_t));
+
+    bmp->init = bmp280_Init;
+
+    return bmp;
+}
+
+static esp_err_t bmp280_Init(bmp280_t * bmp, int addr, int sda, int scl) {
+    ESP_LOGI(bmp280_tag, "Initializing Bmp280 object...");
+
+    bmp->addr = addr;
+    bmp->i2c.sda = sda;
+    bmp->i2c.scl = scl;
+
+    if(i2c_init(bmp->i2c.sda, bmp->i2c.scl) != ESP_OK) {
+        ESP_LOGE(bmp280_tag, "Failed to initialized I2C interface");
+        return ESP_FAIL;
+    }
+
+    sensors_addr_t sensors[] = {
+        {
+            .name = "bmp280",
+            .addr = bmp->addr,
+            .__found = false
+        }
+    };
+
+    i2c_scan(sensors, sizeof(sensors) / (sizeof(sensors[0])));
+    for (int i = 0; i < ((sizeof(sensors)) / (sizeof(sensors[0]))); i++) {
+        if(!sensors[i].__found) {
+            ESP_LOGE(bmp280_tag, "%s in line %d --> %s not found in I2C bus", __func__, __LINE__, sensors[i].name);
+        }
+    }
+    
+
+    if(i2c_read_byte(bmp->addr, BMP280_ID_REG, &(bmp->id), 1) != ESP_OK) {
+        ESP_LOGE(bmp280_tag, "Failed to read bytes from <0x%X>", BMP280_ID_REG);
+        return ESP_FAIL;
+    }
+
+    ESP_LOGI(bmp280_tag, "Chip id is <0x%X>", bmp->id);
+
+    /**
+     * REGISTER: <config> 0xF5
+     *  set t_sb bits (7, 6, 5) to 000 (default value), but in forced mode => hence it has no action
+     *  set filter bits (4, 3, 2) to 100 ? CHECK:
+     *  set spi3w_en to 0 (default value => disabled)
+     */
+
+    if(i2c_write_byte(bmp->addr, BMP280_CONFIG_REG, (BMP280_TSB << 5) | (BMP280_FILTER_16 << 2) | BMP280_SPI32_DIS) != ESP_OK) {
+        ESP_LOGE(bmp280_tag, "Failed to write bytes to <0x%X>", BMP280_CONFIG_REG);
+        return ESP_FAIL;
+    }
+    
+
+    /**
+     * REGISTER: <ctrl_meas> 0xF4
+     *  set osrs_t bits (7, 6, 5) to 010 (x2 just to improve a little pressure measurements)
+     *  set osrs_p bits (4, 3, 2) to 101 (Ultra high resolution) CHECK:
+     *  set mode bits (1, 0) to 01 (Forced mode) => @attention always set force mode again before taking a new measurement (See @b Power_modes) 
+     */
+
+    if(i2c_write_byte(bmp->addr, BMP280_CTRL_MEAS_REG, (BMP280_OSRS_T_2 << 5) | (BMP280_OSRS_P_16 << 2) | (BMP280_FORCED_MODE)) != ESP_OK) {
+        ESP_LOGE(bmp280_tag, "Failed to write bytes to <0x%X>", BMP280_CTRL_MEAS_REG);
+        return ESP_FAIL;
+    }
+
+    ESP_LOGI(bmp280_tag, "Bmp280 object successfully initialized.");
+
+    return ESP_OK;
+}
