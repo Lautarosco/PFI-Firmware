@@ -4,16 +4,16 @@
 /* Enum containing index of a cmd frame */
 typedef enum cmd_index {
 
-    /* Command index */
+    /* Command */
     CMD_INDEX,
 
-    /* State index */
+    /* State */
     STATE_INDEX,
 
-    /* Variable to be updated index */
+    /* Variable */
     VAR_INDEX,
 
-    /* New value index */
+    /* New value */
     VALUE_INDEX
 
 } cmd_index_t;
@@ -39,5 +39,17 @@ void PidGainsCmdFunc( drone_t * obj, char * arr[ 4 ] );
  * @retval none
  */
 void PidActionsCmdFunc( drone_t * obj, char * arr[ 4 ] );
+
+/**
+ * @brief Update general variables
+ * 
+ * @param drone: Pointer to drone object
+ * @param arr: Array containing processed data from received cmd
+ * 
+ * @return none
+ * 
+ */
+void VarsUpdateCmdFunc(drone_t * drone, char * arr[4]);
+
 
 #endif
