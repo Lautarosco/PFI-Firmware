@@ -1,4 +1,4 @@
-#include <com.h>
+#include <bmp280_ll_drivers/communications/com.h>
 #include <driver/i2c.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -68,11 +68,12 @@ esp_err_t i2c_read_byte(uint8_t sensor_addr, uint8_t reg_addr, uint8_t * buff, i
     }
 
     /* 3. */
-    if(i2c_master_stop(cmd) != ESP_OK) {
+    if(i2c_master_start(cmd) != ESP_OK) {
         ESP_LOGE(i2c_tag, "%s in line %d --> Failed to stop I2C communication.", __func__, __LINE__);
         return ESP_FAIL;
     }
 
+/*
     if(i2c_master_cmd_begin(I2C_NUM_0, cmd, 1000 / portTICK_PERIOD_MS) != ESP_OK) {
         ESP_LOGE(i2c_tag, "%s in line %d --> Failed to send queued commands.", __func__, __LINE__);
         return ESP_FAIL;
@@ -84,6 +85,7 @@ esp_err_t i2c_read_byte(uint8_t sensor_addr, uint8_t reg_addr, uint8_t * buff, i
         ESP_LOGE(i2c_tag, "%s in line %d --> Failed to start I2C communication.", __func__, __LINE__);
         return ESP_FAIL;
     }
+*/
 
     /* 4. */
     if(i2c_master_write_byte(cmd, (sensor_addr << 1) | I2C_MASTER_READ, ACK_EN) != ESP_OK) {
@@ -93,12 +95,12 @@ esp_err_t i2c_read_byte(uint8_t sensor_addr, uint8_t reg_addr, uint8_t * buff, i
 
     /* 5. */
     if(len > 1) {
-        if(i2c_master_read(cmd, buff, len - 1, I2C_MASTER_NACK) != ESP_OK) {
+        if(i2c_master_read(cmd, buff, len - 1, I2C_MASTER_ACK) != ESP_OK) {
             ESP_LOGE(i2c_tag, "%s in line %d --> Failed to read <0x%X> address with a length of <%d>", __func__, __LINE__, reg_addr, len);
         }
     }
 
-    if(i2c_master_read_byte(cmd, buff + len - 1, 1) != ESP_OK) {
+    if(i2c_master_read_byte(cmd, buff + len - 1, I2C_MASTER_NACK) != ESP_OK) {
         ESP_LOGE(i2c_tag, "%s in line %d --> Failed to read byte.", __func__, __LINE__);
         return ESP_FAIL;
     }
@@ -153,7 +155,6 @@ esp_err_t i2c_write_byte(uint8_t sensor_addr, uint8_t reg_addr, uint8_t data) {
 void i2c_scan(sensors_addr_t * sensors, int len) {
     ESP_LOGI(i2c_tag, "Scanning I2C bus...");
 
-    bool found = false;
     for (uint8_t addr = 1; addr < 127; addr++) {
         i2c_cmd_handle_t cmd = i2c_cmd_link_create();
         i2c_master_start(cmd);
