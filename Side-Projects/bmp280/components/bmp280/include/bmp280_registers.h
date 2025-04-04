@@ -73,7 +73,7 @@
 /* #################### CONFIG #################### */
 
 typedef enum bmp280_TStandby {
-    TS_MANUAL = 0,      /* Use if when Forced mode is enabled */
+    TS_MANUAL = 0,      /* Use when forced mode is enabled */
     TS_0p5_MS = 0,      /* Time between samples of 0.5 ms */
     TS_62p5_MS,         /* Time between samples of 62.5 ms */
     TS_125_MS,          /* Time between samples of 125 ms */
@@ -87,10 +87,10 @@ typedef enum bmp280_TStandby {
 
 typedef enum bmp280_IIRCoeff {
     IIR_NO_FILTER,      /* Don't use IIR filter */
-    IIR_2,             /* Filter coefficient of 2 */
-    IIR_4,             /* Filter coefficient of 4 */
-    IIR_8,             /* Filter coefficient of 8 */
-    IIR_16             /* Filter coefficient of 16 */
+    IIR_2,              /* Filter coefficient of 2 */
+    IIR_4,              /* Filter coefficient of 4 */
+    IIR_8,              /* Filter coefficient of 8 */
+    IIR_16              /* Filter coefficient of 16 */
 } bmp280_IIRCoeff_t;
 
 
@@ -124,7 +124,6 @@ typedef enum bmp280_OsP {
 
 /* #################### MODE #################### */
 
-// #define BMP280_FORCED_MODE      0b01        /* Forced mode */
 typedef enum bmp280_PowerMode {
     SLEEP_MODE,             /* Sleep mode */
     FORCED_MODE,            /* Forced mode */
