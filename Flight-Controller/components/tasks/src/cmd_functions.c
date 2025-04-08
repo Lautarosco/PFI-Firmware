@@ -119,17 +119,41 @@ static int GetStateIndex( const char * stateName ) {
 
 
 /**
- * @brief Update drone variables such as pid gains or filers coefficient.
+ * @brief Update general variables such as pid gains or filers coefficient.
  */
 typedef struct vars_update {
 
-    /* Name of variable */
+    /* Name of variable => MUST be same as received from cmd */
     const char * name;
 
     /* Address of variable */
     void * addr;
 
 } vars_update_t;
+
+
+void VarsUpdateCmdFunc(drone_t * drone, char * arr[4]) {
+    vars_update_t general_vars[] = {
+        {.name = "ema_roll",  .addr = &(drone->attributes.global_variables.ema_filter_roll)},
+        {.name = "ema_pitch", .addr = &(drone->attributes.global_variables.ema_filter_pitch)},
+        {.name = "ema_yaw",   .addr = &(drone->attributes.global_variables.ema_filter_yaw)},
+        {.name = NULL,        .addr = NULL}
+    };
+
+    bool found = false;
+    for(int i = 0; general_vars[i].name != NULL; i++) {
+        if(!strcmp(arr[VAR_INDEX], general_vars[i].name)) {
+            *( float * ) general_vars[i].addr = (float) atof(arr[VALUE_INDEX]);
+            found = true;
+        }
+    }
+
+    if(!found) {
+
+        ESP_LOGW("TASK3", "%s in line %d --> ValueError: '%s' not found", __func__, __LINE__, arr[VAR_INDEX]);
+    }
+}
+
 
 void PidGainsCmdFunc( drone_t * obj, char * arr[ 4 ] ) {
 

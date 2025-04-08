@@ -60,8 +60,8 @@ esp_err_t bmi_init( bmi160_t * self, int bmi_address,
     
     /* Initialize Gyroscope */
     ESP_ERROR_CHECK( bmi160_write_byte( bmi_address, BMI160_CMD_REG,   gyro_mode ) );      
-    ESP_ERROR_CHECK( bmi160_write_byte( bmi_address, BMI160_ACC_CONF,  gyro_freq ) );
-    ESP_ERROR_CHECK( bmi160_write_byte( bmi_address, BMI160_ACC_RANGE, gyro_range ) );
+    ESP_ERROR_CHECK( bmi160_write_byte( bmi_address, BMI160_GYRO_CONF,  gyro_freq ) );
+    ESP_ERROR_CHECK( bmi160_write_byte( bmi_address, BMI160_GYRO_RANGE, gyro_range ) );
 
     /* Set initials offsets*/
     self->Gyro.offset.x = gyro_offset_x;
