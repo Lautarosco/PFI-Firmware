@@ -481,14 +481,13 @@ static void UpdateStates( drone_t * obj, float ts ) {
         // obj->attributes.states.yaw_dot   = FirstOrderIIR( obj->attributes.components.bmi.Gyro.z, obj->attributes.states.yaw_dot,   DroneConfigs.IIR_coeff_yaw_dot );
         
         /* Update state's position */
+        //Kalman( obj, ts );
 
-        Kalman( obj, ts );
-
-        /*
+        float ALPHA;  // TO-DO: make this a parameter 
         float roll_acc = atan2( obj->attributes.components.bmi.Acc.y, obj->attributes.components.bmi.Acc.z ) * ( 180.0f / M_PI );
         float roll_gyro = obj->attributes.states.roll + ( obj->attributes.components.bmi.Gyro.x * ( ts / 1000.0f ) );
-        obj->attributes.states.roll = ( 0.98f * roll_acc ) + ( 0.02f * roll_gyro );
-        */
+        obj->attributes.states.roll = ( 1-ALPHA * roll_acc ) + ( ALPHA * roll_gyro );
+        
     }
 }
 

@@ -46,20 +46,18 @@ typedef struct drone_globals drone_globals_t;
 typedef struct transmitter transmitter_t;
 
 typedef struct transmitter {
+
+   /* [ A ] Drone's global variables */
+   drone_globals_t * global_variables;
+
    #if PLAYSTATION_TX
       /* [ A ] Transmitter MAC Address */
       uint8_t mac_addr[ MAC_ADDR_SIZE ]; 
-
-      /* [ A ] Drone's global variables */
-      drone_globals_t * global_variables;
 
       /** @brief [ M ] Initialize Joystick  @param obj: Address of Transmitter object @param mac_p: Mac address @retval esp_err_t */
       esp_err_t ( * init )( transmitter_t * obj, const uint8_t mac_p[ MAC_ADDR_SIZE ] );
 
    #elif WEBSV_TX
-      /* [ A ] Drone's global variables */
-      drone_globals_t * global_variables;
-
       /** @brief [ M ] Initialize Joystick  @param obj: Address of Transmitter object @retval esp_err_t */
       esp_err_t ( * init )( transmitter_t * obj );
 
