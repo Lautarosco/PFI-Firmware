@@ -2,6 +2,7 @@
 #define DRONE_CONFIGS_H
 
 #include <drone_structs.h>
+#include "gpio_layout.h"
 
 /**
  * @brief Drone Class generic configs
@@ -28,8 +29,8 @@ static drone_cfg_t DroneConfigs = {
     .imu_cfg = {
         .imu_i2c_cfg = {
             .address = BMI160_ADDR,
-            .scl     = 22,
-            .sda     = 21,
+            .scl     = I2C_SCL_PIN,
+            .sda     = I2C_SDA_PIN,
         },
         .acc_mode    = BMI160_CMD_ACC_NORMAL_MODE,
         .acc_freq    = BMI160_ACC_CONF_100HZ_NORMAL,
@@ -54,7 +55,7 @@ static drone_cfg_t DroneConfigs = {
                 .clk_cfg         = LEDC_APB_CLK
             },
             .channel_cfg = {
-                .gpio_num            = GPIO_NUM_26,
+                .gpio_num            = PWM1_PIN,
                 .speed_mode          = LEDC_LOW_SPEED_MODE,
                 .channel             = LEDC_CHANNEL_0,
                 .intr_type           = LEDC_INTR_DISABLE,
@@ -75,7 +76,7 @@ static drone_cfg_t DroneConfigs = {
                 .clk_cfg         = LEDC_APB_CLK
             },
             .channel_cfg = {
-                .gpio_num            = GPIO_NUM_5,
+                .gpio_num            = PWM2_PIN,
                 .speed_mode          = LEDC_LOW_SPEED_MODE,
                 .channel             = LEDC_CHANNEL_1,
                 .intr_type           = LEDC_INTR_DISABLE,
@@ -96,7 +97,7 @@ static drone_cfg_t DroneConfigs = {
                 .clk_cfg         = LEDC_APB_CLK
             },
             .channel_cfg = {
-                .gpio_num            = GPIO_NUM_15,
+                .gpio_num            = PWM3_PIN,
                 .speed_mode          = LEDC_LOW_SPEED_MODE,
                 .channel             = LEDC_CHANNEL_2,
                 .intr_type           = LEDC_INTR_DISABLE,
@@ -117,7 +118,7 @@ static drone_cfg_t DroneConfigs = {
                 .clk_cfg         = LEDC_APB_CLK
             },
             .channel_cfg = {
-                .gpio_num            = GPIO_NUM_18,
+                .gpio_num            = PWM4_PIN,
                 .speed_mode          = LEDC_LOW_SPEED_MODE,
                 .channel             = LEDC_CHANNEL_3,
                 .intr_type           = LEDC_INTR_DISABLE,

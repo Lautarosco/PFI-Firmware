@@ -220,7 +220,7 @@ void vTaskprint( void * drone_ ) {
                 drone->attributes.components.controllers[ ROLL ]->gain.kd,
                 drone->attributes.components.controllers[ ROLL_D ]->gain.kp,
                 drone->attributes.components.controllers[ ROLL_D ]->gain.ki,
-                drone->attributes.components.controllers[ ROLL_D ]->gain.kd,
+                drone->attributes.components.controllers[ ROLL_D ]->gain.kd
             );
         
             t += 0.01f;      
