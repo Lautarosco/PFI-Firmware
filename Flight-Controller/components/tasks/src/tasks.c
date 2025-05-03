@@ -209,8 +209,8 @@ void vTaskprint( void * drone_ ) {
         if( drone->attributes.init_ok) {
 
             printf(
-                "printer:t,%.2f|roll,%.2f|roll_d,%.2f|\n",
-                t, drone->attributes.states.roll, drone->attributes.states.roll_dot
+                "printer:roll,%.2f|roll_d,%.2f\n",
+                drone->attributes.states.roll, drone->attributes.states.roll_dot
             );
 
             printf(
