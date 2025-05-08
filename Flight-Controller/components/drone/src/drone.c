@@ -456,7 +456,6 @@ static esp_err_t drone_init( drone_t * obj ) {
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
-
 /**
  * @brief Update Drone object states
  * @param obj: Address of Drone object
@@ -477,17 +476,19 @@ static void UpdateStates( drone_t * obj, float ts ) {
 
         // obj->attributes.states.roll_dot  = FirstOrderIIR( obj->attributes.components.bmi.Gyro.x, obj->attributes.states.roll_dot,  DroneConfigs.IIR_coeff_roll_dot );
         obj->attributes.states.roll_dot  = obj->attributes.components.bmi.Gyro.x;
-        // obj->attributes.states.pitch_dot = FirstOrderIIR( obj->attributes.components.bmi.Gyro.y, obj->attributes.states.pitch_dot, DroneConfigs.IIR_coeff_pitch_dot );
+        obj->attributes.states.pitch_dot = obj->attributes.components.bmi.Gyro.y;
         // obj->attributes.states.yaw_dot   = FirstOrderIIR( obj->attributes.components.bmi.Gyro.z, obj->attributes.states.yaw_dot,   DroneConfigs.IIR_coeff_yaw_dot );
         
         /* Update state's position */
         //Kalman( obj, ts );
 
-        float ALPHA = 0.95;  // TO-DO: make this a parameter 
+
         float roll_acc = atan2( obj->attributes.components.bmi.Acc.y, obj->attributes.components.bmi.Acc.z ) * ( 180.0f / M_PI );
         float roll_gyro = obj->attributes.states.roll + ( obj->attributes.components.bmi.Gyro.x * ( ts / 1000.0f ) );
+
+        float ALPHA = 0.95f;  // TODO: make this a parameter 
         obj->attributes.states.roll = (1-ALPHA)*roll_acc + ALPHA*roll_gyro;
-        
+
     }
 }
 

@@ -46,6 +46,19 @@ static void StInitFunc( drone_t * obj ) {
         /* Reset button */
         obj->attributes.global_variables.tx_buttons->cross = false;
     #endif
+
+    // tomar ACC_AVG_NUM mediciones de acelerómetro y promediarlas
+    float sum = 0;
+    #define ACC_AVG_NUM 20.0
+    for (int i = 0; i < ACC_AVG_NUM; i++) {
+        // leer acelerómetro y calcular roll_acc
+        float roll_acc = atan2( obj->attributes.components.bmi.Acc.y, obj->attributes.components.bmi.Acc.z ) * ( 180.0f / M_PI );
+        printf("Roll ACC: %.2f\n", roll_acc);
+        sum += roll_acc;
+        vTaskDelay(pdMS_TO_TICKS(10)); // espera entre muestras
+    }
+    printf("Sum: %.2f\n", sum);
+    obj->attributes.states.roll = sum / ACC_AVG_NUM;
 }
 
 static void StWaitingFunc( drone_t * obj ) {
