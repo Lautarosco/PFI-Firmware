@@ -9,7 +9,6 @@
 #include <esp_chip_info.h>
 
 /* TESTING */
-#define PRINTER
 sm_state_machine_t state_machine;   /* Only for debug purpose ( TEMPORAL REQUIREMENT ) */
 
 /* TESTING */
