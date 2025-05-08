@@ -11,18 +11,18 @@
 /**
  * @brief Structure of Bluetooth data
  */
-typedef struct BluetoothData {
+typedef struct SerialData {
 
     /* Data */
     char * data;
-
+    
     /* Data length */
     int len;
 
-    /* 0: IDLE, 1: DATA */
+    /* 0: Waiting for data, 1: Data received */
     bool state;
 
-} BluetoothData_t;
+} SerialData_t;
 
 /********************/
 /*    A N A L O G   */

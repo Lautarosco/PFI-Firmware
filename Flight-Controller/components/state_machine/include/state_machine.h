@@ -5,11 +5,13 @@
  * @brief Machine states
  */
 typedef enum state_machine_states {
+    
     ST_IDLE,
     ST_INIT,
+    ST_WAITING,
     ST_CALIBRATION,
-    ST_MEASURE,
     ST_CONTROL,
+    ST_PROPELLER_CALIBRATION,
     ST_RESET
 
 } sm_state_t;
@@ -20,6 +22,7 @@ extern const char *state_names[];
  * @brief Events of machine
  */
 typedef enum state_machine_events {
+
     EV_ANY,
     EV_CROSS,
     EV_TRIANGLE,
@@ -73,8 +76,8 @@ void StateMachine_RunIteration( sm_state_machine_t * state_machine, drone_t * dr
 
 /**
  * @brief Get the name of a given state
- * @param state: Desired state's name
- * @retval const char *
+ * @param state: state
+ * @retval state name
  */
 const char * StateMachine_GetStateName( sm_state_t state );
 

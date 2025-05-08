@@ -14,47 +14,28 @@
 typedef enum states {
 
     /* z index used in Arrays */
-    z,
+    Z,
     
     /* Roll index used in Arrays */
-    roll,
+    ROLL,
     
     /* Pitch index used in Arrays */
-    pitch,
+    PITCH,
     
     /* Yaw index used in Arrays */
-    yaw,
+    YAW,
     
-    /* Roll_dot index used in Arrays */
-    roll_dot,
+    /* Roll_d index used in Arrays */
+    ROLL_D,
     
-    /* Pitch_dot index used in Arrays */
-    pitch_dot,
+    /* Pitch_d index used in Arrays */
+    PITCH_D,
     
-    /* Yaw_dot index used in Arrays */
-    yaw_dot,
+    /* Yaw_d index used in Arrays */
+    YAW_D,
     
 } states_t;
 
-
-/* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
-
-/**
- * @brief Integral action saturation options
- */
-typedef enum int_sat {
-
-    /* No integral saturation */
-    no_saturation,
-    
-    /* Anti-Windup saturation */
-    anti_windup,
-    
-    /* Back-Propagation saturation */
-    back_propagation,
-
-} int_sat_t;
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
@@ -74,7 +55,24 @@ typedef struct pid_gain {
     /* Derivative gain */
     float kd;
 
+    /* Back Calculation gain */
+    float kb;
+
 } pid_gain_t;
+
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
+
+typedef struct pid_limits {
+
+    /* Minimum value */
+    float min;
+
+    /* Maximum value */
+    float max;
+
+} pid_limits_t;
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
@@ -85,14 +83,14 @@ typedef struct pid_gain {
  */
 typedef struct pid_action {
 
-    /* Proportional action. */
+    /* Proportional action */
     float p;
     
-    /* Integral action buffer [ Ci_n-1, Ci_n ] */
-    float i_buffer[ 2 ];
+    /* Integral action */
+    float i;
     
-    /* Derivative action buffer [ Cd_n-1, Cd_n ] */
-    float d_buffer[ 2 ];
+    /* Derivative action */
+    float d;
     
 } pid_action_t;
 
@@ -100,60 +98,90 @@ typedef struct pid_action {
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
-/**
- * @brief PID configs
- */
-typedef struct ControllerCfgs {
+/* Struct of a Low Pass Filter */
+typedef struct low_pass_filter {
 
-    /* Controller TAG */
-    states_t tag;
+    /* Output from filter */
+    float out;
 
-    /* LPF cut-off frequency ( D action ) */
-    float fc;
+    /* Time constant of filter in seconds */
+    float tau_s;
 
-    /* Sampling time in milliseconds for discrete blocks */
-    float ts;
-
-    /* Integral saturation */
-    int_sat_t sat;
-
-    pid_gain_t gains;
-
-} ControllerCfgs_t;
+} low_pass_filter_t;
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
-/** @details Forward declaration to avoid warning in function pointers */
+typedef struct pid_controller pid_controller_t; /* Forward declaration to avoid warning in function pointers */
 
-typedef struct pid_controller pid_controller_t;
+/**
+ * @brief Controller function for a particular action
+ * @param obj: Address of a Pid object
+ * @param error: Error
+ * @retval Output of controller action function
+ */
+typedef float ControllerFunction( pid_controller_t * obj, float error );
 
 /**
  * @brief Complete definition of Pid Class
  */
 typedef struct pid_controller {
 
-    /* [ A ] Error buffer [ e_n-1, e_n ] */
-    float error_buffer[ 2 ];
+    /* [ A ] Error */
+    float error;
+
+    /* [ A ] Previous error */
+    float prev_error;
+
+    /* [ A ] Controller TAG */
+    states_t tag;
+
+    /* [ A ] Sampling time in milliseconds */
+    float ts_ms;
 
     /* [ A ] Controller gains struct */
     pid_gain_t gain;
 
-    /* [ A ] Controller actions struct */
-    pid_action_t action;
+    /* [ A ] Integrator state */
+    float integrator;
 
-    /* [ A ] Controller cfgs */
-    ControllerCfgs_t cfg;
+    /* [ A ] Derivative Action Function with Low Pass Filter */
+    low_pass_filter_t derivative_lpf;
+
+    /* [ A ] Integral limits */
+    pid_limits_t integral_limits;
+
+    /* [ A ] PID Output limits */
+    pid_limits_t pid_out_limits;
 
     /* [ A ] Flag to check if object was initialized */
     bool init_ok;
 
-    /** @brief [ M ] Initialize Pid object @param obj: Address of Pid object @param cfg: Controller configs @retval none */
-    void ( * init )( pid_controller_t * obj, ControllerCfgs_t cfg );
+    /** @brief [ M ] Initialize Pid object @param obj: Address of Pid object @retval none */
+    void ( * init )( pid_controller_t * obj, states_t tag, float ts_ms, float tau_s, pid_gain_t pid_gains, pid_limits_t integral_limits, pid_limits_t pid_limits );
 
-    /** @brief [ M ] Calculate Controller action @param obj: Address of Pid object @param pv: Process value @param sp: Set point @retval PID calculation */
-    float ( * pid )( pid_controller_t * obj, float pv, float sp );
+    /** @brief [ M ] Update PID controller @param obj: Address of Pid object @param pv: Process value @param sp: Set Point */
+    float ( * pidUpdate )( pid_controller_t * obj, float pv, float sp );
+
+    /* Pointer to Proportional Action Function */
+    ControllerFunction * pFunc;
+
+    /* Pointer to Integral Action Function */
+    ControllerFunction * iFunc;
+
+    /* Pointer to Derivative Action Function */
+    ControllerFunction * dFunc;
+
+    
+    /** @brief Update Proportional Action Function @param obj: Address of Pid object @param pFunc: Pointer to Proportional Action Function */
+    void ( * PidSetActionP )( pid_controller_t * obj, float ( * pFunc )( pid_controller_t * obj, float error ) );
+    
+    /** @brief Update Integral Action Function @param obj: Address of Pid object @param iFunc: Pointer to Integral Action Function */
+    void ( * PidSetActionI )( pid_controller_t * obj, float ( * iFunc )( pid_controller_t * obj, float error ) );
+    
+    /** @brief Update Derivative Action Function @param obj: Address of Pid object @param dFunc: Pointer to Derivative Action Function */
+    void ( * PidSetActionD )( pid_controller_t * obj, float ( * dFunc )( pid_controller_t * obj, float error ) );
 
 } pid_controller_t;
 

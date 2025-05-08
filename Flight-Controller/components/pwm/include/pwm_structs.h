@@ -46,10 +46,10 @@ typedef struct pwm {
     /* [ A ] pwm configs */
     pwm_cfg_t pwm_cfg;
     
-    /* [ A ] Minimum duty cycle of pwm signal, from 0 to 1 */
+    /* [ A ] Minimum duty cycle of pwm signal accepted by the ESC, from 0 to 1. */
     float dc_min;
     
-    /* [ A ] Maximum duty cycle of pwm signal, from 0 to 1 */
+    /* [ A ] Maximum duty cycle of pwm signal accepted by the ESC, from 0 to 1 */
     float dc_max;
     
     /* [ A ] Maximum number to count used to limit pwm signal width */

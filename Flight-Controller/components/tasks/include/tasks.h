@@ -23,6 +23,13 @@ typedef enum cpu {
 
 
 /**
+ * @brief Freertos task to print drone related variables
+ * @param pvParameters: Any
+ * @retval none
+ */
+void vTaskprint(void * drone_);
+
+/**
  * @brief Freertos task to update next state of state machine
  * @param pvParameters: Any
  * @retval none
@@ -37,10 +44,10 @@ void vTaskStateMachine_Run( void * pvParameters );
 void vTaskDroneMeasure( void * pvParameters );
 
 /**
- * @brief Freertos task to parse Bluetooth data
+ * @brief Freertos task to parse serial data | Format: [ <pid/state/(p/i/d/min_err)/value> ] => For <state> use states enum
  * @param pvParameters: Any
  * @retval none
  */
-void vTaskParseBluetooth( void * pvParameters );
+void vTaskParseCommand( void * pvParameters );
 
 #endif

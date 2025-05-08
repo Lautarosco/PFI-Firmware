@@ -145,12 +145,12 @@ void ps3_spp_deinit()
 
 static void ps3_spp_callback( esp_spp_cb_event_t event, esp_spp_cb_param_t * param ) {
     
-    extern BluetoothData_t * GlobalBluetoothData;
+    extern SerialData_t * GlobalSerialData;
 
     /* Initialize with empty data */
-    /*for( int i = 0; i < sizeof( GlobalBluetoothData->data ) / sizeof( char ) ; i++ ) {
+    /*for( int i = 0; i < sizeof( GlobalSerialData->data ) / sizeof( char ) ; i++ ) {
 
-        GlobalBluetoothData->data[ i ] = '\0';
+        GlobalSerialData->data[ i ] = '\0';
     }*/
     
     switch ( event ) {
@@ -180,30 +180,30 @@ static void ps3_spp_callback( esp_spp_cb_event_t event, esp_spp_cb_param_t * par
             break;
 
         case ESP_SPP_DATA_IND_EVT:
-            if( GlobalBluetoothData != NULL ) {
+            if( GlobalSerialData != NULL ) {
 
                 /* Initialize data length in 0 */
-                GlobalBluetoothData->len = 0;
+                GlobalSerialData->len = 0;
 
                 /* Data received, hence state = 1 */
-                GlobalBluetoothData->state = true;
+                GlobalSerialData->state = true;
                 for (int i = 0; i < param->data_ind.len; i++) {
 
                     /* Avoid \r ( ascii = 13 ) and \n ( ascii 10 ) chars */
                     if( ( param->data_ind.data[ i ] != 13 ) && ( param->data_ind.data[ i ] != 10 ) ) {
                         
-                        /* Assign character to GlobalBluetoothData data */
-                        GlobalBluetoothData->data[ i ] = param->data_ind.data[ i ];
+                        /* Assign character to GlobalSerialData data */
+                        GlobalSerialData->data[ i ] = param->data_ind.data[ i ];
 
-                        /* Increment GlobalBluetoothData data length */
-                        GlobalBluetoothData->len++;
+                        /* Increment GlobalSerialData data length */
+                        GlobalSerialData->len++;
                     }
                 }
             }
 
             else {
 
-                ESP_LOGE( "BLUETOOTH", "'GlobalBluetoothData' variable is NULL" );
+                ESP_LOGE( "BLUETOOTH", "'GlobalSerialData' variable is NULL" );
             }
             
             break;
