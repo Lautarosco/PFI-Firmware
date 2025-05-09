@@ -15,11 +15,7 @@ static const char *TAG = "BMI160";
 
 // Device Methods
 /*Takes an empty bmi160_t struct and inits its functions and parameters*/
-esp_err_t Bmi160( bmi160_t* bmi,
-                        int i2c_address_param,
-                        int i2c_scl_param,
-                        int i2c_sda_param
-                ) {
+esp_err_t Bmi160(bmi160_t* bmi, int i2c_address_param, int i2c_scl_param, int i2c_sda_param) {
 
     // Function pointers assignment
     bmi->init                 = bmi_init;

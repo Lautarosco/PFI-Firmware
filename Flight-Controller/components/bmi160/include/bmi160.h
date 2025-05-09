@@ -121,7 +121,7 @@ esp_err_t bmi160_foc(bmi160_t* bmi);
  * @param i2c_scl: SCL GPIO
  * @retval Pointer to Bmi160 object
  */
-bmi160_t * Bmi160( int i2c_addr, int i2c_sda, int i2c_scl );
+esp_err_t Bmi160( bmi160_t* bmi, int i2c_addr, int i2c_sda, int i2c_scl );
 
 /**
  * @brief Initialize Bmi160 object
@@ -138,7 +138,7 @@ bmi160_t * Bmi160( int i2c_addr, int i2c_sda, int i2c_scl );
  * @param gyro_offset_z: Gyroscope z offset
  * @retval esp_err_t
  */
-esp_err_t bmi_init( bmi160_t * self, int bmi_address,
+
 esp_err_t bmi_init( bmi160_t * self, int bmi_address,
     int acc_mode,  int acc_freq,  int acc_range,
     int gyro_mode, int gyro_freq, int gyro_range,

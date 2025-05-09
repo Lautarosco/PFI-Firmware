@@ -7,6 +7,7 @@
 #include <math.h>
 
 const char * STATE_MACHINE_TAG = "STATE_MACHINE";
+sm_state_machine_t state_machine;
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */

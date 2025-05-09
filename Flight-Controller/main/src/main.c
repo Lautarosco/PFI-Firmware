@@ -4,14 +4,8 @@
 #include <freertos/task.h>
 #include <tasks.h>
 #include <esp_log.h>
-#include <state_machine.h>
 
 #include <esp_chip_info.h>
-
-/* TESTING */
-sm_state_machine_t state_machine;   /* Only for debug purpose ( TEMPORAL REQUIREMENT ) */
-
-/* TESTING */
 
 void app_main( void ) {
 
