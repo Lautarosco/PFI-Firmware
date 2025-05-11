@@ -15,11 +15,7 @@ static const char *TAG = "BMI160";
 
 // Device Methods
 /*Takes an empty bmi160_t struct and inits its functions and parameters*/
-esp_err_t Bmi160( bmi160_t* bmi,
-                        int i2c_address_param,
-                        int i2c_scl_param,
-                        int i2c_sda_param
-                ) {
+esp_err_t Bmi160(bmi160_t* bmi, int i2c_address_param, int i2c_scl_param, int i2c_sda_param) {
 
     // Function pointers assignment
     bmi->init                 = bmi_init;
@@ -106,6 +102,17 @@ esp_err_t bmi160_measure(bmi160_t* bmi) {
 
     // Accelerometer
     bmi->Acc.x = accel_x_g;
+    bmi->Acc.y = -accel_y_g;
+    bmi->Acc.z = accel_z_g;
+
+    // Gyroscopoe
+    bmi->Gyro.x = gyro_x_dps;
+    bmi->Gyro.y = -gyro_y_dps;
+    bmi->Gyro.z = gyro_z_dps;
+
+    /*
+    // Accelerometer
+    bmi->Acc.x = accel_x_g;
     bmi->Acc.y = accel_y_g;
     bmi->Acc.z = accel_z_g;
 
@@ -113,6 +120,7 @@ esp_err_t bmi160_measure(bmi160_t* bmi) {
     bmi->Gyro.x = gyro_x_dps;
     bmi->Gyro.y = gyro_y_dps;
     bmi->Gyro.z = gyro_z_dps;
+    */
 
     return ESP_OK;
 

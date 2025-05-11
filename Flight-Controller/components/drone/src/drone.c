@@ -385,9 +385,6 @@ static void read_from_nvs( drone_t * obj ) {
 static esp_err_t drone_init( drone_t * obj ) {
 
     ESP_LOGI( DRONE_TAG, "Initializing Drone object..." );
-    
-    /* Drone object is initialized */
-    obj->attributes.init_ok = true;
 
     #ifndef IGNORE_BMI
     /* Initialize Bmi160 object */
@@ -450,12 +447,14 @@ static esp_err_t drone_init( drone_t * obj ) {
 
     ESP_LOGI( DRONE_TAG, "Drone object initialized" );
 
+    /* Drone object is initialized */
+    obj->attributes.init_ok = true;
+    
     return ESP_OK;
 }
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
 
 /**
  * @brief Update Drone object states
@@ -473,21 +472,31 @@ static void UpdateStates( drone_t * obj, float ts ) {
 
     else {
 
-        /* Update state's velocity */
+        float acc_x = obj->attributes.components.bmi.Acc.x;
+        float acc_y = obj->attributes.components.bmi.Acc.y;
+        float acc_z = obj->attributes.components.bmi.Acc.z;
 
-        // obj->attributes.states.roll_dot  = FirstOrderIIR( obj->attributes.components.bmi.Gyro.x, obj->attributes.states.roll_dot,  DroneConfigs.IIR_coeff_roll_dot );
-        obj->attributes.states.roll_dot  = obj->attributes.components.bmi.Gyro.x;
-        // obj->attributes.states.pitch_dot = FirstOrderIIR( obj->attributes.components.bmi.Gyro.y, obj->attributes.states.pitch_dot, DroneConfigs.IIR_coeff_pitch_dot );
-        // obj->attributes.states.yaw_dot   = FirstOrderIIR( obj->attributes.components.bmi.Gyro.z, obj->attributes.states.yaw_dot,   DroneConfigs.IIR_coeff_yaw_dot );
+        float gyro_x = obj->attributes.components.bmi.Gyro.x;
+        float gyro_y = obj->attributes.components.bmi.Gyro.y;
+        float gyro_z = obj->attributes.components.bmi.Gyro.z;
+
+        /* Update state's velocity */
+        obj->attributes.states.roll_dot  = gyro_x;
+        obj->attributes.states.pitch_dot = gyro_y;
+        obj->attributes.states.yaw_dot   = gyro_z;
         
         /* Update state's position */
-        //Kalman( obj, ts );
+        float ALPHA = 0.95f;  // TODO: make this a parameter 
 
-        float ALPHA;  // TO-DO: make this a parameter 
-        float roll_acc = atan2( obj->attributes.components.bmi.Acc.y, obj->attributes.components.bmi.Acc.z ) * ( 180.0f / M_PI );
-        float roll_gyro = obj->attributes.states.roll + ( obj->attributes.components.bmi.Gyro.x * ( ts / 1000.0f ) );
-        obj->attributes.states.roll = ( 1-ALPHA * roll_acc ) + ( ALPHA * roll_gyro );
-        
+        float roll_acc = atan2( acc_y, acc_z ) * ( 180.0f / M_PI );
+        float roll_gyro = obj->attributes.states.roll + ( gyro_x * ( ts / 1000.0f ) );        
+        obj->attributes.states.roll = (1-ALPHA)*roll_acc + ALPHA*roll_gyro;
+
+        float pitch_acc = atan2(acc_y, sqrt(acc_x*acc_x + acc_z*acc_z));
+        float pitch_gyro = obj->attributes.states.pitch + (gyro_y * ( ts / 1000.0f) );
+        obj->attributes.states.pitch = (1-ALPHA)*pitch_acc + ALPHA*pitch_gyro;
+
+        obj->attributes.states.yaw = obj->attributes.states.yaw + (gyro_z * (ts / 1000.0f) );
     }
 }
 
@@ -593,14 +602,12 @@ drone_t * Drone( void ) {
 
     /* Make an instance of Bmi160 Class */
     #ifndef IGNORE_BMI
-    ESP_ERROR_CHECK(
-        Bmi160(
-            &( drone->attributes.components.bmi ),
-            drone->attributes.config.imu_cfg.imu_i2c_cfg.address,
-            drone->attributes.config.imu_cfg.imu_i2c_cfg.scl,
-            drone->attributes.config.imu_cfg.imu_i2c_cfg.sda
-        )
+    Bmi160(&(drone->attributes.components.bmi),
+        drone->attributes.config.imu_cfg.imu_i2c_cfg.address,
+        drone->attributes.config.imu_cfg.imu_i2c_cfg.sda,
+        drone->attributes.config.imu_cfg.imu_i2c_cfg.scl
     );
+
 
     /* Check if all devices are connected to i2c bus */
     if( !drone->methods.i2c_scan() ) {

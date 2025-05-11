@@ -115,34 +115,30 @@ esp_err_t bmi160_measure(bmi160_t* bmi);
 esp_err_t bmi160_foc(bmi160_t* bmi);
 
 /**
- * @brief Make an instance of Bmi160 Class.
- * @param bmi: Pointer to bmi160_t struct.
- * @param i2c_address_param: bmi address.
- * @param i2c_scl_param: scl GPIO.
- * @param i2c_sda_param: sda GPIO.
- * @retval esp_err_t
+ * @brief Make an instance of Bmi160 Class
+ * @param i2c_addr: i2c address of bmi sensor
+ * @param i2c_sda: SDA GPIO
+ * @param i2c_scl: SCL GPIO
+ * @retval Pointer to Bmi160 object
  */
-esp_err_t Bmi160( bmi160_t* bmi,
-                        int i2c_address_param,
-                        int i2c_scl_param,
-                        int i2c_sda_param
-                );
+esp_err_t Bmi160( bmi160_t* bmi, int i2c_addr, int i2c_sda, int i2c_scl );
 
 /**
- * @brief Initialize Acelerometer and Gyroscope
- * @param self: Pointer to bmi160_t struct.
- * @param bmi_address: Address of bmi register.
- * @param acc_mode:    Accelerometer mode.
- * @param acc_freq:    Accelerometer operation frequency.
- * @param acc_range:   Accelerometer range.
- * @param gyro_mode:   Gyroscope mode.
- * @param gyro_freq:   Gyroscope operation frequency.
- * @param gyro_range:  Gyroscope range.
- * @param gyro_offset_x: Gyroscope x offset.
- * @param gyro_offset_y: Gyroscope y offset.
- * @param gyro_offset_z: Gyroscope z offset.
+ * @brief Initialize Bmi160 object
+ * @param self: Address of Bmi160 object
+ * @param bmi_address: Bmi160 I2C address
+ * @param acc_mode: Accelerometer mode
+ * @param acc_freq: Accelerometer operation frequency
+ * @param acc_range: Accelerometer range
+ * @param gyro_mode: Gyroscope mode
+ * @param gyro_freq: Gyroscope operation frequency
+ * @param gyro_range: Gyroscope range
+ * @param gyro_offset_x: Gyroscope x offset
+ * @param gyro_offset_y: Gyroscope y offset
+ * @param gyro_offset_z: Gyroscope z offset
  * @retval esp_err_t
  */
+
 esp_err_t bmi_init( bmi160_t * self, int bmi_address,
     int acc_mode,  int acc_freq,  int acc_range,
     int gyro_mode, int gyro_freq, int gyro_range,

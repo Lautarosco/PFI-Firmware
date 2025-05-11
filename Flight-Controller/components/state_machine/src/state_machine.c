@@ -7,6 +7,7 @@
 #include <math.h>
 
 const char * STATE_MACHINE_TAG = "STATE_MACHINE";
+sm_state_machine_t state_machine;
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
@@ -46,6 +47,19 @@ static void StInitFunc( drone_t * obj ) {
         /* Reset button */
         obj->attributes.global_variables.tx_buttons->cross = false;
     #endif
+
+    // tomar ACC_AVG_NUM mediciones de acelerómetro y promediarlas
+    float sum = 0;
+    #define ACC_AVG_NUM 20.0
+    for (int i = 0; i < ACC_AVG_NUM; i++) {
+        // leer acelerómetro y calcular roll_acc
+        float roll_acc = atan2( obj->attributes.components.bmi.Acc.y, obj->attributes.components.bmi.Acc.z ) * ( 180.0f / M_PI );
+        printf("Roll ACC: %.2f\n", roll_acc);
+        sum += roll_acc;
+        vTaskDelay(pdMS_TO_TICKS(10)); // espera entre muestras
+    }
+    printf("Sum: %.2f\n", sum);
+    obj->attributes.states.roll = sum / ACC_AVG_NUM;
 }
 
 static void StWaitingFunc( drone_t * obj ) {
@@ -58,21 +72,17 @@ float filtered_roll = 0.0f;
 
 static void StControlFunc( drone_t * obj ) {
 
-    /* Update drone states */
-    obj->methods.update_states( obj, 10 );
 
-    /* Update sp */
-    obj->attributes.sp.roll = 0;
     /* Compute PID algorithm for all states */
 
     /* ROLL - Cascaded PID*/
 
-    float alpha_ema = 2/(obj->attributes.global_variables.ema_filter_roll+1);
-    filtered_roll = alpha_ema*obj->attributes.states.roll + (1-alpha_ema)*filtered_roll;
+    // float alpha_ema = 2/(obj->attributes.global_variables.ema_filter_roll+1);
+    // filtered_roll = alpha_ema*obj->attributes.states.roll + (1-alpha_ema)*filtered_roll;
 
     float CRoll = obj->attributes.components.controllers[ ROLL ]->pidUpdate(
         obj->attributes.components.controllers[ ROLL ],
-        filtered_roll,
+        obj->attributes.states.roll,
         obj->attributes.sp.roll
     );
     

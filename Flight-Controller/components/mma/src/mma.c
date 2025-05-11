@@ -61,7 +61,6 @@ static float u2pwm(float u, float dc_min, float dc_max ) {
 
 
 /**
->>>>>>> parent of d673ece (Se resolvio el conflicto de merge entre local de juani y dev):Flight-Controller/components/mma/mma.c
  * @brief Compute MMA algorithm and update object outputs
  * @param obj: Address of Mma object
  * @param dc_min: Minimum duty cycle accepted by the ESC

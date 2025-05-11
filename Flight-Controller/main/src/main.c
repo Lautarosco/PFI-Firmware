@@ -4,15 +4,8 @@
 #include <freertos/task.h>
 #include <tasks.h>
 #include <esp_log.h>
-#include <state_machine.h>
 
 #include <esp_chip_info.h>
-
-/* TESTING */
-#define PRINTER
-sm_state_machine_t state_machine;   /* Only for debug purpose ( TEMPORAL REQUIREMENT ) */
-
-/* TESTING */
 
 void app_main( void ) {
 
@@ -37,5 +30,5 @@ void app_main( void ) {
     xTaskCreatePinnedToCore( vTaskParseCommand, "Task3", 1024 * 3, ( void * ) ( drone ), 1, NULL, CORE_0 );
 
     /* Print values over serial */
-    xTaskCreatePinnedToCore( vTaskprint, "Task4", 1024*2, ( void * ) ( drone ), 1, NULL, CORE_0 );
+    xTaskCreatePinnedToCore( vTaskprint, "Task4", 4096, ( void * ) ( drone ), 1, NULL, CORE_0 );
 }
