@@ -7,6 +7,7 @@
 #include <pwm.h>
 #include <controllers.h>
 #include <mma.h>
+#include <state_machine.h>
 
 #define FLASH_PARAMS 20 /* Total Drone parameters to be stored in flash memory */
 #define NVS_NAMESPACE "storage"
@@ -246,6 +247,8 @@ typedef struct drone_attributes {
     /* Drone's init flag */
     bool init_ok;
 
+    /* State machine of Drone Class */
+    sm_state_machine_t state_machine;
 
 } drone_attributes_t;
 
@@ -260,6 +263,9 @@ typedef struct drone drone_t;
 typedef struct drone_methods {
     /** @brief Update Drone object states @param obj: Address of Drone object @param ts: Sampling time in milliseconds @retval none */
     void ( * update_states )( drone_t * obj, float ts );
+
+    /** @brief Update Drone set points @param drone: Address of Drone object @retval none */
+    void (*update_sp)(drone_t * drone);
 
     /** @brief Initialize an object of Drone Class @param obj: Address of Drone object @param drone_cfg: Drone's configs @retval esp_err_t */
     esp_err_t ( * init )( drone_t * obj );

@@ -3,7 +3,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <drone.h>
-#include <state_machine.h>
+// #include <state_machine.h>
 #include <string.h>
 
 #include <esp_log.h>
@@ -146,20 +146,20 @@ void vTaskStateMachine_Run( void * pvParameters ) {
     /* TESTING */
 
     // sm_state_machine_t state_machine;    /* It will end being local */
-    extern sm_state_machine_t state_machine;
+    // extern sm_state_machine_t state_machine;
 
     /* TESTING */
 
     /* Initialize state_machine object */
-    StateMachine_Init( &state_machine );
+    StateMachine_Init( &obj->attributes.state_machine );
 
     while( 1 ) {
 
         /* Get occurred event */
-        getEvent( &state_machine, *obj );
+        getEvent( &obj->attributes.state_machine, *obj );
 
         /* Go to the next state and run it's respective function */
-        StateMachine_RunIteration( &state_machine, obj );
+        StateMachine_RunIteration( &obj->attributes.state_machine, obj );
         
         vTaskDelay( pdMS_TO_TICKS( 10 ) );
     }

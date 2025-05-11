@@ -503,6 +503,28 @@ static void UpdateStates( drone_t * obj, float ts ) {
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
+/**
+ * @brief Update Drone set points
+ * @param drone: Address of Drone object
+ * @retval none
+ */
+static void UpdateSetPoint(drone_t * drone) {
+    // 1. Update only if current state machine state is ST_CONTROL
+    if(drone->attributes.state_machine.curr_state == ST_CONTROL) {
+        // 2. Check for roll commands
+        if(drone->attributes.global_variables.tx_buttons->triangle) {
+            drone->attributes.sp.roll += 0.1;
+        }
+
+        else if(drone->attributes.global_variables.tx_buttons->cross) {
+            drone->attributes.sp.roll -= 0.1;
+        }
+    }
+}
+
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
 
 drone_t * Drone( void ) {
 
@@ -537,6 +559,7 @@ drone_t * Drone( void ) {
 
     /* Pointer to Drone functions ( methods ) */
     drone->methods.update_states    = UpdateStates;
+    drone->methods.update_sp        = UpdateSetPoint;
     drone->methods.init             = drone_init;
     drone->methods.i2c_scan         = i2c_scan;
     drone->methods.read_from_flash  = read_from_nvs;
