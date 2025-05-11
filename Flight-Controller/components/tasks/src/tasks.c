@@ -180,14 +180,16 @@ void vTaskDroneMeasure( void * pvParameters ) {
         /* Measure attitude and update bmi sensor internal registers with respective values */
         obj->attributes.components.bmi.measure( &( obj->attributes.components.bmi ) );
 
-        /* Update drone states */
-        obj->methods.update_states( obj, 10 );
+        if (obj->attributes.init_ok) {
+            /* Update drone states */
+            obj->methods.update_states( obj, 10 );
 
-        /* Update sp */
-        obj->attributes.sp.roll = 0;
-        obj->attributes.sp.pitch = 0;
-        obj->attributes.sp.yaw = 0;
-        obj->attributes.sp.z = 0;
+            /* Update sp */
+            obj->attributes.sp.roll = 0;
+            obj->attributes.sp.pitch = 0;
+            obj->attributes.sp.yaw = 0;
+            obj->attributes.sp.z = 0;
+        }
 
         vTaskDelay( pdMS_TO_TICKS( 10 ) );
     }
