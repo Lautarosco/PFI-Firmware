@@ -247,8 +247,6 @@ void vTaskprint( void * drone_ ) {
                 drone->attributes.sp.yaw_dot,
                 drone->attributes.states.z,
                 drone->attributes.sp.z,
-
-                // pwm duty cycles
                 drone->attributes.components.pwm[0]->get_pwm_dc(drone->attributes.components.pwm[0]),
                 drone->attributes.components.pwm[1]->get_pwm_dc(drone->attributes.components.pwm[1]),
                 drone->attributes.components.pwm[2]->get_pwm_dc(drone->attributes.components.pwm[2]),
