@@ -385,9 +385,6 @@ static void read_from_nvs( drone_t * obj ) {
 static esp_err_t drone_init( drone_t * obj ) {
 
     ESP_LOGI( DRONE_TAG, "Initializing Drone object..." );
-    
-    /* Drone object is initialized */
-    obj->attributes.init_ok = true;
 
     #ifndef IGNORE_BMI
     /* Initialize Bmi160 object */
@@ -450,6 +447,9 @@ static esp_err_t drone_init( drone_t * obj ) {
 
     ESP_LOGI( DRONE_TAG, "Drone object initialized" );
 
+    /* Drone object is initialized */
+    obj->attributes.init_ok = true;
+    
     return ESP_OK;
 }
 

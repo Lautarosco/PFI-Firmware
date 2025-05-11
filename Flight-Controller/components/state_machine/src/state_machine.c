@@ -72,11 +72,7 @@ float filtered_roll = 0.0f;
 
 static void StControlFunc( drone_t * obj ) {
 
-    /* Update drone states */
-    obj->methods.update_states( obj, 10 );
 
-    /* Update sp */
-    obj->attributes.sp.roll = 0;
     /* Compute PID algorithm for all states */
 
     /* ROLL - Cascaded PID*/

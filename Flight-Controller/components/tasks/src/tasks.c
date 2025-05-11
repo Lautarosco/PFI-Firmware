@@ -180,6 +180,15 @@ void vTaskDroneMeasure( void * pvParameters ) {
         /* Measure attitude and update bmi sensor internal registers with respective values */
         obj->attributes.components.bmi.measure( &( obj->attributes.components.bmi ) );
 
+        /* Update drone states */
+        obj->methods.update_states( obj, 10 );
+
+        /* Update sp */
+        obj->attributes.sp.roll = 0;
+        obj->attributes.sp.pitch = 0;
+        obj->attributes.sp.yaw = 0;
+        obj->attributes.sp.z = 0;
+
         vTaskDelay( pdMS_TO_TICKS( 10 ) );
     }
 }
@@ -188,19 +197,19 @@ void vTaskDroneMeasure( void * pvParameters ) {
 
 void vTaskprint( void * drone_ ) {
 
-    float t = 0.0f;
     drone_t* drone = ( drone_t * ) drone_;
 
     /**
-     * @brief Variable format: <printer:time,%f|var,%f\n>
+     * @brief Variable format: <printer:var,%f\n>
      * @details Used for sending variables such as drone states, pid values, etc.
-     * @example i.e, <printer:t,%f|roll,%f>  This will send roll values to plotter app
+     * @example i.e, <printer:roll,%f>  This will send roll values to plotter app
      * 
      * 
      * @brief Static format: <static:var_name/var_attr,%f|\n>
      * @details Used for sending static variables
      * @example i.e, <static:roll/P,%f>  This will send proportional action of roll pid to plotter app
      */
+    static char buf[1024];
 
     while( 1 ) {
 
@@ -208,25 +217,69 @@ void vTaskprint( void * drone_ ) {
 
         if( drone->attributes.init_ok) {
 
-            printf(
-                "printer:roll,%.2f|roll_d,%.2f\n",
-                drone->attributes.states.roll, drone->attributes.states.roll_dot
-            );
+            // Dynamic
+            snprintf(buf, sizeof(buf),
+                "printer:roll,%.2f|roll_d,%.2f|roll_sp,%.2f|roll_d_sp,%.2f|"
+                "pitch,%.2f|pitch_d,%.2f|pitch_sp,%.2f|pitch_d_sp,%.2f|"
+                "yaw,%.2f|yaw_d,%.2f|yaw_sp,%.2f|yaw_d_sp,%.2f|"
+                "height,%.2f|height_sp,%.2f|"
+                "dc1,%.2f|dc2,%.2f|dc3,%.2f|dc4,%.2f|"
+                "static:roll/P,%.2f|roll/I,%.2f|roll/D,%.2f|roll_d/P,%.2f|roll_d/I,%.2f|roll_d/D,%.2f|"
+                "pitch/P,%.2f|pitch/I,%.2f|pitch/D,%.2f|pitch_d/P,%.2f|pitch_d/I,%.2f|pitch_d/D,%.2f|"
+                "yaw/P,%.2f|yaw/I,%.2f|yaw/D,%.2f|yaw_d/P,%.2f|yaw_d/I,%.2f|yaw_d/D,%.2f\n",
 
-            printf(
-                "static:roll/P,%.2f|roll/I,%.2f|roll/D,%.2f|roll_d/P,%.2f|roll_d/I,%.2f|roll_d/D,%.2f\n",
-                drone->attributes.components.controllers[ ROLL ]->gain.kp,
-                drone->attributes.components.controllers[ ROLL ]->gain.ki,
-                drone->attributes.components.controllers[ ROLL ]->gain.kd,
-                drone->attributes.components.controllers[ ROLL_D ]->gain.kp,
-                drone->attributes.components.controllers[ ROLL_D ]->gain.ki,
-                drone->attributes.components.controllers[ ROLL_D ]->gain.kd
+                // dynamic state
+                drone->attributes.states.roll,
+                drone->attributes.states.roll_dot,
+                drone->attributes.sp.roll,
+                drone->attributes.sp.roll_dot,
+                drone->attributes.states.pitch,
+                drone->attributes.states.pitch_dot,
+                drone->attributes.sp.pitch,
+                drone->attributes.sp.pitch_dot,
+                drone->attributes.states.yaw,
+                drone->attributes.states.yaw_dot,
+                drone->attributes.sp.yaw,
+                drone->attributes.sp.yaw_dot,
+                drone->attributes.states.z,
+                drone->attributes.sp.z,
+
+                // pwm duty cycles
+                drone->attributes.components.pwm[0]->get_pwm_dc(drone->attributes.components.pwm[0]),
+                drone->attributes.components.pwm[1]->get_pwm_dc(drone->attributes.components.pwm[1]),
+                drone->attributes.components.pwm[2]->get_pwm_dc(drone->attributes.components.pwm[2]),
+                drone->attributes.components.pwm[3]->get_pwm_dc(drone->attributes.components.pwm[3]),
+
+                // roll gains
+                drone->attributes.components.controllers[ROLL]->gain.kp,
+                drone->attributes.components.controllers[ROLL]->gain.ki,
+                drone->attributes.components.controllers[ROLL]->gain.kd,
+                drone->attributes.components.controllers[ROLL_D]->gain.kp,
+                drone->attributes.components.controllers[ROLL_D]->gain.ki,
+                drone->attributes.components.controllers[ROLL_D]->gain.kd,
+
+                // pitch gains
+                drone->attributes.components.controllers[PITCH]->gain.kp,
+                drone->attributes.components.controllers[PITCH]->gain.ki,
+                drone->attributes.components.controllers[PITCH]->gain.kd,
+                drone->attributes.components.controllers[PITCH_D]->gain.kp,
+                drone->attributes.components.controllers[PITCH_D]->gain.ki,
+                drone->attributes.components.controllers[PITCH_D]->gain.kd,
+
+                // yaw gains
+                drone->attributes.components.controllers[YAW]->gain.kp,
+                drone->attributes.components.controllers[YAW]->gain.ki,
+                drone->attributes.components.controllers[YAW]->gain.kd,
+                drone->attributes.components.controllers[YAW_D]->gain.kp,
+                drone->attributes.components.controllers[YAW_D]->gain.ki,
+                drone->attributes.components.controllers[YAW_D]->gain.kd
             );
+            printf("%s", buf);
         
-            t += 0.01f;      
         }
+        fflush(stdout);  // check
 
-        vTaskDelay( pdMS_TO_TICKS( 10 ) );
+        vTaskDelay( pdMS_TO_TICKS( 50 ) );
     }
 
 
