@@ -72,7 +72,7 @@ typedef struct drone drone_t;
  * @param event: Occurred event
  * @retval none
  */
-void StateMachine_RunIteration( sm_state_machine_t * state_machine, drone_t * drone );
+void StateMachine_RunIteration(drone_t * drone);
 
 /**
  * @brief Get the name of a given state

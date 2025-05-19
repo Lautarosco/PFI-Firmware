@@ -159,11 +159,10 @@ void vTaskStateMachine_Run( void * pvParameters ) {
         getEvent( &obj->attributes.state_machine, *obj );
 
         /* Go to the next state and run it's respective function */
-        StateMachine_RunIteration( &obj->attributes.state_machine, obj );
+        StateMachine_RunIteration(obj);
         
         vTaskDelay( pdMS_TO_TICKS( 10 ) );
     }
-    
 }
 
 

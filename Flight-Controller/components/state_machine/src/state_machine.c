@@ -296,7 +296,7 @@ void StateMachine_Init( sm_state_machine_t * state_machine ) {
     state_machine->curr_state = ST_IDLE;
 }
 
-void StateMachine_RunIteration( sm_state_machine_t * state_machine, drone_t * drone ) {
+void StateMachine_RunIteration(drone_t * drone) {
 
     // printf( "Current state: %s\r\nCurrent event: %s\r\n", StateMachine_GetStateName( state_machine->curr_state ), StateMachine_GetEventName( state_machine->event ) );
 
@@ -304,16 +304,16 @@ void StateMachine_RunIteration( sm_state_machine_t * state_machine, drone_t * dr
     for( int i = 0; i < sizeof( state_trans_matrix ) / sizeof( state_trans_matrix[ 0 ] ); i++ ) {
 
         /* If matched actual state */
-        if( state_trans_matrix[ i ].curr_state == state_machine->curr_state ) {
+        if( state_trans_matrix[ i ].curr_state == drone->attributes.state_machine.curr_state ) {
 
             /* If matched occurred event */
-            if( state_trans_matrix[ i ].event == state_machine->event ) {
+            if( state_trans_matrix[ i ].event == drone->attributes.state_machine.event ) {
 
                 /* Go to the next state */
-                state_machine->curr_state = state_trans_matrix[ i ].next_state;
+                drone->attributes.state_machine.curr_state = state_trans_matrix[ i ].next_state;
 
                 /* Run new actual state respective function */
-                state_function_array[ state_machine->curr_state ].func( drone );
+                state_function_array[ drone->attributes.state_machine.curr_state ].func( drone );
                 break;
             }
         }
