@@ -69,6 +69,33 @@ static void StWaitingFunc( drone_t * obj ) {
 
 
 float filtered_roll = 0.0f;
+static void StControlVibrationCheck( drone_t* drone) {
+
+    while (true) {
+
+        if (drone->attributes.global_variables.tx_buttons->up) {
+            toggle_motor(drone->attributes.components.pwm[0]);
+
+        }
+        else if (drone->attributes.global_variables.tx_buttons->down) {
+            toggle_motor(drone->attributes.components.pwm[1]);
+
+        }
+        else if (drone->attributes.global_variables.tx_buttons->left) {
+            toggle_motor(drone->attributes.components.pwm[2]);
+
+        }
+        else if (drone->attributes.global_variables.tx_buttons->right) {
+            toggle_motor(drone->attributes.components.pwm[3]);
+
+        }
+        else if (drone->attributes.global_variables.tx_buttons->circle) return;
+    }
+
+    printf("Vibration: %.2f\n", );
+
+
+}
 
 static void StControlFunc( drone_t * obj ) {
 
