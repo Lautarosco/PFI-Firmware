@@ -211,6 +211,7 @@ void vTaskprint( void * drone_ ) {
      * @example i.e, <static:roll/P,%f>  This will send proportional action of roll pid to plotter app
      */
     static char buf[1024];
+    extern sm_state_machine_t state_machine;
 
     while( 1 ) {
 
@@ -224,10 +225,11 @@ void vTaskprint( void * drone_ ) {
                 "pitch,%.2f|pitch_d,%.2f|pitch_sp,%.2f|pitch_d_sp,%.2f|"
                 "yaw,%.2f|yaw_d,%.2f|yaw_sp,%.2f|yaw_d_sp,%.2f|"
                 "height,%.2f|height_sp,%.2f|"
-                "dc1,%.2f|dc2,%.2f|dc3,%.2f|dc4,%.2f|"
+                "dc1,%.2f|dc2,%.2f|dc3,%.2f|dc4,%.2f\n"  // end of dynamic values
                 "static:roll/P,%.2f|roll/I,%.2f|roll/D,%.2f|roll_d/P,%.2f|roll_d/I,%.2f|roll_d/D,%.2f|"
                 "pitch/P,%.2f|pitch/I,%.2f|pitch/D,%.2f|pitch_d/P,%.2f|pitch_d/I,%.2f|pitch_d/D,%.2f|"
-                "yaw/P,%.2f|yaw/I,%.2f|yaw/D,%.2f|yaw_d/P,%.2f|yaw_d/I,%.2f|yaw_d/D,%.2f\n",
+                "yaw/P,%.2f|yaw/I,%.2f|yaw/D,%.2f|yaw_d/P,%.2f|yaw_d/I,%.2f|yaw_d/D,%.2f|"
+                "state,%s\n",
 
                 // dynamic state
                 drone->attributes.states.roll,
@@ -244,8 +246,6 @@ void vTaskprint( void * drone_ ) {
                 drone->attributes.sp.yaw_dot,
                 drone->attributes.states.z,
                 drone->attributes.sp.z,
-
-                // pwm duty cycles
                 drone->attributes.components.pwm[0]->get_pwm_dc(drone->attributes.components.pwm[0]),
                 drone->attributes.components.pwm[1]->get_pwm_dc(drone->attributes.components.pwm[1]),
                 drone->attributes.components.pwm[2]->get_pwm_dc(drone->attributes.components.pwm[2]),
@@ -273,7 +273,10 @@ void vTaskprint( void * drone_ ) {
                 drone->attributes.components.controllers[YAW]->gain.kd,
                 drone->attributes.components.controllers[YAW_D]->gain.kp,
                 drone->attributes.components.controllers[YAW_D]->gain.ki,
-                drone->attributes.components.controllers[YAW_D]->gain.kd
+                drone->attributes.components.controllers[YAW_D]->gain.kd,
+            
+                // state machine current state
+                StateMachine_GetStateName(state_machine.curr_state)
             );
             printf("%s", buf);
         

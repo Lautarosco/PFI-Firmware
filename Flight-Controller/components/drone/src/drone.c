@@ -492,7 +492,7 @@ static void UpdateStates( drone_t * obj, float ts ) {
         float roll_gyro = obj->attributes.states.roll + ( gyro_x * ( ts / 1000.0f ) );        
         obj->attributes.states.roll = (1-ALPHA)*roll_acc + ALPHA*roll_gyro;
 
-        float pitch_acc = atan2(acc_y, sqrt(acc_x*acc_x + acc_z*acc_z));
+        float pitch_acc = atan2(acc_x, sqrt(acc_y*acc_y + acc_z*acc_z)) * (180.0f / M_PI);
         float pitch_gyro = obj->attributes.states.pitch + (gyro_y * ( ts / 1000.0f) );
         obj->attributes.states.pitch = (1-ALPHA)*pitch_acc + ALPHA*pitch_gyro;
 
