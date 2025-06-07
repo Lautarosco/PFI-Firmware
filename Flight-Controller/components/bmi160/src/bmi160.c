@@ -106,7 +106,7 @@ esp_err_t bmi160_measure(bmi160_t* bmi) {
     bmi->Acc.z = accel_z_g;
 
     // Gyroscopoe
-    bmi->Gyro.x = gyro_x_dps;
+    bmi->Gyro.x = - gyro_x_dps;  // ni idea jajajajaj
     bmi->Gyro.y = -gyro_y_dps;
     bmi->Gyro.z = gyro_z_dps;
 
