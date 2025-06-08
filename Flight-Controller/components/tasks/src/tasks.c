@@ -285,16 +285,72 @@ void vTaskprint( void * drone_ ) {
 
         vTaskDelay( pdMS_TO_TICKS( 50 ) );
     }
-
-
-
 }
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
-static void vTaskUartEvent( void * pvParameters ) {
+static void vLocalUartTxCmd(void *pvParameters) {
+    drone_t *drone = (drone_t *) pvParameters;
+
+    // tx:{button:cross,action:press}
+    char char_ptr[256];
+    char * string_ptr[2];
+    int char_index = 0;
+    int string_index = 0;
+
+    bool eof = false;
+    bool err = false;
+
+    for (int i = 3; i < drone->attributes.global_variables.serial_data->len; i++)
+    {   
+        char curr_char = drone->attributes.global_variables.serial_data->data[i];
+
+        if(i == 3) {
+            if(curr_char == '{') {
+                continue;
+            } else {
+                err = true;
+            }
+        } else if(curr_char == '}') {
+            eof = true;
+            char_ptr[char_index] = '\0';
+            string_ptr[string_index++] = strdup(char_ptr);
+            break;
+        } else if(curr_char == ',') {
+            char_ptr[char_index] = '\0';
+            string_ptr[string_index++] = strdup(char_ptr);
+            char_index = 0;
+        } else {
+            char_ptr[char_index++] = curr_char;
+        }
+    }
+    printf("0: %s, 1: %s\n", string_ptr[0], string_ptr[1]);
+    vTaskDelete(NULL);
+}
+
+static void LocalParseUartCmd(drone_t *drone) {
+    const char * tx_label = "tx:";
+    if(drone->attributes.global_variables.serial_data->len >= strlen(tx_label)) {
+        bool err = false;
+        for (int i = 0; i < strlen(tx_label); i++)
+        {
+            if(drone->attributes.global_variables.serial_data->data[i] != tx_label[i]) {
+                err = true;
+            }
+        }
+        if(!err) {
+            xTaskCreatePinnedToCore( vLocalUartTxCmd, "Task5", 1024 * 3, ( void * ) ( drone ), 0, NULL, CORE_0 );
+        }
+    }
+}
+
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
+
+void vTaskUartEvent( void * pvParameters ) {
 
     /* Cast parameter into Drone object */
     drone_t * obj = ( drone_t * ) pvParameters;
@@ -329,6 +385,8 @@ static void vTaskUartEvent( void * pvParameters ) {
 
                         /* Store received data into drone's global variable */
                         uart_read_bytes( uart_num, obj->attributes.global_variables.serial_data->data, uart_event.size, 100 );
+
+                        LocalParseUartCmd(obj);
 
                         /* Echo received data */
                         uart_write_bytes( uart_num, obj->attributes.global_variables.serial_data->data, uart_event.size );
@@ -380,7 +438,7 @@ void vTaskParseCommand( void * pvParameters ) {
     drone_t * obj = ( drone_t * ) pvParameters;
 
     /* Start UART cmd detection task */
-    xTaskCreatePinnedToCore( vTaskUartEvent, "Task4", 1024 * 3, ( void * ) ( obj ), 0, NULL, CORE_0 );
+    // xTaskCreatePinnedToCore( vTaskUartEvent, "Task4", 1024 * 3, ( void * ) ( obj ), 0, NULL, CORE_0 );
 
     while( 1 ) {
 
@@ -398,7 +456,7 @@ void vTaskParseCommand( void * pvParameters ) {
             char * ptr = ( char * ) malloc( 256 * sizeof( char ) ); /* PENDIENTE REEMPLAZAR POR 'char * ptr[ 256 ];' */
 
             /* Pointer of char ( array of 4 strings ) */
-                char * ptrArr[ 4 ] = { 0 };
+            char * ptrArr[ 4 ] = { 0 };
 
             /* Pointer index */
             int ptrIndex = 0;
