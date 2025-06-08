@@ -176,7 +176,7 @@ static bool i2c_scan( void ) {
 
             else {
 
-                ESP_LOGI( DRONE_TAG, "Device found at address: ( 0x%02x )", address );
+                // ESP_LOGI( DRONE_TAG, "Device found at address: ( 0x%02x )", address );
             }
         }
         

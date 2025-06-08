@@ -298,7 +298,7 @@ void StateMachine_Init( sm_state_machine_t * state_machine ) {
 
 void StateMachine_RunIteration(drone_t * drone) {
 
-    // printf( "Current state: %s\r\nCurrent event: %s\r\n", StateMachine_GetStateName( state_machine->curr_state ), StateMachine_GetEventName( state_machine->event ) );
+    printf( "Current state: %s\r\nCurrent event: %s\r\n", StateMachine_GetStateName( state_machine->curr_state ), StateMachine_GetEventName( state_machine->event ) );
 
     /* Loop through the entire transition matrix to match actual state and occurred event */
     for( int i = 0; i < sizeof( state_trans_matrix ) / sizeof( state_trans_matrix[ 0 ] ); i++ ) {

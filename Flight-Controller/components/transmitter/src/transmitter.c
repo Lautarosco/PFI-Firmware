@@ -18,6 +18,17 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
 
     /** @details Private functions implementations */
 
+    typedef struct js_btn_wrapper {
+        int btn_index;
+        bool btn_value;
+    } js_btn_wrapper_t;
+
+    typedef struct tx_btns {
+        char * btn_name;
+        js_btn_wrapper_t btn_arr[2];
+        bool * tx_btn_ptr;
+    } tx_btns_t;
+
     /**
      * @brief Activate buttons flags
      * @param ps3: ps3_t struct
@@ -29,195 +40,34 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
         /* Declared in drone.c source file */
         extern tx_buttons_t * GlobalTxButtons;
 
-        /* If cross button is being pressed */
-        if( event.button_down.cross ) {
-            
-            GlobalTxButtons->cross = true;
-        }
-
-        /* If cross button is not being pressed */
-        else if( event.button_up.cross ) {
-            
-            GlobalTxButtons->cross = false;
-        }
-
-
-        /* If square button is being pressed */
-        if( event.button_down.square ) {
-            
-            GlobalTxButtons->square = true;
-        }
-
-        /* If square button is not being pressed */
-        else if( event.button_up.square ) {
-            
-            GlobalTxButtons->square = false;
-        }
-
-
-        /* If triangle button is being pressed */
-        if( event.button_down.triangle ) {
-            
-            GlobalTxButtons->triangle = true;
-        }
-
-        /* If triangle button is not being pressed */
-        else if( event.button_up.triangle ) {
-            
-            GlobalTxButtons->triangle = false;
-        }
-
-
-        /* If circle button is being pressed */
-        if( event.button_down.circle ) {
-            
-            GlobalTxButtons->circle = true;
-        }
-
-        /* If circle button is not being pressed */
-        else if( event.button_up.circle ) {
-            
-            GlobalTxButtons->circle = false;
-        }
-
-
-        /* If up button is being pressed */
-        if( event.button_down.up ) {
-            
-            GlobalTxButtons->up = true;
-        }
-
-        /* If up button is not being pressed */
-        else if( event.button_up.up ) {
-            
-            GlobalTxButtons->up = false;
-        }
-
-
-        /* If down button is being pressed */
-        if( event.button_down.down ) {
-            
-            GlobalTxButtons->down = true;
-        }
-
-        /* If down button is not being pressed */
-        else if( event.button_up.down ) {
-            
-            GlobalTxButtons->down = false;
-        }
-
-
-        /* If left button is being pressed */
-        if( event.button_down.left ) {
-            
-            GlobalTxButtons->left = true;
-        }
-
-        /* If left button is not being pressed */
-        else if( event.button_up.left ) {
-            
-            GlobalTxButtons->left = false;
-        }
-
-
-        /* If right button is being pressed */
-        if( event.button_down.right ) {
-            
-            GlobalTxButtons->right = true;
-        }
-
-        /* If right button is not being pressed */
-        else if( event.button_up.right ) {
-            
-            GlobalTxButtons->right = false;
-        }
-
-
-        /* If r1 button is being pressed */
-        if( event.button_down.r1 ) {
-            
-            GlobalTxButtons->r1 = true;
-        }
-
-        /* If r1 button is not being pressed */
-        else if( event.button_up.r1 ) {
-            
-            GlobalTxButtons->r1 = false;
-        }
-
-
-        /* If l1 button is being pressed */
-        if( event.button_down.l1 ) {
-            
-            GlobalTxButtons->l1 = true;
-        }
-
-        /* If l1 button is not being pressed */
-        else if( event.button_up.l1 ) {
-            
-            GlobalTxButtons->l1 = false;
-        }
-
-
-        /* If r2 button is being pressed */
-        if( event.button_down.r2 ) {
-            
-            GlobalTxButtons->r2 = true;
-        }
-
-        /* If r2 button is not being pressed */
-        else if( event.button_up.r2 ) {
-            
-            GlobalTxButtons->r2 = false;
-        }
-
-
-        /* If l2 button is being pressed */
-        if( event.button_down.l2 ) {
-            
-            GlobalTxButtons->l2 = true;
-        }
-
-        /* If l2 button is not being pressed */
-        else if( event.button_up.l2 ) {
-            
-            GlobalTxButtons->l2 = false;
-        }
-
-        /* If select button is being pressed */
-        if( event.button_down.select ) {
-            
-            GlobalTxButtons->select = true;
-        }
-
-        /* If select button is not being pressed */
-        else if( event.button_up.select ) {
-            
-            GlobalTxButtons->select = false;
-        }
-
-        /* If start button is being pressed */
-        if( event.button_down.start ) {
-            
-            GlobalTxButtons->start = true;
-        }
-
-        /* If start button is not being pressed */
-        else if( event.button_up.start ) {
-            
-            GlobalTxButtons->start = false;
-        }
-
-        /* If ps button is being pressed */
-        if( event.button_down.ps ) {
-            
-            GlobalTxButtons->ps = true;
-        }
-
-        /* If ps button is not being pressed */
-        else if( event.button_up.ps ) {
-            
-            GlobalTxButtons->ps = false;
+        tx_btns_t tx_btns_arr[] = {
+            {.btn_name = "cross",    .btn_arr = {{.btn_index = event.button_down.cross,    .btn_value = true}, {.btn_index = event.button_up.cross,    .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->cross)},
+            {.btn_name = "triangle", .btn_arr = {{.btn_index = event.button_down.triangle, .btn_value = true}, {.btn_index = event.button_up.triangle, .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->triangle)},
+            {.btn_name = "square",   .btn_arr = {{.btn_index = event.button_down.square,   .btn_value = true}, {.btn_index = event.button_up.square,   .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->square)},
+            {.btn_name = "circle",   .btn_arr = {{.btn_index = event.button_down.circle,   .btn_value = true}, {.btn_index = event.button_up.circle,   .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->circle)},
+            {.btn_name = "up",       .btn_arr = {{.btn_index = event.button_down.up,       .btn_value = true}, {.btn_index = event.button_up.up,       .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->up)},
+            {.btn_name = "down",     .btn_arr = {{.btn_index = event.button_down.down,     .btn_value = true}, {.btn_index = event.button_up.down,     .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->down)},
+            {.btn_name = "left",     .btn_arr = {{.btn_index = event.button_down.left,     .btn_value = true}, {.btn_index = event.button_up.left,     .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->left)},
+            {.btn_name = "right",    .btn_arr = {{.btn_index = event.button_down.right,    .btn_value = true}, {.btn_index = event.button_up.right,    .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->right)},
+            {.btn_name = "l1",       .btn_arr = {{.btn_index = event.button_down.l1,       .btn_value = true}, {.btn_index = event.button_up.l1,       .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->l1)},
+            {.btn_name = "l2",       .btn_arr = {{.btn_index = event.button_down.l2,       .btn_value = true}, {.btn_index = event.button_up.l2,       .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->l2)},
+            {.btn_name = "r1",       .btn_arr = {{.btn_index = event.button_down.r1,       .btn_value = true}, {.btn_index = event.button_up.r1,       .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->r1)},
+            {.btn_name = "r2",       .btn_arr = {{.btn_index = event.button_down.r2,       .btn_value = true}, {.btn_index = event.button_up.r2,       .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->r2)},
+            {.btn_name = "start",    .btn_arr = {{.btn_index = event.button_down.start,    .btn_value = true}, {.btn_index = event.button_up.start,    .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->start)},
+            {.btn_name = "reset",    .btn_arr = {{.btn_index = event.button_down.ps,       .btn_value = true}, {.btn_index = event.button_up.ps,       .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->ps)}
+        };
+        
+        for (int i = 0; i < ((sizeof(tx_btns_arr)) / (sizeof(tx_btns_arr[0]))); i++)
+        {
+            if(tx_btns_arr[i].btn_arr[0].btn_index) {
+                (*tx_btns_arr[i].tx_btn_ptr) = tx_btns_arr[i].btn_arr[0].btn_value;
+                printf("<%s> button was pressed\n", tx_btns_arr[i].btn_name);
+                break;
+            } else if(tx_btns_arr[i].btn_arr[1].btn_index) {
+                (*tx_btns_arr[i].tx_btn_ptr) = tx_btns_arr[i].btn_arr[1].btn_value;
+                printf("<%s> button was released\n", tx_btns_arr[i].btn_name);
+                break;
+            }
         }
     }
 
@@ -404,179 +254,49 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
         /* Declared in drone.c source file */
         extern tx_buttons_t * GlobalTxButtons;
 
+        typedef struct tx_btns {
+            char * btn_name;
+            bool * tx_btn_ptr;
+        } tx_btns_t;
+
+        tx_btns_t tx_btns_arr[] = {
+            {.btn_name = "cross",    .tx_btn_ptr = &(GlobalTxButtons->cross)},
+            {.btn_name = "triangle", .tx_btn_ptr = &(GlobalTxButtons->triangle)},
+            {.btn_name = "square",   .tx_btn_ptr = &(GlobalTxButtons->square)},
+            {.btn_name = "circle",   .tx_btn_ptr = &(GlobalTxButtons->circle)},
+            {.btn_name = "up",       .tx_btn_ptr = &(GlobalTxButtons->up)},
+            {.btn_name = "down",     .tx_btn_ptr = &(GlobalTxButtons->down)},
+            {.btn_name = "left",     .tx_btn_ptr = &(GlobalTxButtons->left)},
+            {.btn_name = "right",    .tx_btn_ptr = &(GlobalTxButtons->right)},
+            {.btn_name = "l1",       .tx_btn_ptr = &(GlobalTxButtons->l1)},
+            {.btn_name = "l2",       .tx_btn_ptr = &(GlobalTxButtons->l2)},
+            {.btn_name = "r1",       .tx_btn_ptr = &(GlobalTxButtons->r1)},
+            {.btn_name = "r2",       .tx_btn_ptr = &(GlobalTxButtons->r2)},
+            {.btn_name = "start",    .tx_btn_ptr = &(GlobalTxButtons->start)},
+            {.btn_name = "reset",    .tx_btn_ptr = &(GlobalTxButtons->ps)}
+        };
+
         /* If any button was pressed */
         if( !strcmp( action, "press" ) ) {
-
-            /* If x button is being pressed */
-            if( !strcmp( button, "cross" ) ) {
-
-                GlobalTxButtons->cross = true;
-            }
-
-            /* If square button is being pressed */
-            else if( !strcmp( button, "square" ) ) {
-
-                GlobalTxButtons->square = true;
-            }
-
-            /* If triangle button is being pressed */
-            else if( !strcmp( button, "triangle" ) ) {
-
-                GlobalTxButtons->triangle = true;
-            }
-
-            /* If circle button is being pressed */
-            else if( !strcmp( button, "circle" ) ) {
-
-                GlobalTxButtons->circle = true;
-            }
-
-            /* If up button is being pressed */
-            else if( !strcmp( button, "up" ) ) {
-
-                GlobalTxButtons->up = true;
-            }
-
-            /* If down button is being pressed */
-            else if( !strcmp( button, "down" ) ) {
-
-                GlobalTxButtons->down = true;
-            }
-
-            /* If left button is being pressed */
-            else if( !strcmp( button, "left" ) ) {
-
-                GlobalTxButtons->left = true;
-            }
-
-            /* If right button is being pressed */
-            else if( !strcmp( button, "right" ) ) {
-
-                GlobalTxButtons->right = true;
-            }
-
-            /* If r1 button is being pressed */
-            else if( !strcmp( button, "r1" ) ) {
-
-                GlobalTxButtons->r1 = true;
-            }
-
-            /* If l1 button is being pressed */
-            else if( !strcmp( button, "l1" ) ) {
-
-                GlobalTxButtons->l1 = true;
-            }
-
-            /* If r2 button is being pressed */
-            else if( !strcmp( button, "r2" ) ) {
-
-                GlobalTxButtons->r2 = true;
-            }
-
-            /* If l2 button is being pressed */
-            else if( !strcmp( button, "l2" ) ) {
-
-                GlobalTxButtons->l2 = true;
-            }
-
-            /* If start button is being released */
-            else if( !strcmp( button, "start" ) ) {
-
-                GlobalTxButtons->start = true;
-            }
-
-            /* If reset button is being released */
-            else if( !strcmp( button, "reset" ) ) {
-
-                GlobalTxButtons->ps = true;
+            for (int i = 0; i < ((sizeof(tx_btns_arr)) / (sizeof(tx_btns_arr[0]))); i++)
+            {
+                if(!strcmp(button, tx_btns_arr[i].btn_name)) {
+                    (*tx_btns_arr[i].tx_btn_ptr) = true;
+                    printf("<%s> button was pressed\n", tx_btns_arr[i].btn_name);
+                    break;
+                }
             }
         }
 
         /* If any button was released */
-        else if( !strcmp( action, "release" ) ) {
-
-            /* If x button is being released */
-            if( !strcmp( button, "cross" ) ) {
-
-                GlobalTxButtons->cross = false;
-            }
-
-            /* If square button is being released */
-            else if( !strcmp( button, "square" ) ) {
-
-                GlobalTxButtons->square = false;
-            }
-
-            /* If triangle button is being released */
-            else if( !strcmp( button, "triangle" ) ) {
-                
-                GlobalTxButtons->triangle = false;
-            }
-
-            /* If circle button is being released */
-            else if( !strcmp( button, "circle" ) ) {
-
-                GlobalTxButtons->circle = false;
-            }
-
-            /* If up button is being released */
-            else if( !strcmp( button, "up" ) ) {
-
-                GlobalTxButtons->up = false;
-            }
-
-            /* If down button is being released */
-            else if( !strcmp( button, "down" ) ) {
-
-                GlobalTxButtons->down = false;
-            }
-
-            /* If left button is being released */
-            else if( !strcmp( button, "left" ) ) {
-
-                GlobalTxButtons->left = false;
-            }
-
-            /* If right button is being released */
-            else if( !strcmp( button, "right" ) ) {
-
-                GlobalTxButtons->right = false;
-            }
-
-            /* If r1 button is being released */
-            else if( !strcmp( button, "r1" ) ) {
-
-                GlobalTxButtons->r1 = false;
-            }
-
-            /* If l1 button is being released */
-            else if( !strcmp( button, "l1" ) ) {
-
-                GlobalTxButtons->l1 = false;
-            }
-
-            /* If r2 button is being released */
-            else if( !strcmp( button, "r2" ) ) {
-
-                GlobalTxButtons->r2 = false;
-            }
-
-            /* If l2 button is being released */
-            else if( !strcmp( button, "l2" ) ) {
-
-                GlobalTxButtons->l2 = false;
-            }
-
-            /* If start button is being released */
-            else if( !strcmp( button, "start" ) ) {
-
-                GlobalTxButtons->start = false;
-            }
-
-            /* If reset button is being released */
-            else if( !strcmp( button, "reset" ) ) {
-
-                GlobalTxButtons->ps = false;
+        else {
+            for (int i = 0; i < ((sizeof(tx_btns_arr)) / (sizeof(tx_btns_arr[0]))); i++)
+            {
+                if(!strcmp(button, tx_btns_arr[i].btn_name)) {
+                    (*tx_btns_arr[i].tx_btn_ptr) = false;
+                    printf("<%s> button was released\n", tx_btns_arr[i].btn_name);
+                    break;
+                }
             }
         }
 

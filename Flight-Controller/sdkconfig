@@ -748,11 +748,18 @@ CONFIG_BTDM_BLE_SLEEP_CLOCK_ACCURACY_INDEX_EFF=1
 # CONFIG_BTDM_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS is not set
 
 #
+<<<<<<< HEAD
 # BLE disconnects when Instant Passed (0x28) occurs
 #
 # end of BLE disconnects when Instant Passed (0x28) occurs
 
 # CONFIG_BTDM_CTRL_CONTROLLER_DEBUG_MODE_1 is not set
+=======
+# BLE disconnect when instant passed
+#
+# end of BLE disconnect when instant passed
+
+>>>>>>> dev
 CONFIG_BTDM_RESERVE_DRAM=0xdb5c
 CONFIG_BTDM_CTRL_HLI=y
 # end of Controller Options
@@ -1565,6 +1572,7 @@ CONFIG_HAL_ASSERTION_EQUALS_SYSTEM=y
 CONFIG_HAL_DEFAULT_ASSERTION_LEVEL=2
 CONFIG_HAL_SPI_MASTER_FUNC_IN_IRAM=y
 CONFIG_HAL_SPI_SLAVE_FUNC_IN_IRAM=y
+# CONFIG_HAL_ECDSA_GEN_SIG_CM is not set
 # end of Hardware Abstraction Layer (HAL) and Low Level (LL)
 
 #
