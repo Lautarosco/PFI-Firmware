@@ -161,7 +161,7 @@ void vTaskStateMachine_Run( void * pvParameters ) {
         /* Go to the next state and run it's respective function */
         StateMachine_RunIteration( &state_machine, obj );
         
-        vTaskDelay( pdMS_TO_TICKS( 10 ) );
+        vTaskDelay( pdMS_TO_TICKS( 1000 ) );
     }
     
 }
