@@ -276,6 +276,7 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
             {.btn_name = "reset",    .tx_btn_ptr = &(GlobalTxButtons->ps)}
         };
 
+        bool found = false;
         /* If any button was pressed */
         if( !strcmp( action, "press" ) ) {
             for (int i = 0; i < ((sizeof(tx_btns_arr)) / (sizeof(tx_btns_arr[0]))); i++)
@@ -283,21 +284,30 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
                 if(!strcmp(button, tx_btns_arr[i].btn_name)) {
                     (*tx_btns_arr[i].tx_btn_ptr) = true;
                     printf("<%s> button was pressed\n", tx_btns_arr[i].btn_name);
+                    found = true;
                     break;
                 }
             }
-        }
-
-        /* If any button was released */
-        else {
+        } else if (!strcmp(action, "release")) {
             for (int i = 0; i < ((sizeof(tx_btns_arr)) / (sizeof(tx_btns_arr[0]))); i++)
             {
                 if(!strcmp(button, tx_btns_arr[i].btn_name)) {
                     (*tx_btns_arr[i].tx_btn_ptr) = false;
                     printf("<%s> button was released\n", tx_btns_arr[i].btn_name);
+                    found = true;
                     break;
                 }
             }
+        } else {
+            ESP_LOGE( TRANSMITTER_TAG, "Action must be press/release. See function %s in line %d", __func__, __LINE__ );
+        }
+
+        if (!found) {
+            printf("Buttons must be: <");
+            for (int i = 0; i < ((sizeof(tx_btns_arr)) / (sizeof(tx_btns_arr[0]))); i++) {
+                printf("%s/", tx_btns_arr[i].btn_name);
+            }
+            printf(">\n");
         }
 
         cJSON_Delete( json );
