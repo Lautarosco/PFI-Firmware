@@ -326,7 +326,30 @@ static void vLocalUartTxCmd(void *pvParameters) {
             char_ptr[char_index++] = curr_char;
         }
     }
-    printf("0: %s, 1: %s\n", string_ptr[0], string_ptr[1]);
+    printf("string: {%s}, len: {%d}\n", string_ptr[0], strlen(string_ptr[0]));
+    printf("string: {%s}, len: {%d}\n", string_ptr[1], strlen(string_ptr[1]));
+
+    const char * btn;
+    const char * action;
+    for (int i = 0; i < 2; i++)
+    {
+        char * token = strtok(string_ptr[i], ":");
+        for (int j = 0; token != NULL; j++)
+        {
+            if(j == 1) {
+                printf("%s\n", token);
+                if(!i) {
+                    for (int n = 0; i < strlen(token); n++)
+                    {
+                        btn[n] = token[n];
+                    }
+                    
+                }
+            }
+            token = strtok(NULL, ":");
+        }
+    }
+
     vTaskDelete(NULL);
 }
 
@@ -343,6 +366,8 @@ static void LocalParseUartCmd(drone_t *drone) {
         if(!err) {
             xTaskCreatePinnedToCore( vLocalUartTxCmd, "Task5", 1024 * 3, ( void * ) ( drone ), 0, NULL, CORE_0 );
         }
+    } else {
+        // xTaskCreatePinnedToCore( vTaskParseCommand, "Task3", 1024 * 3, ( void * ) ( drone ), 0, NULL, CORE_0 );
     }
 }
 

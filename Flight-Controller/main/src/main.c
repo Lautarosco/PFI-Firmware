@@ -27,7 +27,7 @@ void app_main( void ) {
     xTaskCreatePinnedToCore( vTaskDroneMeasure, "Task2", 1024 * 3, ( void * ) ( drone ), 1, NULL, CORE_0 );
 
     /* Parse Bluetooth commands */
-    xTaskCreatePinnedToCore( vTaskParseCommand, "Task3", 1024 * 3, ( void * ) ( drone ), 1, NULL, CORE_0 );
+    // xTaskCreatePinnedToCore( vTaskParseCommand, "Task3", 1024 * 3, ( void * ) ( drone ), 1, NULL, CORE_0 );
 
     /* Print values over serial */
     // xTaskCreatePinnedToCore( vTaskprint, "Task4", 4096, ( void * ) ( drone ), 1, NULL, CORE_0 );
