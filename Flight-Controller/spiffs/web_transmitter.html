@@ -193,5 +193,61 @@
       <button class="x">x</button>
     </div>
   </div>
+
+  <div style="margin-top: 20px; display: flex; gap: 10px; align-items: center;">
+  <input 
+    type="text" 
+    id="input1" 
+    placeholder="Variable a actualizar"
+    style="padding: 10px; border-radius: 5px; border: 1px solid black; height: 40px; box-sizing: border-box;"
+  >
+  <input 
+    type="text" 
+    id="input2" 
+    placeholder="Nuevo valor" 
+    style="padding: 10px; border-radius: 5px; border: 1px solid black; height: 40px; box-sizing: border-box;"
+  >
+  <button 
+  id="confirmBtn" 
+  style="
+    padding: 0 20px; 
+    height: 40px; 
+    background-color: #007bff; 
+    color: white; 
+    border: none; 
+    border-radius: 5px; 
+    cursor: pointer;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  "
+  onmousedown="this.style.backgroundColor='#0056b3'"
+  onmouseup="this.style.backgroundColor='#007bff'"
+  onmouseleave="this.style.backgroundColor='#007bff'"
+>
+  OK
+</button>
+</div>
+<script>
+  document.getElementById('confirmBtn').addEventListener('click', function() {
+    const variable = document.getElementById('input1').value;
+    const valor = document.getElementById('input2').value;
+
+    if (!variable || !valor) {
+      alert("Ambos campos son obligatorios");
+      return;
+    }
+
+    fetch('/update_vars', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ variable, valor }),
+    })
+    .then(response => response.json())
+    .then(data => console.log('Success:', data))
+    .catch(error => console.error('Error:', error));
+  });
+</script>
 </body>
 </html>

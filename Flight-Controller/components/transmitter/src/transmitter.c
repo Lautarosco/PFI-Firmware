@@ -37,6 +37,8 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
      */
     static void controller_event_cb( ps3_t ps3, ps3_event_t event ) {
 
+        /* ========================= START Process incomming data ========================= */
+
         /* Declared in drone.c source file */
         extern tx_buttons_t * GlobalTxButtons;
 
@@ -57,6 +59,7 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
             {.btn_name = "reset",    .btn_arr = {{.btn_index = event.button_down.ps,       .btn_value = true}, {.btn_index = event.button_up.ps,       .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->ps)}
         };
         
+        // Match received button with buttons array
         for (int i = 0; i < ((sizeof(tx_btns_arr)) / (sizeof(tx_btns_arr[0]))); i++)
         {
             if(tx_btns_arr[i].btn_arr[0].btn_index) {
@@ -69,6 +72,8 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
                 break;
             }
         }
+
+        /* ========================= END Process incomming data ========================= */
     }
 
     /**
@@ -212,6 +217,45 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
     #define WIFI_SSID "ESP32_Transmitter"
     #define WIFI_PASS "12345678"
 
+    static esp_err_t update_vars_handler(httpd_req_t *req) {
+        char buff[100];
+        int ret = httpd_req_recv(req, buff, sizeof(buff) - 1);
+        
+        if (ret <= 0) {
+            if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+                httpd_resp_send_408(req);
+            }
+            return ESP_FAIL;
+        }
+        buff[ret] = '\0';
+
+        // Parse JSON
+        cJSON *json = cJSON_Parse(buff);
+        if (!json) {
+            ESP_LOGE(TRANSMITTER_TAG, "Invalid JSON received");
+            return ESP_ERR_INVALID_RESPONSE;
+        }
+
+        // Extract HTTP values
+        const char *var = cJSON_GetObjectItem(json, "variable")->valuestring;
+        const char *value = cJSON_GetObjectItem(json, "valor")->valuestring;
+
+        ESP_LOGI(TRANSMITTER_TAG, "Variable: %s | Valor: %s", var, value);
+
+        /* ========================= START Process incomming data ========================= */
+
+        // Aquí puedes procesar los valores (ej. guardarlos en una struct o EEPROM)
+        // Ejemplo:
+        // GlobalTxButtons->custom_var = atoi(valor); // Si es numérico
+
+        /* ========================= END Process incomming data ========================= */
+
+        cJSON_Delete(json);
+        httpd_resp_set_type(req, "application/json");
+        httpd_resp_sendstr(req, "{\"status\":\"ok\"}");
+        return ESP_OK;
+    }
+
     static esp_err_t button_handler( httpd_req_t * req ) {
 
         /* Create a buffer to store events related data */
@@ -251,6 +295,8 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
 
         ESP_LOGE( "DEBUG", "Action: %s | Button: %s", action, button );
 
+        /* ========================= START Process incomming data ========================= */
+
         /* Declared in drone.c source file */
         extern tx_buttons_t * GlobalTxButtons;
 
@@ -259,6 +305,7 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
             bool * tx_btn_ptr;
         } tx_btns_t;
 
+        // Pair each button with respective drone's attribute
         tx_btns_t tx_btns_arr[] = {
             {.btn_name = "cross",    .tx_btn_ptr = &(GlobalTxButtons->cross)},
             {.btn_name = "triangle", .tx_btn_ptr = &(GlobalTxButtons->triangle)},
@@ -276,9 +323,10 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
             {.btn_name = "reset",    .tx_btn_ptr = &(GlobalTxButtons->ps)}
         };
 
+        // Check which button was pressed/released
         bool found = false;
-        /* If any button was pressed */
         if( !strcmp( action, "press" ) ) {
+            // Match received button with buttons array
             for (int i = 0; i < ((sizeof(tx_btns_arr)) / (sizeof(tx_btns_arr[0]))); i++)
             {
                 if(!strcmp(button, tx_btns_arr[i].btn_name)) {
@@ -289,6 +337,7 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
                 }
             }
         } else if (!strcmp(action, "release")) {
+            // Match received button with buttons array
             for (int i = 0; i < ((sizeof(tx_btns_arr)) / (sizeof(tx_btns_arr[0]))); i++)
             {
                 if(!strcmp(button, tx_btns_arr[i].btn_name)) {
@@ -299,6 +348,7 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
                 }
             }
         } else {
+            // Actions can only be press or release
             ESP_LOGE( TRANSMITTER_TAG, "Action must be press/release. See function %s in line %d", __func__, __LINE__ );
         }
 
@@ -309,6 +359,8 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
             }
             printf(">\n");
         }
+
+        /* ========================= END Process incomming data ========================= */
 
         cJSON_Delete( json );
         httpd_resp_set_type( req, "application/json" );
@@ -377,6 +429,14 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
                 .user_ctx = NULL
             };
             httpd_register_uri_handler( server, &button_uri );
+
+            httpd_uri_t update_vars_uri = {
+                .uri      = "/update_vars",
+                .method   = HTTP_POST,
+                .handler  = update_vars_handler,
+                .user_ctx = NULL
+            };
+            httpd_register_uri_handler(server, &update_vars_uri);
         }
 
         else {
