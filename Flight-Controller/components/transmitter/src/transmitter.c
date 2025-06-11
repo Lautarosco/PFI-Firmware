@@ -203,7 +203,7 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
     #include <string.h>
     #include <esp_http_server.h>
     #include <cJSON.h>
-    // #include <esp_spiffs.h>
+    #include <ctype.h>
 
     /* TESTING */
 
@@ -218,41 +218,66 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
     #define WIFI_PASS "12345678"
 
     static esp_err_t update_vars_handler(httpd_req_t *req) {
-        char buff[100];
-        int ret = httpd_req_recv(req, buff, sizeof(buff) - 1);
-        
-        if (ret <= 0) {
-            if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
-                httpd_resp_send_408(req);
+        /* Create a buffer to store events related data */
+        char buff[ 100 ];
+
+        /* Read data from HTTP server */
+        int ret = httpd_req_recv( req, buff, sizeof( buff ) - 1 );
+
+        if( ret <= 0 ) {
+
+            if( ret == HTTPD_SOCK_ERR_TIMEOUT ) {
+
+                httpd_resp_send_408( req );
             }
+
             return ESP_FAIL;
         }
-        buff[ret] = '\0';
 
-        // Parse JSON
-        cJSON *json = cJSON_Parse(buff);
-        if (!json) {
-            ESP_LOGE(TRANSMITTER_TAG, "Invalid JSON received");
+        /* Add NULL-terminate to end of buffer */
+        buff[ ret ] = '\0';
+
+        cJSON * json = cJSON_Parse( buff );
+
+        /* Check if received JSON is valid */
+        if( !json ) {
+
+            ESP_LOGE( TRANSMITTER_TAG, "Invalid JSON received" );
             return ESP_ERR_INVALID_RESPONSE;
         }
 
-        // Extract HTTP values
-        const char *var = cJSON_GetObjectItem(json, "variable")->valuestring;
-        const char *value = cJSON_GetObjectItem(json, "valor")->valuestring;
+        /* Store button pressed */
+        const char * action = cJSON_GetObjectItem( json, "action" )->valuestring;
 
-        ESP_LOGI(TRANSMITTER_TAG, "Variable: %s | Valor: %s", var, value);
+        /* Store occurred action */
+        const char * sel = cJSON_GetObjectItem( json, "selected" )->valuestring;
 
-        /* ========================= START Process incomming data ========================= */
+        const char * text = cJSON_GetObjectItem( json, "text" )->valuestring;
 
-        // Aquí puedes procesar los valores (ej. guardarlos en una struct o EEPROM)
-        // Ejemplo:
-        // GlobalTxButtons->custom_var = atoi(valor); // Si es numérico
+        // html entered text is empty
+        if (!strcmp(text, "")) {
+            printf("Empty input\n");
+        } else {
+            // Check if html entered text is a valid number
+            bool is_digit = true;
+            for (int i = 0; i < strlen(text); i++)
+            {
+                if (!isdigit((unsigned char) text[i])) {
+                    is_digit = false;
+                    break;
+                }
+            }
 
-        /* ========================= END Process incomming data ========================= */
+            if (is_digit) {
+                ESP_LOGE( "DEBUG", "Action: %s | Opción: %s | Número: %f", action, sel, (float) atof(text));
+            } else {
+                printf("Wrong input\n");
+            }
+        }
 
-        cJSON_Delete(json);
-        httpd_resp_set_type(req, "application/json");
-        httpd_resp_sendstr(req, "{\"status\":\"ok\"}");
+        httpd_resp_set_type( req, "application/json" );
+        httpd_resp_sendstr( req, "{\"status\":\"ok\"}" );
+
         return ESP_OK;
     }
 
@@ -431,7 +456,7 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
             httpd_register_uri_handler( server, &button_uri );
 
             httpd_uri_t update_vars_uri = {
-                .uri      = "/update_vars",
+                .uri      = "/test_button",
                 .method   = HTTP_POST,
                 .handler  = update_vars_handler,
                 .user_ctx = NULL

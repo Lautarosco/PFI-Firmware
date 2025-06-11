@@ -84,4 +84,16 @@ void PidSetActionI( pid_controller_t * obj, ControllerFunction * iFunc );
  */
 void PidSetActionD( pid_controller_t * obj, ControllerFunction * dFunc );
 
+/* ========== START TESTING ========== */
+
+/**
+ * @brief Retrieve Kp gain of given state controller
+ * @param state_controller: Controller of given state
+ * @param new_value: New Kp value
+ * @retval none
+ */
+void set_pid_kp(pid_gain_t *state_controller, float new_value);
+
+/* ========== END TESTING ========== */
+
 #endif

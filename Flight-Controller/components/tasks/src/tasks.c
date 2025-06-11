@@ -161,7 +161,7 @@ void vTaskStateMachine_Run( void * pvParameters ) {
         /* Go to the next state and run it's respective function */
         StateMachine_RunIteration(obj);
         
-        vTaskDelay( pdMS_TO_TICKS( 1000 ) );
+        vTaskDelay( pdMS_TO_TICKS( 10 ) );
     }
 }
 
@@ -294,6 +294,9 @@ void vTaskprint( void * drone_ ) {
 static void vLocalUartTxCmd(void *pvParameters) {
     drone_t *drone = (drone_t *) pvParameters;
 
+    // Reset serial_data flag
+    drone->attributes.global_variables.serial_data->state = false;
+
     // tx:{button:cross,action:press}
     char char_ptr[256];
     char * string_ptr[2];
@@ -332,8 +335,8 @@ static void vLocalUartTxCmd(void *pvParameters) {
         vTaskDelete(NULL);
     }
 
-    printf("string: {%s}, len: {%d}\n", string_ptr[0], strlen(string_ptr[0]));
-    printf("string: {%s}, len: {%d}\n", string_ptr[1], strlen(string_ptr[1]));
+    // printf("string: {%s}, len: {%d}\n", string_ptr[0], strlen(string_ptr[0]));
+    // printf("string: {%s}, len: {%d}\n", string_ptr[1], strlen(string_ptr[1]));
 
     char button[20];
     char action[20];
@@ -360,7 +363,7 @@ static void vLocalUartTxCmd(void *pvParameters) {
                     strcpy(action, token);
                 }
             }
-            printf("string_ptr[%d] (element %d): %s\n", i, j, token);
+            // printf("string_ptr[%d] (element %d): %s\n", i, j, token);
             
             token = strtok(NULL, ":");
         }
@@ -398,7 +401,7 @@ static void vLocalUartTxCmd(void *pvParameters) {
             {
                 if(!strcmp(button, tx_btns_arr[i].btn_name)) {
                     (*tx_btns_arr[i].tx_btn_ptr) = true;
-                    printf("<%s> button was pressed\n", tx_btns_arr[i].btn_name);
+                    // printf("<%s> button was pressed\n", tx_btns_arr[i].btn_name);
                     found = true;
                     break;
                 }
@@ -408,7 +411,7 @@ static void vLocalUartTxCmd(void *pvParameters) {
             {
                 if(!strcmp(button, tx_btns_arr[i].btn_name)) {
                     (*tx_btns_arr[i].tx_btn_ptr) = false;
-                    printf("<%s> button was released\n", tx_btns_arr[i].btn_name);
+                    // printf("<%s> button was released\n", tx_btns_arr[i].btn_name);
                     found = true;
                     break;
                 }

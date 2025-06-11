@@ -92,6 +92,54 @@
       justify-content: center;
       gap: 10px;
     }
+
+    .control-container {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    select {
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      height: 40px;
+      min-width: 150px;
+    }
+
+    .text-input {
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      height: 40px;
+      min-width: 200px;
+      box-sizing: border-box;
+    }
+
+    .ok-button-container {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    #confirmBtn {
+      padding: 0 20px; 
+      height: 40px; 
+      background-color: #007bff; 
+      color: white; 
+      border: none; 
+      border-radius: 5px; 
+      cursor: pointer;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #confirmBtn:active {
+      background-color: #0056b3;
+    }
   </style>
   <script>
     // Dictionary to map button symbols/names to correct values
@@ -155,10 +203,32 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
-      const buttons = document.querySelectorAll("button");
+      // Attach events to joystick buttons
+      const buttons = document.querySelectorAll(".joystick-container button");
       buttons.forEach((button) => {
-        const buttonText = button.textContent.trim(); // Get button text or symbol
+        const buttonText = button.textContent.trim();
         attachButtonEvents(button, buttonText);
+      });
+
+      // OK Button functionality
+      document.getElementById('confirmBtn').addEventListener('click', function() {
+        const selectedOption = document.getElementById('dropdownMenu').value;
+        const userText = document.getElementById('textInput').value;
+        console.log("Selected option:", selectedOption);
+        console.log("User text:", userText);
+        
+        fetch('/test_button', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            action: "selection",
+            selected: selectedOption,
+            text: userText
+          }),
+        })
+        .then(response => response.json())
+        .then(data => console.log('Response:', data))
+        .catch(error => console.error('Error:', error));
       });
     });
   </script>
@@ -193,61 +263,17 @@
       <button class="x">x</button>
     </div>
   </div>
-
-  <div style="margin-top: 20px; display: flex; gap: 10px; align-items: center;">
-  <input 
-    type="text" 
-    id="input1" 
-    placeholder="Variable a actualizar"
-    style="padding: 10px; border-radius: 5px; border: 1px solid black; height: 40px; box-sizing: border-box;"
-  >
-  <input 
-    type="text" 
-    id="input2" 
-    placeholder="Nuevo valor" 
-    style="padding: 10px; border-radius: 5px; border: 1px solid black; height: 40px; box-sizing: border-box;"
-  >
-  <button 
-  id="confirmBtn" 
-  style="
-    padding: 0 20px; 
-    height: 40px; 
-    background-color: #007bff; 
-    color: white; 
-    border: none; 
-    border-radius: 5px; 
-    cursor: pointer;
-    box-sizing: border-box;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  "
-  onmousedown="this.style.backgroundColor='#0056b3'"
-  onmouseup="this.style.backgroundColor='#007bff'"
-  onmouseleave="this.style.backgroundColor='#007bff'"
->
-  OK
-</button>
-</div>
-<script>
-  document.getElementById('confirmBtn').addEventListener('click', function() {
-    const variable = document.getElementById('input1').value;
-    const valor = document.getElementById('input2').value;
-
-    if (!variable || !valor) {
-      alert("Ambos campos son obligatorios");
-      return;
-    }
-
-    fetch('/update_vars', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ variable, valor }),
-    })
-    .then(response => response.json())
-    .then(data => console.log('Success:', data))
-    .catch(error => console.error('Error:', error));
-  });
-</script>
+  <div class="control-container">
+    <select id="dropdownMenu">
+      <option value="option1">Opción 1</option>
+      <option value="option2">Opción 2</option>
+      <option value="option3">Opción 3</option>
+      <option value="option4">Opción 4</option>
+    </select>
+    
+    <input type="text" id="textInput" class="text-input" placeholder="Ingrese el nuevo valor">
+    
+    <button id="confirmBtn">OK</button>
+  </div>
 </body>
 </html>

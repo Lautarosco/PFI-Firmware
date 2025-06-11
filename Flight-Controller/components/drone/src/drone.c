@@ -28,6 +28,11 @@ tx_buttons_t * GlobalTxButtons;
  */
 SerialData_t * GlobalSerialData;
 
+/**
+ * @brief Pointer to roll controller gains, global variable of a Drone object (used in transmitter component)
+ */
+pid_gain_t *GlobalRollGains;
+
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
@@ -692,6 +697,9 @@ drone_t * Drone( void ) {
 
     /* Assign Bluetooth data global variable memmory address to 'GlobalSerialData' variable */
     GlobalSerialData = drone->attributes.global_variables.serial_data;
+
+    /* Point 'GlobalRollGains' global variable to 'roll_gains' drone global_variables attribute */
+    GlobalRollGains = drone->attributes.global_variables.roll_gains;
 
     /* Free memory used for csv object */
     // for( int i = 0; i < n_rows; i++ ) {

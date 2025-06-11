@@ -7,6 +7,9 @@ typedef struct tx_buttons tx_buttons_t;
 /* Forward declaration to use SerialData_t type */
 typedef struct SerialData SerialData_t;
 
+/* Forward declaration to use pid_gain_t type */
+typedef struct pid_gain pid_gain_t;
+
 /**
  * @brief Drone's global variables
  */
@@ -21,6 +24,8 @@ typedef struct drone_globals {
     float ema_filter_roll;
     float ema_filter_pitch;
     float ema_filter_yaw;
+
+    pid_gain_t *roll_gains;
 
 } drone_globals_t;
 
