@@ -18,20 +18,14 @@ const char * DRONE_TAG = "DRONE";
 
 /** @details Public variables */
 
-/**
- * @brief Pointer to buttons global variable of a Drone object ( used in transmitter component | transmitter_structs.c source file )
- */
-tx_buttons_t * GlobalTxButtons;
-
-/**
- * @brief Pointer to Bluetooth data global variable of a Drone object ( used in ps3 component | ps3_spp.c source file )
- */
-SerialData_t * GlobalSerialData;
-
-/**
- * @brief Pointer to roll controller gains, global variable of a Drone object (used in transmitter component)
- */
-pid_gain_t *GlobalRollGains;
+tx_buttons_t *GlobalTxButtons;          /** @brief Pointer to buttons global variable of a Drone object ( used in transmitter component | transmitter_structs.c source file ) */
+SerialData_t *GlobalSerialData;         /** @brief Pointer to Bluetooth data global variable of a Drone object ( used in ps3 component | ps3_spp.c source file ) */
+pid_gain_t *GlobalRollGains;            /** @brief Pointer to roll controller gains */
+pid_gain_t *GlobalRoll_dGains;          /** @brief Pointer to roll controller gains */
+pid_gain_t *GlobalPitchGains;           /** @brief Pointer to pitch controller gains */
+pid_gain_t *GlobalPitch_dGains;         /** @brief Pointer to pitch controller gains */
+pid_gain_t *GlobalYawGains;             /** @brief Pointer to yaw controller gains */
+pid_gain_t *GlobalYaw_dGains;           /** @brief Pointer to yaw controller gains */
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
@@ -692,14 +686,35 @@ drone_t * Drone( void ) {
 
     #endif
 
+
+    /* =============== START Global variables assignment =============== */
+
     /* Assign Transmitter buttons global variable memmory address to 'GlobalTxButtons' variable */
     GlobalTxButtons = drone->attributes.global_variables.tx_buttons;
 
     /* Assign Bluetooth data global variable memmory address to 'GlobalSerialData' variable */
     GlobalSerialData = drone->attributes.global_variables.serial_data;
 
-    /* Point 'GlobalRollGains' global variable to 'roll_gains' drone global_variables attribute */
-    GlobalRollGains = drone->attributes.global_variables.roll_gains;
+    /* Point 'GlobalRollGains' global variable to roll controller */
+    GlobalRollGains = &(drone->attributes.components.controllers[ROLL]->gain);
+
+    /* Point 'GlobalRollGains' global variable to roll_d controller */
+    GlobalRoll_dGains = &(drone->attributes.components.controllers[ROLL_D]->gain);
+
+    /* Point 'GlobalRollGains' global variable to pitch controller */
+    GlobalPitchGains = &(drone->attributes.components.controllers[PITCH]->gain);
+
+    /* Point 'GlobalRollGains' global variable to pitch_d controller */
+    GlobalPitch_dGains = &(drone->attributes.components.controllers[PITCH_D]->gain);
+
+    /* Point 'GlobalRollGains' global variable to yaw controller */
+    GlobalYawGains = &(drone->attributes.components.controllers[YAW]->gain);
+
+    /* Point 'GlobalRollGains' global variable to yaw_d controller */
+    GlobalYaw_dGains = &(drone->attributes.components.controllers[YAW_D]->gain);
+
+    /* =============== END Global variables assignment =============== */
+
 
     /* Free memory used for csv object */
     // for( int i = 0; i < n_rows; i++ ) {

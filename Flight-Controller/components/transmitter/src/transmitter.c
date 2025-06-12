@@ -250,7 +250,7 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
         const char * action = cJSON_GetObjectItem( json, "action" )->valuestring;
 
         /* Store occurred action */
-        const char * sel = cJSON_GetObjectItem( json, "selected" )->valuestring;
+        const char * html_select = cJSON_GetObjectItem( json, "selected" )->valuestring;
 
         const char * text = cJSON_GetObjectItem( json, "text" )->valuestring;
 
@@ -269,7 +269,72 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
             }
 
             if (is_digit) {
-                ESP_LOGE( "DEBUG", "Action: %s | Opción: %s | Número: %f", action, sel, (float) atof(text));
+                float new_value = atof(text);
+                ESP_LOGE( "DEBUG", "Action: %s | Opción: %s | Número: %.2f", action, html_select, new_value);
+                /* ========================= START Process incomming data ========================= */
+
+                /* Forward declaration to avoid header inclusion */
+                typedef struct pid_gain pid_gain_t;
+
+                /* Declared in drone.c source file */
+                extern pid_gain_t * GlobalRollGains;
+                extern pid_gain_t * GlobalRoll_dGains;
+                extern pid_gain_t * GlobalPitchGains;
+                extern pid_gain_t * GlobalPitch_dGains;
+                extern pid_gain_t * GlobalYawGains;
+                extern pid_gain_t * GlobalYaw_dGains;
+
+                /* Declared in controllers.h and defined in controllers.c */
+                extern bool set_pid_gain(pid_gain_t *controller_gains, const char label[], float new_value);
+
+                typedef struct gains_label {
+                    const char *html_option;
+                    const char *name;
+                    pid_gain_t *state;
+                } gains_label_t;
+
+                gains_label_t arr[] = {
+                    // Roll
+                    {.html_option = "roll_kp",    .name = "kp", .state = GlobalRollGains},
+                    {.html_option = "roll_ki",    .name = "ki", .state = GlobalRollGains},
+                    {.html_option = "roll_kd",    .name = "kd", .state = GlobalRollGains},
+
+                    // Roll_d
+                    {.html_option = "roll_d_kp",  .name = "kp", .state = GlobalRoll_dGains},
+                    {.html_option = "roll_d_ki",  .name = "ki", .state = GlobalRoll_dGains},
+                    {.html_option = "roll_d_kd",  .name = "kd", .state = GlobalRoll_dGains},
+
+                    // Pitch
+                    {.html_option = "pitch_kp",   .name = "kp", .state = GlobalPitchGains},
+                    {.html_option = "pitch_ki",   .name = "ki", .state = GlobalPitchGains},
+                    {.html_option = "pitch_kd",   .name = "kd", .state = GlobalPitchGains},
+
+                    // Pitch_d
+                    {.html_option = "pitch_d_kp", .name = "kp", .state = GlobalPitch_dGains},
+                    {.html_option = "pitch_d_ki", .name = "ki", .state = GlobalPitch_dGains},
+                    {.html_option = "pitch_d_kd", .name = "kd", .state = GlobalPitch_dGains},
+
+                    // Yaw
+                    {.html_option = "yaw_kp",     .name = "kp", .state = GlobalYawGains},
+                    {.html_option = "yaw_ki",     .name = "ki", .state = GlobalYawGains},
+                    {.html_option = "yaw_kd",     .name = "kd", .state = GlobalYawGains},
+
+                    // Yaw_d
+                    {.html_option = "yaw_d_kp",   .name = "kp", .state = GlobalYaw_dGains},
+                    {.html_option = "yaw_d_ki",   .name = "ki", .state = GlobalYaw_dGains},
+                    {.html_option = "yaw_d_kd",   .name = "kd", .state = GlobalYaw_dGains},
+                };
+
+                for (int i = 0; i < ((sizeof(arr)) / (sizeof(arr[0]))); i++)
+                {
+                    if (!strcmp(html_select, arr[i].html_option)) {
+                        if (!set_pid_gain(arr[i].state, arr[i].name, new_value)) {
+                            ESP_LOGE(TRANSMITTER_TAG, "Drone's state <%s> NOT FOUND. See function %s in line %d.", html_select, __func__, __LINE__);
+                        }
+                    }
+                }
+
+                /* ========================= END Process incomming data ========================= */
             } else {
                 printf("Wrong input\n");
             }

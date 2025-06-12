@@ -140,6 +140,18 @@
     #confirmBtn:active {
       background-color: #0056b3;
     }
+
+    .nested-selects {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .sub-select {
+      display: none;
+    }
+    .sub-select.visible {
+      display: block;
+    }
   </style>
   <script>
     // Dictionary to map button symbols/names to correct values
@@ -210,12 +222,61 @@
         attachButtonEvents(button, buttonText);
       });
 
-      // OK Button functionality
+      // Configuración de selects anidados
+      const mainSelect = document.getElementById('mainMenu');
+      const subSelect1 = document.getElementById('subMenu1');
+      const subSelect2 = document.getElementById('subMenu2');
+      const subSelect3 = document.getElementById('subMenu3');
+      const subSelect4 = document.getElementById('subMenu4');
+      const subSelect5 = document.getElementById('subMenu5');
+      const subSelect6 = document.getElementById('subMenu6');
+      
+      // Manejador de cambio para el select principal
+      mainSelect.addEventListener('change', function() {
+        // Oculta todos los submenús primero
+        document.querySelectorAll('.sub-select').forEach(el => {
+          el.classList.remove('visible');
+        });
+        
+        // Muestra el submenú correspondiente
+        if (this.value === 'roll') {
+          subSelect1.classList.add('visible');
+        } else if (this.value === 'roll_d') {
+          subSelect2.classList.add('visible');
+        } else if (this.value === 'pitch') {
+          subSelect3.classList.add('visible');
+        } else if (this.value === 'pitch_d') {
+          subSelect4.classList.add('visible');
+        } else if (this.value === 'yaw') {
+          subSelect5.classList.add('visible');
+        } else if (this.value === 'yaw_d') {
+          subSelect6.classList.add('visible');
+        }
+      });
+
+      // OK Button functionality modificada
       document.getElementById('confirmBtn').addEventListener('click', function() {
-        const selectedOption = document.getElementById('dropdownMenu').value;
-        const userText = document.getElementById('textInput').value;
+        const mainOption = mainSelect.value;
+        let selectedOption = mainOption;
+        let selectedText = document.getElementById('textInput').value;
+        
+        // Determina qué submenú está visible y obtiene su valor
+        if (mainOption === 'roll' && subSelect1.classList.contains('visible')) {
+          selectedOption = `roll_${subSelect1.value}`;
+        } else if (mainOption === 'roll_d' && subSelect2.classList.contains('visible')) {
+          selectedOption = `roll_d_${subSelect2.value}`;
+        } else if (mainOption === 'pitch' && subSelect3.classList.contains('visible')) {
+          selectedOption = `pitch_${subSelect3.value}`;
+        } else if (mainOption === 'pitch_d' && subSelect4.classList.contains('visible')) {
+          selectedOption = `pitch_d_${subSelect4.value}`;
+        } else if (mainOption === 'yaw' && subSelect5.classList.contains('visible')) {
+          selectedOption = `yaw_${subSelect5.value}`;
+        } else if (mainOption === 'yaw_d' && subSelect6.classList.contains('visible')) {
+          selectedOption = `yaw_d_${subSelect6.value}`;
+        }
+        
         console.log("Selected option:", selectedOption);
-        console.log("User text:", userText);
+        console.log("User text:", selectedText);
         
         fetch('/test_button', {
           method: 'POST',
@@ -223,7 +284,7 @@
           body: JSON.stringify({ 
             action: "selection",
             selected: selectedOption,
-            text: userText
+            text: selectedText
           }),
         })
         .then(response => response.json())
@@ -263,17 +324,61 @@
       <button class="x">x</button>
     </div>
   </div>
+  
   <div class="control-container">
-    <select id="dropdownMenu">
-      <option value="option1">Opción 1</option>
-      <option value="option2">Opción 2</option>
-      <option value="option3">Opción 3</option>
-      <option value="option4">Opción 4</option>
-    </select>
+    <div class="nested-selects">
+      <select id="mainMenu">
+        <option value=""></option>
+        <option value="z">z</option>
+        <option value="roll">Roll</option>
+        <option value="roll_d">Roll_d</option>
+        <option value="pitch">Pitch</option>
+        <option value="pitch_d">Pitch_d</option>
+        <option value="yaw">Yaw</option>
+        <option value="yaw_d">Yaw_d</option>
+        <option value="simpleOption">Opción simple</option>
+      </select>
+      
+      <select id="subMenu1" class="sub-select">
+        <option value="kp">Kp</option>
+        <option value="ki">Ki</option>
+        <option value="kd">Kd</option>
+      </select>
+      
+      <select id="subMenu2" class="sub-select">
+        <option value="kp">Kp</option>
+        <option value="ki">Ki</option>
+        <option value="kd">Kd</option>
+      </select>
+
+      <select id="subMenu3" class="sub-select">
+        <option value="kp">Kp</option>
+        <option value="ki">Ki</option>
+        <option value="kd">Kd</option>
+      </select>
+
+      <select id="subMenu4" class="sub-select">
+        <option value="kp">Kp</option>
+        <option value="ki">Ki</option>
+        <option value="kd">Kd</option>
+      </select>
+      
+      <select id="subMenu5" class="sub-select">
+        <option value="kp">Kp</option>
+        <option value="ki">Ki</option>
+        <option value="kd">Kd</option>
+      </select>
+
+      <select id="subMenu6" class="sub-select">
+        <option value="kp">Kp</option>
+        <option value="ki">Ki</option>
+        <option value="kd">Kd</option>
+      </select>
+    </div>
     
-    <input type="text" id="textInput" class="text-input" placeholder="Ingrese el nuevo valor">
-    
+    <input type="text" id="textInput" class="text-input" placeholder="Ingrese texto aquí">
     <button id="confirmBtn">OK</button>
   </div>
+
 </body>
 </html>

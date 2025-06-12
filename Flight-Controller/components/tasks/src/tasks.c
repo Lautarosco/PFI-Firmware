@@ -531,9 +531,10 @@ typedef struct cmd_function {
 
 static cmd_function_t cmd_function_array[] = {
 
-    { .cmd_name = "pid gains",   .func = &PidGainsCmdFunc },
-    { .cmd_name = "pid actions", .func = &PidActionsCmdFunc },
-    { .cmd_name = "var update",  .func = &VarsUpdateCmdFunc },
+    {.cmd_name = "pid gains",   .func = &PidGainsCmdFunc},
+    {.cmd_name = "pid actions", .func = &PidActionsCmdFunc},
+    {.cmd_name = "var update",  .func = &VarsUpdateCmdFunc},
+    {.cmd_name = "sp update",  .func = &SpUpdateCmdFunc},
 };
 
 

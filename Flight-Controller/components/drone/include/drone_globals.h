@@ -25,8 +25,6 @@ typedef struct drone_globals {
     float ema_filter_pitch;
     float ema_filter_yaw;
 
-    pid_gain_t *roll_gains;
-
 } drone_globals_t;
 
 #endif
