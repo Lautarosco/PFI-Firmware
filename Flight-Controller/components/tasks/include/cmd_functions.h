@@ -51,5 +51,15 @@ void PidActionsCmdFunc( drone_t * obj, char * arr[ 4 ] );
  */
 void VarsUpdateCmdFunc(drone_t * drone, char * arr[4]);
 
+/**
+ * @brief Store all pointed variables in the ESP32 NVS
+ * 
+ * @param drone: Pointer to drone object
+ * @param arr: Array containing processed data from received cmd
+ * 
+ * @return none
+ * 
+ */
+void NvsStoreCmdFunc(drone_t * drone, char * arr[4]);
 
 #endif

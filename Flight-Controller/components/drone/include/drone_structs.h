@@ -54,6 +54,88 @@ typedef enum drone_flash_params {
     /* Roll_d IIR filter coefficient */
     ROLL_D_IIR_COEFF,
 
+    /* Pitch Kp gain */
+    PID_PITCH_KP,
+
+    /* Pitch Ki gain */
+    PID_PITCH_KI,
+
+    /* Pitch Kd gain */
+    PID_PITCH_KD,
+
+    /* Pitch KB gain */
+    PID_PITCH_KB,
+
+    /* Pitch_d Kp gain */
+    PID_PITCH_D_KP,
+
+    /* Pitch_d Ki gain */
+    PID_PITCH_D_KI,
+
+    /* Pitch_d Kd gain */
+    PID_PITCH_D_KD,
+
+    /* Pitch_d KB gain */
+    PID_PITCH_D_KB,
+
+    /* Pitch_d IIR filter coefficient */
+    PITCH_D_IIR_COEFF,
+
+    /* Yaw Kp gain */
+    PID_YAW_KP,
+
+    /* Yaw Ki gain */
+    PID_YAW_KI,
+
+    /* Yaw Kd gain */
+    PID_YAW_KD,
+
+    /* Yaw KB gain */
+    PID_YAW_KB,
+
+    /* Yaw_d Kp gain */
+    PID_YAW_D_KP,
+
+    /* Yaw_d Ki gain */
+    PID_YAW_D_KI,
+
+    /* Yaw_d Kd gain */
+    PID_YAW_D_KD,
+
+    /* Yaw_d KB gain */
+    PID_YAW_D_KB,
+
+    /* Yaw_d IIR filter coefficient */
+    YAW_D_IIR_COEFF,
+
+    /* Z Kp gain */
+    PID_Z_KP,
+
+    /* Z Ki gain */
+    PID_Z_KI,
+
+    /* Z Kd gain */
+    PID_Z_KD,
+
+    /* Z KB gain */
+    PID_Z_KB,
+
+    /* Z_d Kp gain */
+    PID_Z_D_KP,
+
+    /* Z_d Ki gain */
+    PID_Z_D_KI,
+
+    /* Z_d Kd gain */
+    PID_Z_D_KD,
+
+    /* Z_d KB gain */
+    PID_Z_D_KB,
+
+    /* Z_d IIR filter coefficient */
+    Z_D_IIR_COEFF,
+
+
 } drone_flash_params_t;
 
 

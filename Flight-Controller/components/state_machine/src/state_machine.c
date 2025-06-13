@@ -69,31 +69,56 @@ static void StWaitingFunc( drone_t * obj ) {
 
 
 float filtered_roll = 0.0f;
+
+static void toggle_motor(drone_t* drone, int pwm_num);
+static void toggle_motor(drone_t* drone, int pwm_num) {
+
+    #define DC_ON 1
+    #define DC_OFF 0
+    #define AVG (DC_ON+DC_OFF)/2
+
+    if (drone->attributes.components.pwm[0]->get_pwm_dc(drone->attributes.components.pwm[ pwm_num ]) > AVG) {
+
+        drone->attributes.components.pwm[ pwm_num ]->set_pwm_dc(
+            drone->attributes.components.pwm[ pwm_num ],
+            DC_OFF
+        );
+
+    } else {
+
+        drone->attributes.components.pwm[ pwm_num ]->set_pwm_dc(
+            drone->attributes.components.pwm[ pwm_num ],
+            DC_ON
+        );
+
+    }
+
+}
+
 static void StControlVibrationCheck( drone_t* drone) {
 
     while (true) {
 
         if (drone->attributes.global_variables.tx_buttons->up) {
-            toggle_motor(drone->attributes.components.pwm[0]);
+            toggle_motor(drone, 0);
 
         }
         else if (drone->attributes.global_variables.tx_buttons->down) {
-            toggle_motor(drone->attributes.components.pwm[1]);
+            toggle_motor(drone, 1);
 
         }
         else if (drone->attributes.global_variables.tx_buttons->left) {
-            toggle_motor(drone->attributes.components.pwm[2]);
+            toggle_motor(drone, 2);
 
         }
         else if (drone->attributes.global_variables.tx_buttons->right) {
-            toggle_motor(drone->attributes.components.pwm[3]);
+            toggle_motor(drone, 3);
 
         }
-        else if (drone->attributes.global_variables.tx_buttons->circle) return;
+        else if (drone->attributes.global_variables.tx_buttons->square) return;
     }
 
-    printf("Vibration: %.2f\n", );
-
+    // sprintf("Vibration: %.2f\n", );
 
 }
 
