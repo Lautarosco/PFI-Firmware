@@ -29,7 +29,7 @@ typedef struct comp_words {
 
 
 /**
- * @brief Reset device in order to clean device registers
+ * @brief Reset device in order to clean its registers
  * 
  * @param bmp280_i2c_bus_handler: bmp280 I2C bus handler
  * 

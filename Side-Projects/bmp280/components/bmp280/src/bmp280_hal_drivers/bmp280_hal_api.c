@@ -15,7 +15,7 @@
 
 /* #################### CONSTANTS #################### */
 
-static const char * bmp280_tag = "BMP280";
+static const char * bmp280_tag = "[BMP280]";
 
 
 /* #################### STRUCTS #################### */
@@ -319,7 +319,7 @@ double bmp280_hal_GetRelativeP(bmp280_t bmp, int n) {
     double p0 = 0.0;
     for(int i = 0; i < n; i++) {
         bmp.measure(bmp.i2c.bmp280_i2c_bus_handler);
-        p0 += bmp.get_press();
+        p0 += bmp.get_pressure();
 
         vTaskDelay(pdMS_TO_TICKS(10));
     }

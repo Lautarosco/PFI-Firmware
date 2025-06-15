@@ -25,8 +25,8 @@ void app_main(void) {
         return;
     }
 
-    // double p0 = bmp280_GetRelativeP(*bmp, 100);
-    double p0 = 1032.0;
+    double p0 = bmp280_GetRelativeP(*bmp, 100);
+    double p0 = 1015.5; /* Relative pressure (depends on location) */
     double t = 0.0;
     double p = 0.0;
     double z = 0.0;
@@ -35,8 +35,8 @@ void app_main(void) {
 
     while(1) {
 
-        t = bmp->get_temp();
-        p = bmp->get_press();
+        t = bmp->get_temperature();
+        p = bmp->get_pressure();
         z = bmp->get_altitude(p, p0);
 
         printf("Temperature: %lf °C\tPressure: %lf hPa\tAltitude: %lf m\r\n", t, p, z);

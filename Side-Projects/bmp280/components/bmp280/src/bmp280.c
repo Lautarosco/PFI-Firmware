@@ -103,11 +103,11 @@ bmp280_t * Bmp280(void) {
     memset(bmp, 0, sizeof(bmp280_t));   /* Initialize all attributes to 0 */
 
     /* Function pointers assignment */
-    bmp->init         = bmp280_Init;
-    bmp->get_temp     = bmp280_GetTemp;
-    bmp->get_press    = bmp280_GetPress;
-    bmp->measure      = bmp280_Measure;
-    bmp->get_altitude = bmp280_GetAltitude;
+    bmp->init            = bmp280_Init;
+    bmp->get_temperature = bmp280_GetTemp;
+    bmp->get_pressure    = bmp280_GetPress;
+    bmp->measure         = bmp280_Measure;
+    bmp->get_altitude    = bmp280_GetAltitude;
 
     return bmp;
 }

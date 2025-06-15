@@ -7,8 +7,8 @@
 
 
 typedef struct __i2c_cfg {
-    int sda;                                        /* I2C SDA (data) GPIO */
-    int scl;                                        /* I2C SCL (clock) GPIO */
+    int sda;                                            /* I2C SDA (data) GPIO */
+    int scl;                                            /* I2C SCL (clock) GPIO */
     i2c_master_dev_handle_t bmp280_i2c_bus_handler;     /* bmp280 I2C bus handler */
 } __i2c_cfg_t;
 
@@ -29,7 +29,7 @@ typedef struct bmp280 {
      * 
      * @return ESP_OK if success - ESP_FAIL
      */
-    esp_err_t (* init)(bmp280_t * bmp, i2c_master_bus_handle_t * master_i2c_bus_handler, int addr, int sda, int scl);
+    esp_err_t (*init)(bmp280_t * bmp, i2c_master_bus_handle_t * master_i2c_bus_handler, int addr, int sda, int scl);
 
     /**
      * @brief [M] Compensate raw temperature values stored in registers and return temperature
@@ -37,7 +37,7 @@ typedef struct bmp280 {
      * 
      * @return 32-bit signed int measured temperature
      */
-    double (* get_temp)(void);
+    double (*get_temperature)(void);
 
     /**
      * @brief [M] Compensate raw pressure values stored in registers and return
@@ -45,7 +45,7 @@ typedef struct bmp280 {
      * 
      * @return 32-bit signed int measured pressure
      */
-    double (* get_press)(void);
+    double (*get_pressure)(void);
 
     /**
      * @brief [M] Measure pressure and temperature
@@ -54,18 +54,18 @@ typedef struct bmp280 {
      * 
      * @return ESP_OK if success - ESP_FAIL
      */
-    esp_err_t (* measure)(i2c_master_dev_handle_t bmp280_i2c_bus_handler);
+    esp_err_t (*measure)(i2c_master_dev_handle_t bmp280_i2c_bus_handler);
 
     /**
      * @brief [M] Calculate altitude based on measured pressure 'p' and relative pressure 'p0'. The latter should be calculated with
-     * 'bmp280_GetRelativeP' function or use sea level value, ~1013.25 hPa (value taken from https://cdn-shop.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf, p. 16, 3.6)
+     * 'bmp280_GetRelativeP' function or use sea level value, ~1013.25 hPa (value taken from https://cdn-shop.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf, p. 16, Sec. 3.6)
      * 
      * @param p: Measured pressure
      * @param p0: Relative pressure
      * 
      * @return 64-bit estimated altitude
      */
-    double (* get_altitude)(double p, double p0);
+    double (*get_altitude)(double p, double p0);
 } bmp280_t;
 
 #endif
