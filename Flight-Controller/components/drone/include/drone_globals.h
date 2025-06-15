@@ -1,21 +1,20 @@
 #ifndef DRONE_GLOBAL_VARIABLES_H
 #define DRONE_GLOBAL_VARIABLES_H
 
-/* Forward declaration to avoid including transmitter.h header file ( avoid circular dependency ) */
-typedef struct tx_buttons tx_buttons_t;
-
-/* Forward declaration to use SerialData_t type */
-typedef struct SerialData SerialData_t;
+#include "transmitter_structs.h"
 
 /**
  * @brief Drone's global variables
  */
 typedef struct drone_globals {
     /* Transmitter buttons */
-    tx_buttons_t * tx_buttons;
+    tx_buttons_t tx_buttons;
+    
+    /* Transmitter buttons previous state*/
+    tx_buttons_t tx_buttons_prev;
     
     /* Serial data */
-    SerialData_t * serial_data;
+    SerialData_t serial_data;
 
     /* IIR filter coefficient */
     float ema_filter_roll;

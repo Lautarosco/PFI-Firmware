@@ -386,7 +386,6 @@ static void read_from_nvs( drone_t * obj ) {
 
         /* Continue reading NVS */
         else {
-
             __read_from_flash( NVS_NAMESPACE, i, &read_var, sizeof( read_var ) );
             *(float*) (obj->attributes.flash_params_arr[i]) = read_var;
             ESP_LOGI( DRONE_TAG, "Updated %s: %.2f", GetKeyName( i ), read_var );
@@ -544,18 +543,6 @@ drone_t * Drone( void ) {
     /* Set Drone Class generic configs */
     drone->attributes.config = GetDroneConfigs();  // este GetDroneConfig está bien porque es el único que se tiene que usar
 
-    /* Assign memmory to Transmitter object buttons */
-    drone->attributes.global_variables.tx_buttons = malloc( sizeof( tx_buttons_t ) );
-
-    memset( drone->attributes.global_variables.tx_buttons, 0, sizeof( tx_buttons_t ) );
-
-    /* Assign memory to Bluetooth data */
-    drone->attributes.global_variables.serial_data = malloc( sizeof( SerialData_t ) );
-
-    memset( drone->attributes.global_variables.serial_data, 0, sizeof( SerialData_t ) );
-
-    /* Bluetooth data default values */
-    drone->attributes.global_variables.serial_data->data = malloc( 256 * sizeof( char ) );
 
     /* Pointer to Drone functions ( methods ) */
     drone->methods.update_states    = UpdateStates;
@@ -686,10 +673,10 @@ drone_t * Drone( void ) {
     #endif
 
     /* Assign Transmitter buttons global variable memmory address to 'GlobalTxButtons' variable */
-    GlobalTxButtons = drone->attributes.global_variables.tx_buttons;
+    GlobalTxButtons = &drone->attributes.global_variables.tx_buttons;
 
     /* Assign Bluetooth data global variable memmory address to 'GlobalSerialData' variable */
-    GlobalSerialData = drone->attributes.global_variables.serial_data;
+    GlobalSerialData = &drone->attributes.global_variables.serial_data;
 
     /* Free memory used for csv object */
     // for( int i = 0; i < n_rows; i++ ) {

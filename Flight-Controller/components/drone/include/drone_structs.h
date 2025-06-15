@@ -302,7 +302,10 @@ typedef struct drone_cfg {
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
+typedef struct synced_tx_buttons {
+    tx_buttons_t current;
+    tx_buttons_t previous;
+} synced_tx_buttons_t;
 
 /** @brief Drone's attributes */
 typedef struct drone_attributes {
@@ -315,6 +318,9 @@ typedef struct drone_attributes {
 
     /* Drone's components */
     drone_components_t components;
+
+    /* Buttons */
+    synced_tx_buttons_t buttons;
 
     /* Drone's global variables */
     drone_globals_t global_variables;
