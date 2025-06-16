@@ -7,6 +7,9 @@ typedef struct tx_buttons tx_buttons_t;
 /* Forward declaration to use SerialData_t type */
 typedef struct SerialData SerialData_t;
 
+/* Forward declaration to use pid_gain_t type */
+typedef struct pid_gain pid_gain_t;
+
 /**
  * @brief Drone's global variables
  */

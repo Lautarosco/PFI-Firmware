@@ -155,6 +155,56 @@ void VarsUpdateCmdFunc(drone_t * drone, char * arr[4]) {
 }
 
 
+void SpUpdateCmdFunc( drone_t * obj, char * arr[ 4 ] ) {
+
+    /* Get index ( states enum ) of received state */
+    int index = GetStateIndex( arr[ STATE_INDEX ] );
+
+    /* Check if received state is valid */
+    if( PID_INDEX_CHECK( index, sizeof( obj->attributes.components.controllers ) / ( sizeof( obj->attributes.components.controllers[ 0 ] ) ), __func__, __LINE__ ) ) {
+
+        typedef struct sp_index {
+            int state_index;
+            float *ptr;
+        } sp_index_t;
+
+        sp_index_t sp_arr[] = {
+            {.state_index = Z,       .ptr = &(obj->attributes.sp.z)},
+            {.state_index = ROLL,    .ptr = &(obj->attributes.sp.roll)},
+            {.state_index = ROLL_D,  .ptr = &(obj->attributes.sp.roll_dot)},
+            {.state_index = PITCH,   .ptr = &(obj->attributes.sp.pitch)},
+            {.state_index = PITCH_D, .ptr = &(obj->attributes.sp.pitch_dot)},
+            {.state_index = YAW,     .ptr = &(obj->attributes.sp.yaw)},
+            {.state_index = YAW_D,   .ptr = &(obj->attributes.sp.yaw_dot)},
+            {.state_index = 0,       .ptr = NULL},
+        };
+
+        bool found = false;
+
+        /* Get state index */
+        int ret = GetStateIndex(arr[STATE_INDEX]);
+
+        /* If valid state */
+        if (ret != -1) {
+            for (int i = 0; sp_arr[i].ptr != NULL; i++)
+            {
+                if (sp_arr[i].state_index == ret) {
+                    *(sp_arr[i].ptr) = atof(arr[VALUE_INDEX]);
+                    found = true;
+                }
+                break;
+            }
+                
+        }
+
+        if( !found ) {
+
+            ESP_LOGE( "TASK3", "Drone's <%s> state not found. See func %s, in line %d", arr[STATE_INDEX], __func__, __LINE__ );
+        }
+    }
+}
+
+
 void PidGainsCmdFunc( drone_t * obj, char * arr[ 4 ] ) {
 
     /* Get index ( states enum ) of received state */

@@ -84,4 +84,17 @@ void PidSetActionI( pid_controller_t * obj, ControllerFunction * iFunc );
  */
 void PidSetActionD( pid_controller_t * obj, ControllerFunction * dFunc );
 
+/* ========== START TESTING ========== */
+
+/**
+ * @brief Retrieve Kp gain of given state controller
+ * @param state_controller: Gains struct of a given state
+ * @param label: Name of gain
+ * @param new_value: New gain value
+ * @retval 1 if success - 0
+ */
+bool set_pid_gain(pid_gain_t *controller_gains, const char label[], float new_value);
+
+/* ========== END TESTING ========== */
+
 #endif

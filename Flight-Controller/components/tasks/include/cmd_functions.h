@@ -52,4 +52,15 @@ void PidActionsCmdFunc( drone_t * obj, char * arr[ 4 ] );
 void VarsUpdateCmdFunc(drone_t * drone, char * arr[4]);
 
 
+/**
+ * @brief Update Set Point
+ * 
+ * @param drone: Pointer to drone object
+ * @param arr: Array containing processed data from received cmd
+ * 
+ * @return none
+ * 
+ */
+void SpUpdateCmdFunc(drone_t * drone, char * arr[4]);
+
 #endif

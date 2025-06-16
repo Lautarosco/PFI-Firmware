@@ -18,15 +18,14 @@ const char * DRONE_TAG = "DRONE";
 
 /** @details Public variables */
 
-/**
- * @brief Pointer to buttons global variable of a Drone object ( used in transmitter component | transmitter_structs.c source file )
- */
-tx_buttons_t * GlobalTxButtons;
-
-/**
- * @brief Pointer to Bluetooth data global variable of a Drone object ( used in ps3 component | ps3_spp.c source file )
- */
-SerialData_t * GlobalSerialData;
+tx_buttons_t *GlobalTxButtons;          /** @brief Pointer to buttons global variable of a Drone object ( used in transmitter component | transmitter_structs.c source file ) */
+SerialData_t *GlobalSerialData;         /** @brief Pointer to Bluetooth data global variable of a Drone object ( used in ps3 component | ps3_spp.c source file ) */
+pid_gain_t *GlobalRollGains;            /** @brief Pointer to roll controller gains */
+pid_gain_t *GlobalRoll_dGains;          /** @brief Pointer to roll controller gains */
+pid_gain_t *GlobalPitchGains;           /** @brief Pointer to pitch controller gains */
+pid_gain_t *GlobalPitch_dGains;         /** @brief Pointer to pitch controller gains */
+pid_gain_t *GlobalYawGains;             /** @brief Pointer to yaw controller gains */
+pid_gain_t *GlobalYaw_dGains;           /** @brief Pointer to yaw controller gains */
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
@@ -176,7 +175,7 @@ static bool i2c_scan( void ) {
 
             else {
 
-                ESP_LOGI( DRONE_TAG, "Device found at address: ( 0x%02x )", address );
+                // ESP_LOGI( DRONE_TAG, "Device found at address: ( 0x%02x )", address );
             }
         }
         
@@ -503,6 +502,29 @@ static void UpdateStates( drone_t * obj, float ts ) {
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
+/**
+ * @brief Update Drone set points
+ * @param drone: Address of Drone object
+ * @retval none
+ */
+static void UpdateSetPoint(drone_t * drone) {
+    // 1. Update only if current state machine state is ST_CONTROL
+    if(drone->attributes.state_machine.curr_state == ST_CONTROL) {
+        // Triangle for + delta
+        if(drone->attributes.global_variables.tx_buttons->triangle) {
+            drone->attributes.sp.roll += 0.1;
+        }
+
+        // Triangle for - delta
+        else if(drone->attributes.global_variables.tx_buttons->cross) {
+            drone->attributes.sp.roll -= 0.1;
+        }
+    }
+}
+
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
 
 drone_t * Drone( void ) {
 
@@ -537,6 +559,7 @@ drone_t * Drone( void ) {
 
     /* Pointer to Drone functions ( methods ) */
     drone->methods.update_states    = UpdateStates;
+    drone->methods.update_sp        = UpdateSetPoint;
     drone->methods.init             = drone_init;
     drone->methods.i2c_scan         = i2c_scan;
     drone->methods.read_from_flash  = read_from_nvs;
@@ -663,11 +686,35 @@ drone_t * Drone( void ) {
 
     #endif
 
+
+    /* =============== START Global variables assignment =============== */
+
     /* Assign Transmitter buttons global variable memmory address to 'GlobalTxButtons' variable */
     GlobalTxButtons = drone->attributes.global_variables.tx_buttons;
 
     /* Assign Bluetooth data global variable memmory address to 'GlobalSerialData' variable */
     GlobalSerialData = drone->attributes.global_variables.serial_data;
+
+    /* Point 'GlobalRollGains' global variable to roll controller */
+    GlobalRollGains = &(drone->attributes.components.controllers[ROLL]->gain);
+
+    /* Point 'GlobalRollGains' global variable to roll_d controller */
+    GlobalRoll_dGains = &(drone->attributes.components.controllers[ROLL_D]->gain);
+
+    /* Point 'GlobalRollGains' global variable to pitch controller */
+    GlobalPitchGains = &(drone->attributes.components.controllers[PITCH]->gain);
+
+    /* Point 'GlobalRollGains' global variable to pitch_d controller */
+    GlobalPitch_dGains = &(drone->attributes.components.controllers[PITCH_D]->gain);
+
+    /* Point 'GlobalRollGains' global variable to yaw controller */
+    GlobalYawGains = &(drone->attributes.components.controllers[YAW]->gain);
+
+    /* Point 'GlobalRollGains' global variable to yaw_d controller */
+    GlobalYaw_dGains = &(drone->attributes.components.controllers[YAW_D]->gain);
+
+    /* =============== END Global variables assignment =============== */
+
 
     /* Free memory used for csv object */
     // for( int i = 0; i < n_rows; i++ ) {

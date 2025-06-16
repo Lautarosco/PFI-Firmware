@@ -50,4 +50,11 @@ void vTaskDroneMeasure( void * pvParameters );
  */
 void vTaskParseCommand( void * pvParameters );
 
+/**
+ * @brief FreeRTOS task to detect UART events
+ * @param pvParameters: Any
+ * @retval none
+ */
+void vTaskUartEvent(void * pvParameters);
+
 #endif

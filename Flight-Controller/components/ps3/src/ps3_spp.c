@@ -146,12 +146,6 @@ void ps3_spp_deinit()
 static void ps3_spp_callback( esp_spp_cb_event_t event, esp_spp_cb_param_t * param ) {
     
     extern SerialData_t * GlobalSerialData;
-
-    /* Initialize with empty data */
-    /*for( int i = 0; i < sizeof( GlobalSerialData->data ) / sizeof( char ) ; i++ ) {
-
-        GlobalSerialData->data[ i ] = '\0';
-    }*/
     
     switch ( event ) {
 

@@ -18,6 +18,17 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
 
     /** @details Private functions implementations */
 
+    typedef struct js_btn_wrapper {
+        int btn_index;
+        bool btn_value;
+    } js_btn_wrapper_t;
+
+    typedef struct tx_btns {
+        char * btn_name;
+        js_btn_wrapper_t btn_arr[2];
+        bool * tx_btn_ptr;
+    } tx_btns_t;
+
     /**
      * @brief Activate buttons flags
      * @param ps3: ps3_t struct
@@ -26,199 +37,43 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
      */
     static void controller_event_cb( ps3_t ps3, ps3_event_t event ) {
 
+        /* ========================= START Process incomming data ========================= */
+
         /* Declared in drone.c source file */
         extern tx_buttons_t * GlobalTxButtons;
 
-        /* If cross button is being pressed */
-        if( event.button_down.cross ) {
-            
-            GlobalTxButtons->cross = true;
+        tx_btns_t tx_btns_arr[] = {
+            {.btn_name = "cross",    .btn_arr = {{.btn_index = event.button_down.cross,    .btn_value = true}, {.btn_index = event.button_up.cross,    .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->cross)},
+            {.btn_name = "triangle", .btn_arr = {{.btn_index = event.button_down.triangle, .btn_value = true}, {.btn_index = event.button_up.triangle, .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->triangle)},
+            {.btn_name = "square",   .btn_arr = {{.btn_index = event.button_down.square,   .btn_value = true}, {.btn_index = event.button_up.square,   .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->square)},
+            {.btn_name = "circle",   .btn_arr = {{.btn_index = event.button_down.circle,   .btn_value = true}, {.btn_index = event.button_up.circle,   .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->circle)},
+            {.btn_name = "up",       .btn_arr = {{.btn_index = event.button_down.up,       .btn_value = true}, {.btn_index = event.button_up.up,       .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->up)},
+            {.btn_name = "down",     .btn_arr = {{.btn_index = event.button_down.down,     .btn_value = true}, {.btn_index = event.button_up.down,     .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->down)},
+            {.btn_name = "left",     .btn_arr = {{.btn_index = event.button_down.left,     .btn_value = true}, {.btn_index = event.button_up.left,     .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->left)},
+            {.btn_name = "right",    .btn_arr = {{.btn_index = event.button_down.right,    .btn_value = true}, {.btn_index = event.button_up.right,    .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->right)},
+            {.btn_name = "l1",       .btn_arr = {{.btn_index = event.button_down.l1,       .btn_value = true}, {.btn_index = event.button_up.l1,       .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->l1)},
+            {.btn_name = "l2",       .btn_arr = {{.btn_index = event.button_down.l2,       .btn_value = true}, {.btn_index = event.button_up.l2,       .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->l2)},
+            {.btn_name = "r1",       .btn_arr = {{.btn_index = event.button_down.r1,       .btn_value = true}, {.btn_index = event.button_up.r1,       .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->r1)},
+            {.btn_name = "r2",       .btn_arr = {{.btn_index = event.button_down.r2,       .btn_value = true}, {.btn_index = event.button_up.r2,       .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->r2)},
+            {.btn_name = "start",    .btn_arr = {{.btn_index = event.button_down.start,    .btn_value = true}, {.btn_index = event.button_up.start,    .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->start)},
+            {.btn_name = "reset",    .btn_arr = {{.btn_index = event.button_down.ps,       .btn_value = true}, {.btn_index = event.button_up.ps,       .btn_value = false}}, .tx_btn_ptr = &(GlobalTxButtons->ps)}
+        };
+        
+        // Match received button with buttons array
+        for (int i = 0; i < ((sizeof(tx_btns_arr)) / (sizeof(tx_btns_arr[0]))); i++)
+        {
+            if(tx_btns_arr[i].btn_arr[0].btn_index) {
+                (*tx_btns_arr[i].tx_btn_ptr) = tx_btns_arr[i].btn_arr[0].btn_value;
+                printf("<%s> button was pressed\n", tx_btns_arr[i].btn_name);
+                break;
+            } else if(tx_btns_arr[i].btn_arr[1].btn_index) {
+                (*tx_btns_arr[i].tx_btn_ptr) = tx_btns_arr[i].btn_arr[1].btn_value;
+                printf("<%s> button was released\n", tx_btns_arr[i].btn_name);
+                break;
+            }
         }
 
-        /* If cross button is not being pressed */
-        else if( event.button_up.cross ) {
-            
-            GlobalTxButtons->cross = false;
-        }
-
-
-        /* If square button is being pressed */
-        if( event.button_down.square ) {
-            
-            GlobalTxButtons->square = true;
-        }
-
-        /* If square button is not being pressed */
-        else if( event.button_up.square ) {
-            
-            GlobalTxButtons->square = false;
-        }
-
-
-        /* If triangle button is being pressed */
-        if( event.button_down.triangle ) {
-            
-            GlobalTxButtons->triangle = true;
-        }
-
-        /* If triangle button is not being pressed */
-        else if( event.button_up.triangle ) {
-            
-            GlobalTxButtons->triangle = false;
-        }
-
-
-        /* If circle button is being pressed */
-        if( event.button_down.circle ) {
-            
-            GlobalTxButtons->circle = true;
-        }
-
-        /* If circle button is not being pressed */
-        else if( event.button_up.circle ) {
-            
-            GlobalTxButtons->circle = false;
-        }
-
-
-        /* If up button is being pressed */
-        if( event.button_down.up ) {
-            
-            GlobalTxButtons->up = true;
-        }
-
-        /* If up button is not being pressed */
-        else if( event.button_up.up ) {
-            
-            GlobalTxButtons->up = false;
-        }
-
-
-        /* If down button is being pressed */
-        if( event.button_down.down ) {
-            
-            GlobalTxButtons->down = true;
-        }
-
-        /* If down button is not being pressed */
-        else if( event.button_up.down ) {
-            
-            GlobalTxButtons->down = false;
-        }
-
-
-        /* If left button is being pressed */
-        if( event.button_down.left ) {
-            
-            GlobalTxButtons->left = true;
-        }
-
-        /* If left button is not being pressed */
-        else if( event.button_up.left ) {
-            
-            GlobalTxButtons->left = false;
-        }
-
-
-        /* If right button is being pressed */
-        if( event.button_down.right ) {
-            
-            GlobalTxButtons->right = true;
-        }
-
-        /* If right button is not being pressed */
-        else if( event.button_up.right ) {
-            
-            GlobalTxButtons->right = false;
-        }
-
-
-        /* If r1 button is being pressed */
-        if( event.button_down.r1 ) {
-            
-            GlobalTxButtons->r1 = true;
-        }
-
-        /* If r1 button is not being pressed */
-        else if( event.button_up.r1 ) {
-            
-            GlobalTxButtons->r1 = false;
-        }
-
-
-        /* If l1 button is being pressed */
-        if( event.button_down.l1 ) {
-            
-            GlobalTxButtons->l1 = true;
-        }
-
-        /* If l1 button is not being pressed */
-        else if( event.button_up.l1 ) {
-            
-            GlobalTxButtons->l1 = false;
-        }
-
-
-        /* If r2 button is being pressed */
-        if( event.button_down.r2 ) {
-            
-            GlobalTxButtons->r2 = true;
-        }
-
-        /* If r2 button is not being pressed */
-        else if( event.button_up.r2 ) {
-            
-            GlobalTxButtons->r2 = false;
-        }
-
-
-        /* If l2 button is being pressed */
-        if( event.button_down.l2 ) {
-            
-            GlobalTxButtons->l2 = true;
-        }
-
-        /* If l2 button is not being pressed */
-        else if( event.button_up.l2 ) {
-            
-            GlobalTxButtons->l2 = false;
-        }
-
-        /* If select button is being pressed */
-        if( event.button_down.select ) {
-            
-            GlobalTxButtons->select = true;
-        }
-
-        /* If select button is not being pressed */
-        else if( event.button_up.select ) {
-            
-            GlobalTxButtons->select = false;
-        }
-
-        /* If start button is being pressed */
-        if( event.button_down.start ) {
-            
-            GlobalTxButtons->start = true;
-        }
-
-        /* If start button is not being pressed */
-        else if( event.button_up.start ) {
-            
-            GlobalTxButtons->start = false;
-        }
-
-        /* If ps button is being pressed */
-        if( event.button_down.ps ) {
-            
-            GlobalTxButtons->ps = true;
-        }
-
-        /* If ps button is not being pressed */
-        else if( event.button_up.ps ) {
-            
-            GlobalTxButtons->ps = false;
-        }
+        /* ========================= END Process incomming data ========================= */
     }
 
     /**
@@ -348,7 +203,7 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
     #include <string.h>
     #include <esp_http_server.h>
     #include <cJSON.h>
-    // #include <esp_spiffs.h>
+    #include <ctype.h>
 
     /* TESTING */
 
@@ -361,6 +216,135 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
 
     #define WIFI_SSID "ESP32_Transmitter"
     #define WIFI_PASS "12345678"
+
+    static esp_err_t update_vars_handler(httpd_req_t *req) {
+        /* Create a buffer to store events related data */
+        char buff[ 100 ];
+
+        /* Read data from HTTP server */
+        int ret = httpd_req_recv( req, buff, sizeof( buff ) - 1 );
+
+        if( ret <= 0 ) {
+
+            if( ret == HTTPD_SOCK_ERR_TIMEOUT ) {
+
+                httpd_resp_send_408( req );
+            }
+
+            return ESP_FAIL;
+        }
+
+        /* Add NULL-terminate to end of buffer */
+        buff[ ret ] = '\0';
+
+        cJSON * json = cJSON_Parse( buff );
+
+        /* Check if received JSON is valid */
+        if( !json ) {
+
+            ESP_LOGE( TRANSMITTER_TAG, "Invalid JSON received" );
+            return ESP_ERR_INVALID_RESPONSE;
+        }
+
+        /* Store button pressed */
+        const char * action = cJSON_GetObjectItem( json, "action" )->valuestring;
+
+        /* Store occurred action */
+        const char * html_select = cJSON_GetObjectItem( json, "selected" )->valuestring;
+
+        const char * text = cJSON_GetObjectItem( json, "text" )->valuestring;
+
+        // html entered text is empty
+        if (!strcmp(text, "")) {
+            printf("Empty input\n");
+        } else {
+            // Check if html entered text is a valid number
+            bool is_digit = true;
+            for (int i = 0; i < strlen(text); i++)
+            {
+                if (!isdigit((unsigned char) text[i])) {
+                    is_digit = false;
+                    break;
+                }
+            }
+
+            if (is_digit) {
+                float new_value = atof(text);
+                ESP_LOGE( "DEBUG", "Action: %s | Opción: %s | Número: %.2f", action, html_select, new_value);
+                /* ========================= START Process incomming data ========================= */
+
+                /* Forward declaration to avoid header inclusion */
+                typedef struct pid_gain pid_gain_t;
+
+                /* Declared in drone.c source file */
+                extern pid_gain_t * GlobalRollGains;
+                extern pid_gain_t * GlobalRoll_dGains;
+                extern pid_gain_t * GlobalPitchGains;
+                extern pid_gain_t * GlobalPitch_dGains;
+                extern pid_gain_t * GlobalYawGains;
+                extern pid_gain_t * GlobalYaw_dGains;
+
+                /* Declared in controllers.h and defined in controllers.c */
+                extern bool set_pid_gain(pid_gain_t *controller_gains, const char label[], float new_value);
+
+                typedef struct gains_label {
+                    const char *html_option;
+                    const char *name;
+                    pid_gain_t *state;
+                } gains_label_t;
+
+                gains_label_t arr[] = {
+                    // Roll
+                    {.html_option = "roll_kp",    .name = "kp", .state = GlobalRollGains},
+                    {.html_option = "roll_ki",    .name = "ki", .state = GlobalRollGains},
+                    {.html_option = "roll_kd",    .name = "kd", .state = GlobalRollGains},
+
+                    // Roll_d
+                    {.html_option = "roll_d_kp",  .name = "kp", .state = GlobalRoll_dGains},
+                    {.html_option = "roll_d_ki",  .name = "ki", .state = GlobalRoll_dGains},
+                    {.html_option = "roll_d_kd",  .name = "kd", .state = GlobalRoll_dGains},
+
+                    // Pitch
+                    {.html_option = "pitch_kp",   .name = "kp", .state = GlobalPitchGains},
+                    {.html_option = "pitch_ki",   .name = "ki", .state = GlobalPitchGains},
+                    {.html_option = "pitch_kd",   .name = "kd", .state = GlobalPitchGains},
+
+                    // Pitch_d
+                    {.html_option = "pitch_d_kp", .name = "kp", .state = GlobalPitch_dGains},
+                    {.html_option = "pitch_d_ki", .name = "ki", .state = GlobalPitch_dGains},
+                    {.html_option = "pitch_d_kd", .name = "kd", .state = GlobalPitch_dGains},
+
+                    // Yaw
+                    {.html_option = "yaw_kp",     .name = "kp", .state = GlobalYawGains},
+                    {.html_option = "yaw_ki",     .name = "ki", .state = GlobalYawGains},
+                    {.html_option = "yaw_kd",     .name = "kd", .state = GlobalYawGains},
+
+                    // Yaw_d
+                    {.html_option = "yaw_d_kp",   .name = "kp", .state = GlobalYaw_dGains},
+                    {.html_option = "yaw_d_ki",   .name = "ki", .state = GlobalYaw_dGains},
+                    {.html_option = "yaw_d_kd",   .name = "kd", .state = GlobalYaw_dGains},
+                };
+
+                for (int i = 0; i < ((sizeof(arr)) / (sizeof(arr[0]))); i++)
+                {
+                    if (!strcmp(html_select, arr[i].html_option)) {
+                        if (!set_pid_gain(arr[i].state, arr[i].name, new_value)) {
+                            ESP_LOGE(TRANSMITTER_TAG, "Drone's state <%s> NOT FOUND. See function %s in line %d.", html_select, __func__, __LINE__);
+                        }
+                    }
+                }
+
+                /* ========================= END Process incomming data ========================= */
+            } else {
+                printf("Wrong input\n");
+            }
+        }
+
+        httpd_resp_set_type( req, "application/json" );
+        httpd_resp_sendstr( req, "{\"status\":\"ok\"}" );
+
+        return ESP_OK;
+    }
 
     static esp_err_t button_handler( httpd_req_t * req ) {
 
@@ -401,184 +385,72 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
 
         ESP_LOGE( "DEBUG", "Action: %s | Button: %s", action, button );
 
+        /* ========================= START Process incomming data ========================= */
+
         /* Declared in drone.c source file */
         extern tx_buttons_t * GlobalTxButtons;
 
-        /* If any button was pressed */
+        typedef struct tx_btns {
+            char * btn_name;
+            bool * tx_btn_ptr;
+        } tx_btns_t;
+
+        // Pair each button with respective drone's attribute
+        tx_btns_t tx_btns_arr[] = {
+            {.btn_name = "cross",    .tx_btn_ptr = &(GlobalTxButtons->cross)},
+            {.btn_name = "triangle", .tx_btn_ptr = &(GlobalTxButtons->triangle)},
+            {.btn_name = "square",   .tx_btn_ptr = &(GlobalTxButtons->square)},
+            {.btn_name = "circle",   .tx_btn_ptr = &(GlobalTxButtons->circle)},
+            {.btn_name = "up",       .tx_btn_ptr = &(GlobalTxButtons->up)},
+            {.btn_name = "down",     .tx_btn_ptr = &(GlobalTxButtons->down)},
+            {.btn_name = "left",     .tx_btn_ptr = &(GlobalTxButtons->left)},
+            {.btn_name = "right",    .tx_btn_ptr = &(GlobalTxButtons->right)},
+            {.btn_name = "l1",       .tx_btn_ptr = &(GlobalTxButtons->l1)},
+            {.btn_name = "l2",       .tx_btn_ptr = &(GlobalTxButtons->l2)},
+            {.btn_name = "r1",       .tx_btn_ptr = &(GlobalTxButtons->r1)},
+            {.btn_name = "r2",       .tx_btn_ptr = &(GlobalTxButtons->r2)},
+            {.btn_name = "start",    .tx_btn_ptr = &(GlobalTxButtons->start)},
+            {.btn_name = "reset",    .tx_btn_ptr = &(GlobalTxButtons->ps)}
+        };
+
+        // Check which button was pressed/released
+        bool found = false;
         if( !strcmp( action, "press" ) ) {
-
-            /* If x button is being pressed */
-            if( !strcmp( button, "cross" ) ) {
-
-                GlobalTxButtons->cross = true;
+            // Match received button with buttons array
+            for (int i = 0; i < ((sizeof(tx_btns_arr)) / (sizeof(tx_btns_arr[0]))); i++)
+            {
+                if(!strcmp(button, tx_btns_arr[i].btn_name)) {
+                    (*tx_btns_arr[i].tx_btn_ptr) = true;
+                    printf("<%s> button was pressed\n", tx_btns_arr[i].btn_name);
+                    found = true;
+                    break;
+                }
             }
-
-            /* If square button is being pressed */
-            else if( !strcmp( button, "square" ) ) {
-
-                GlobalTxButtons->square = true;
+        } else if (!strcmp(action, "release")) {
+            // Match received button with buttons array
+            for (int i = 0; i < ((sizeof(tx_btns_arr)) / (sizeof(tx_btns_arr[0]))); i++)
+            {
+                if(!strcmp(button, tx_btns_arr[i].btn_name)) {
+                    (*tx_btns_arr[i].tx_btn_ptr) = false;
+                    printf("<%s> button was released\n", tx_btns_arr[i].btn_name);
+                    found = true;
+                    break;
+                }
             }
-
-            /* If triangle button is being pressed */
-            else if( !strcmp( button, "triangle" ) ) {
-
-                GlobalTxButtons->triangle = true;
-            }
-
-            /* If circle button is being pressed */
-            else if( !strcmp( button, "circle" ) ) {
-
-                GlobalTxButtons->circle = true;
-            }
-
-            /* If up button is being pressed */
-            else if( !strcmp( button, "up" ) ) {
-
-                GlobalTxButtons->up = true;
-            }
-
-            /* If down button is being pressed */
-            else if( !strcmp( button, "down" ) ) {
-
-                GlobalTxButtons->down = true;
-            }
-
-            /* If left button is being pressed */
-            else if( !strcmp( button, "left" ) ) {
-
-                GlobalTxButtons->left = true;
-            }
-
-            /* If right button is being pressed */
-            else if( !strcmp( button, "right" ) ) {
-
-                GlobalTxButtons->right = true;
-            }
-
-            /* If r1 button is being pressed */
-            else if( !strcmp( button, "r1" ) ) {
-
-                GlobalTxButtons->r1 = true;
-            }
-
-            /* If l1 button is being pressed */
-            else if( !strcmp( button, "l1" ) ) {
-
-                GlobalTxButtons->l1 = true;
-            }
-
-            /* If r2 button is being pressed */
-            else if( !strcmp( button, "r2" ) ) {
-
-                GlobalTxButtons->r2 = true;
-            }
-
-            /* If l2 button is being pressed */
-            else if( !strcmp( button, "l2" ) ) {
-
-                GlobalTxButtons->l2 = true;
-            }
-
-            /* If start button is being released */
-            else if( !strcmp( button, "start" ) ) {
-
-                GlobalTxButtons->start = true;
-            }
-
-            /* If reset button is being released */
-            else if( !strcmp( button, "reset" ) ) {
-
-                GlobalTxButtons->ps = true;
-            }
+        } else {
+            // Actions can only be press or release
+            ESP_LOGE( TRANSMITTER_TAG, "Action must be press/release. See function %s in line %d", __func__, __LINE__ );
         }
 
-        /* If any button was released */
-        else if( !strcmp( action, "release" ) ) {
-
-            /* If x button is being released */
-            if( !strcmp( button, "cross" ) ) {
-
-                GlobalTxButtons->cross = false;
+        if (!found) {
+            printf("Buttons must be: <");
+            for (int i = 0; i < ((sizeof(tx_btns_arr)) / (sizeof(tx_btns_arr[0]))); i++) {
+                printf("%s/", tx_btns_arr[i].btn_name);
             }
-
-            /* If square button is being released */
-            else if( !strcmp( button, "square" ) ) {
-
-                GlobalTxButtons->square = false;
-            }
-
-            /* If triangle button is being released */
-            else if( !strcmp( button, "triangle" ) ) {
-                
-                GlobalTxButtons->triangle = false;
-            }
-
-            /* If circle button is being released */
-            else if( !strcmp( button, "circle" ) ) {
-
-                GlobalTxButtons->circle = false;
-            }
-
-            /* If up button is being released */
-            else if( !strcmp( button, "up" ) ) {
-
-                GlobalTxButtons->up = false;
-            }
-
-            /* If down button is being released */
-            else if( !strcmp( button, "down" ) ) {
-
-                GlobalTxButtons->down = false;
-            }
-
-            /* If left button is being released */
-            else if( !strcmp( button, "left" ) ) {
-
-                GlobalTxButtons->left = false;
-            }
-
-            /* If right button is being released */
-            else if( !strcmp( button, "right" ) ) {
-
-                GlobalTxButtons->right = false;
-            }
-
-            /* If r1 button is being released */
-            else if( !strcmp( button, "r1" ) ) {
-
-                GlobalTxButtons->r1 = false;
-            }
-
-            /* If l1 button is being released */
-            else if( !strcmp( button, "l1" ) ) {
-
-                GlobalTxButtons->l1 = false;
-            }
-
-            /* If r2 button is being released */
-            else if( !strcmp( button, "r2" ) ) {
-
-                GlobalTxButtons->r2 = false;
-            }
-
-            /* If l2 button is being released */
-            else if( !strcmp( button, "l2" ) ) {
-
-                GlobalTxButtons->l2 = false;
-            }
-
-            /* If start button is being released */
-            else if( !strcmp( button, "start" ) ) {
-
-                GlobalTxButtons->start = false;
-            }
-
-            /* If reset button is being released */
-            else if( !strcmp( button, "reset" ) ) {
-
-                GlobalTxButtons->ps = false;
-            }
+            printf(">\n");
         }
+
+        /* ========================= END Process incomming data ========================= */
 
         cJSON_Delete( json );
         httpd_resp_set_type( req, "application/json" );
@@ -647,6 +519,14 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
                 .user_ctx = NULL
             };
             httpd_register_uri_handler( server, &button_uri );
+
+            httpd_uri_t update_vars_uri = {
+                .uri      = "/test_button",
+                .method   = HTTP_POST,
+                .handler  = update_vars_handler,
+                .user_ctx = NULL
+            };
+            httpd_register_uri_handler(server, &update_vars_uri);
         }
 
         else {

@@ -261,6 +261,35 @@ float D_LPF( pid_controller_t * obj, float error ) {
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
+bool set_pid_gain(pid_gain_t *controller_gains, const char label[], float new_value) {
+    typedef struct gains {
+        const char *name;
+        float *ptr;
+    } gains_t;
+
+    gains_t gains_arr[] = {
+        {.name = "kp", .ptr = &(controller_gains->kp)},
+        {.name = "ki", .ptr = &(controller_gains->ki)},
+        {.name = "kd", .ptr = &(controller_gains->kd)},
+        {.name = "kb", .ptr = &(controller_gains->kb)}
+    };
+
+    bool found = false;
+    for (int i = 0; i < ((sizeof(gains_arr)) / (sizeof(gains_arr[0]))); i++)
+    {
+        if (!strcmp(gains_arr[i].name, label)) {
+            *(gains_arr[i].ptr) = new_value;
+            found = true;
+        }
+    }
+    
+    return found;
+}
+
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
+
 /**
  * @brief Initialize Pid object
  * @param obj: Address of Pid object
@@ -297,6 +326,7 @@ static void pid_init( pid_controller_t * obj, states_t tag, float ts_ms, float t
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
 
 pid_controller_t * Pid( ControllerFunction * pFunc, ControllerFunction * iFunc, ControllerFunction * dFunc ) {
 

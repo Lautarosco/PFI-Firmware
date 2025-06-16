@@ -16,7 +16,7 @@ typedef enum state_machine_states {
 
 } sm_state_t;
 
-extern const char *state_names[];
+// extern const char *state_names[];
 
 /**
  * @brief Events of machine
@@ -45,7 +45,7 @@ typedef struct state_machine {
 
 
 /* Create a state_machine object */
-extern sm_state_machine_t state_machine;
+// extern sm_state_machine_t state_machine;
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
@@ -72,7 +72,7 @@ typedef struct drone drone_t;
  * @param event: Occurred event
  * @retval none
  */
-void StateMachine_RunIteration( sm_state_machine_t * state_machine, drone_t * drone );
+void StateMachine_RunIteration(drone_t * drone);
 
 /**
  * @brief Get the name of a given state

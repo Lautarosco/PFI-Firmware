@@ -45,7 +45,7 @@
  *       ----------------------------------------------------------------------------------------------------
  *      |        Setting         |     Oversampling    |     Resolution     | Recommended temp. oversampling |
  *      |------------------------|---------------------|--------------------|--------------------------------|
- *      |No measurement          |(auto) set to 0x80000|          -         |            As needed           |
+ *      |No measurement          |       Skipped       |          -         |            As needed           |
  *      |------------------------|---------------------|--------------------|--------------------------------|
  *      |Ultra low power         |         x1          |  16 bit / 2.62 Pa  |                x1              |
  *      |------------------------|---------------------|--------------------|--------------------------------|
@@ -67,7 +67,7 @@
  *       -----------------------------------------------------------
  *      |      Mode      |     Oversampling    |     Resolution     |
  *      |----------------|---------------------|--------------------|
- *      |      000       |(auto) set to 0x80000|          -         |
+ *      |      000       |       Skipped       |          -         |
  *      |----------------|---------------------|--------------------|
  *      |      001       |         x1          |  16 bit / .005 °C  |
  *      |----------------|---------------------|--------------------|
@@ -168,9 +168,8 @@
  * 
  *  Option 2.
  *      Perform measurements in Forced mode with the same sampling time compared
- *      to the MCU. In ultra high resolution, the maximum measurement time in ms
- *      is 43.2 so i believe one could run the sensor at a lower sampling time with
- *      no problem
+ *      to the MCU. In ultra high resolution, the maximum measurement time is 43.2 ms
+ *      so i believe one could run the sensor at a lower sampling time without any problem
  * 
  *  <Data readout>
  *      @attention In order to prevent a possible mix-up of bytes belonging to different
@@ -226,8 +225,200 @@
  *      |    0xA0/0xA1     |  reserved  |   reserved   |
  *      |------------------|------------|--------------|
  *      
- *      
+ *  <Compensation formula>
+ *  ...
+ *   ...
+ *   ...
+ *   
+ *  <Memory map>
+ *       Registers width: 8 bits
+ *         
+ *         ------------------------------------------------
+ *        |   Register name   |   Address   | Reset state  |
+ *        |-------------------|-------------|--------------|
+ *        |     temp_xlsb     |     0xFC    |    0x00      |
+ *        |-------------------|-------------|--------------|
+ *        |      temp_lsb     |     0xFB    |    0x00      |
+ *        |-------------------|-------------|--------------|
+ *        |      temp_msb     |     0xFA    |    0x80      |
+ *        |-------------------|-------------|--------------|
+ *        |     press_xlsb    |     0xF9    |    0x00      |
+ *        |-------------------|-------------|--------------|
+ *        |     press_lsb     |     0xF8    |    0x00      |
+ *        |-------------------|-------------|--------------|
+ *        |     press_msb     |     0xF7    |    0x80      |
+ *        |-------------------|-------------|--------------|
+ *        |      config       |     0xF5    |    0x00      |
+ *        |-------------------|-------------|--------------|
+ *        |     ctrl_meas     |     0xF4    |    0x00      |
+ *        |-------------------|-------------|--------------|
+ *        |      status       |     0xF3    |    0x00      |
+ *        |-------------------|-------------|--------------|
+ *        |       reset       |     0xE0    |    0x00      |
+ *        |-------------------|-------------|--------------|
+ *        |        id         |     0xD0    |    0x58      |
+ *        |-------------------|-------------|--------------|
+ *        | calib25...calib00 | 0xA1...0x88 |  individual  |
+ *        |-------------------|-------------|--------------|
+ * 
+ *      @b Registers_description
+ *          @c id: (0xD0) : chip identification number chip_id[7:0] = 0x58
+ * 
+ *          @c reset: (0xE0) : if 0xB6 is written to the register, the device is
+ *          autimatically reset. @attention Writing other values has no effect
+ *          
+ *          @c status: (0xF3) : it contains two bits which indicate the status of the device
+ * 
+ *               -----------------------------------------------------------------
+ *              |    Bits    |       Name       |           Description           |
+ *              |------------|------------------|---------------------------------|
+ *              |     3      |    measuring[0]  |               1*                |
+ *              |------------|------------------|---------------------------------|
+ *              |  4, 3, 2   |    im_update[0]  |               2*                |
+ *              |------------|------------------|---------------------------------|
+ * 
+ *              1* : Automatically set to 1 whenever a conversion is running and
+ *              back to 0 when the results have been transferred to the data registers
+ * 
+ *              2* : Automatically set to 1 when the NVM data are being copied
+ *              to image registers and back to 0 when the coppying is done
+ * 
+ *          @c ctrl_meas (0xF4)
+ *              
+ *               -----------------------------------------------------------------
+ *              |    Bits    |       Name       |           Description           |
+ *              |------------|------------------|---------------------------------|
+ *              |  7, 6, 5   |    osrs_t[2:0]   |Controls oversampling of temp.   |
+ *              |------------|------------------|---------------------------------|
+ *              |  4, 3, 2   |    osrs_p[2:0]   |Controls oversampling of press.  |
+ *              |------------|------------------|---------------------------------|
+ *              |    1, 0    |     mode[1:0]    |Controls the power mode of device|
+ *              |------------|------------------|---------------------------------|
+ * 
+ * 
+ *          @c config (0xF5)
+ * 
+ *               -----------------------------------------------------------------
+ *              |    Bits    |       Name       |           Description           |
+ *              |------------|------------------|---------------------------------|
+ *              |  7, 6, 5   |     t_sb[2:0]    |Controls inactive duration       |
+ *              |------------|------------------|---------------------------------|
+ *              |  4, 3, 2   |    filter[2:0]   |Controls time const. of IIR      |
+ *              |------------|------------------|---------------------------------|
+ *              |      0     |    spi32_en[0]   |Enables 3-wire SPI when set to 1 |
+ *              |------------|------------------|---------------------------------|
+ * 
+ *          @c press_(msb/lsb/xlsb) (0xF7...0xF9)
+ * 
+ *               -----------------------------------------------------------------
+ *              |    Bits    |       Name       |           Description           |
+ *              |------------|------------------|---------------------------------|
+ *              |    0xF7    |  press_msb[7:0]  |MSB of raw pressure data         |
+ *              |------------|------------------|---------------------------------|
+ *              |    0xF8    |  press_lsb[7:0]  |LSB of raw pressure data         |
+ *              |------------|------------------|---------------------------------|
+ *              | 0xF9 bits  |                  |                                 |
+ *              | (7,6,5,4)  | press_xlsb[3:0]  |XLSB of raw pressure data        |
+ *              |------------|------------------|---------------------------------|
+ * 
+ *          @c temp_(msb/lsb/xlsb) (0xFA...0xFC)
+ * 
+ *               -----------------------------------------------------------------
+ *              |    Bits    |       Name       |           Description           |
+ *              |------------|------------------|---------------------------------|
+ *              |    0xFA    |  temp_msb[7:0]   |MSB of raw temperature data      |
+ *              |------------|------------------|---------------------------------|
+ *              |    0xFB    |  temp_lsb[7:0]   |LSB of raw temperature data      |
+ *              |------------|------------------|---------------------------------|
+ *              | 0xFC bits  |                  |                                 |
+ *              | (7,6,5,4)  | press_xlsb[3:0]  |XLSB of raw temperature data     |
+ *              |------------|------------------|---------------------------------|
+ * 
+ *  <Digital interfaces>
+ *      Supports SPI and I2C though we're using the latter. For this one, it supports
+ *      the standard, fast and high speeds modes.
+ * 
+ *      @e Single_byte_write
+ *      @e Multiple_byte_write (using paris of register addresses and register data)
+ *      @e Single_byte_read
+ *      @e Multiple_byte_read (using a single register address which is auto-incremented)
+ *
+ *      @b Interface_selection is done automatically based on CSB status. @attention If
+ *      CSB is connected to VDDIO, then I2C interface is active
+ * 
+ *      @b Serial_address : 111011x => The 6 MSB bits are fiex while the last one is
+ *      changeable by SDO value and can be changed during operation. Connecting SDO
+ *      to GND results in slave address 1110110 (0x76), meanwhile if connected to
+ *      VDDIO results in slave address 1110111 (0x77). @attention SDO pin cannot be
+ *      left floating, if so device address will be undefined
+ * 
+ *      @c I2C interface uses the following pins
+ *          @e SCK : Serial Clock (SCL)
+ *          @e SDI : data (SDA)
+ *              @attention SDI is bi-directional with open drain to GND, therefore
+ *              it must be externally connected to VDDIO via a pull up resistor
+ *          @e SDO : Slave address LSB (GND = 0, VDDIO = 1)
+ * 
+ *          @b I2C_Write : Send the slave address in write mode (RW = 0)
+ * 
+ *               ---------------------------------
+ *              |       Slave adddress      |  RW |
+ *              |---|---|---|---|---|---|---|-----|
+ *              | 1 | 1 | 1 | 0 | 1 | 1 | x |  0  |
+ *              |---|---|---|---|---|---|---|-----|
+ * 
+ *              @attention x is determined by SDO pin (See @b Serial_address)
+ * 
+ *              Once thats sent, master sends paris of registers addressses and
+ *              register data as follows
+ *              
+ *              1st pair.
+ *                  Register address (0xA0) : 10100000
+ *                  Register data - address 0xA0 : 8-bit
+ *              
+ *              2nd pair.
+ *                  Register address (0xA1) : 10100001
+ *                  Register data - address 0xA1 : 8-bit
+ * 
+ *          @b I2C_Read : In order to read registers, first the register address
+ *          must be sent in write mode. Then, either a stop or a repeated start
+ *          condition must be generated
+ *              After this, the slave is addressed in read mode (RW = 1) 1111011x1
  */     
 
 
 
+
+/**
+ * Settings
+ * 
+ * REGISTER: <config> 0xF5
+ *  set t_sb bits (7, 6, 5) to 000 (default value), but in forced mode => hence it has no action
+ *  set filter bits (4, 3, 2) to 100 ? CHECK:
+ *  set spi3w_en to 0 (default value => disabled)
+ * 
+ * REGISTER: <ctrl_meas> 0xF4
+ *  set osrs_t bits (7, 6, 5) to 010 (x2 just to improve a little pressure measurements)
+ *  set osrs_p bits (4, 3, 2) to 101 (Ultra high resolution) CHECK:
+ *  set mode bits (1, 0) to 01 (Forced mode) => @attention always set force mode again before taking a new measurement (See @b Power_modes)
+ */
+
+
+
+/**
+ * I2C Read
+ * 
+ * 1. Send 111011x0 (write mode) to register address (0xF6)
+ * 2. Wait for a stop or repeated start condition HOW: can i detect this?
+ * 3. Send 111011x1 (read mode) to register address (0xF6)
+ * 4. Read bytes 0xF6 and 0xF7 simmultaneously
+ */
+
+
+/**
+ * I2C Write
+ * 
+ * 1. Send 111011x0 (write mode) to register address
+ * 2. First, send 8-bit data to 0xA0 register, then send again 8-bit data to 0xA1
+ * 3. Wait for a stop condition HOW: can i detect this?
+ */
