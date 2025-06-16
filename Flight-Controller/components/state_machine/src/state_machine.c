@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include <state_machine.h>
 #include <drone.h>
+#include <string.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <esp_log.h>
 #include <math.h>
+
+#include "button_helper.h"
 
 const char * STATE_MACHINE_TAG = "STATE_MACHINE";
 // sm_state_machine_t state_machine;
@@ -45,7 +48,7 @@ static void StInitFunc( drone_t * obj ) {
 
     #if WEBSV_TX
         /* Reset button */
-        obj->attributes.global_variables.tx_buttons->cross = false;
+        obj->attributes.global_variables.tx_buttons.cross = false;
     #endif
 
     // tomar ACC_AVG_NUM mediciones de acelerómetro y promediarlas
@@ -69,6 +72,97 @@ static void StWaitingFunc( drone_t * obj ) {
 
 
 float filtered_roll = 0.0f;
+
+#define AVG (drone->attributes.components.pwm[ pwm_num ]->dc_max+drone->attributes.components.pwm[ pwm_num ]->dc_min)/2  // buscar una solucion mas prolija
+
+static void toggle_motor(drone_t* drone, int pwm_num);
+static void toggle_motor(drone_t* drone, int pwm_num) {
+
+    float current_pwm_dc = drone->attributes.components.pwm[ pwm_num ]->get_pwm_dc(drone->attributes.components.pwm[ pwm_num ]);
+    printf("Current PWM DC for motor %d: %.2f\n", pwm_num, current_pwm_dc);
+
+    if (current_pwm_dc > AVG) {
+
+        drone->attributes.components.pwm[ pwm_num ]->set_pwm_dc(
+            drone->attributes.components.pwm[ pwm_num ],
+            drone->attributes.components.pwm[ pwm_num ]->dc_min
+        );
+        printf("Motor %d OFF\n", pwm_num);
+
+    } else {
+
+        drone->attributes.components.pwm[ pwm_num ]->set_pwm_dc(
+            drone->attributes.components.pwm[ pwm_num ],
+            drone->attributes.components.pwm[ pwm_num ]->dc_max*0  // TODO: no hacerlo tan grande
+        );
+        printf("Motor %d ON\n", pwm_num);
+
+
+    }
+
+}
+
+static void StControlVibrationCheck(drone_t* drone) {
+    float alpha = 0.1f; // Smoothing factor (0 < alpha < 1)
+
+    static bool initialized = false;
+    static float acc_av_vector = 0;
+    static float vibration_total_result = 0;
+    static int vibration_counter = 0;
+    
+    if (pressed(drone, EV_SQUARE) && initialized) {
+        
+        /* Turn off motors */
+        for (int pwm_num = 0; pwm_num < 4; pwm_num++) {
+            drone->attributes.components.pwm[pwm_num]->set_pwm_dc(
+                drone->attributes.components.pwm[pwm_num],
+                drone->attributes.components.pwm[ pwm_num ]->dc_min);
+        }
+        initialized = false;  // Reset for next entry
+        printf("Exiting vibration check mode\n");
+        drone->attributes.request_state_transition = true;
+        drone->attributes.requested_transition_event = EV_SQUARE;
+        return;
+    }
+    
+    // Initialize with first reading
+    if (!initialized) {
+        acc_av_vector = sqrt(
+            drone->attributes.components.bmi.Acc.x * drone->attributes.components.bmi.Acc.x +
+            drone->attributes.components.bmi.Acc.y * drone->attributes.components.bmi.Acc.y +
+            drone->attributes.components.bmi.Acc.z * drone->attributes.components.bmi.Acc.z
+        );
+
+        acc_av_vector = 0;
+        vibration_total_result = 0;
+        vibration_counter = 0;
+        initialized = true;
+
+    }
+
+    // Motor control
+    if(pressed(drone, EV_UP)) toggle_motor(drone, 0);
+    else if(pressed(drone, EV_DOWN)) toggle_motor(drone, 1);
+    else if(pressed(drone, EV_LEFT)) toggle_motor(drone, 2);
+    else if(pressed(drone, EV_RIGHT)) toggle_motor(drone, 3);
+    
+    // Vibration calculation
+    float current_acc_vector = sqrtf(
+        drone->attributes.components.bmi.Acc.x * drone->attributes.components.bmi.Acc.x +
+        drone->attributes.components.bmi.Acc.y * drone->attributes.components.bmi.Acc.y +
+        drone->attributes.components.bmi.Acc.z * drone->attributes.components.bmi.Acc.z
+    );
+    
+    acc_av_vector = (alpha) * current_acc_vector + (1-alpha) * acc_av_vector;
+    vibration_total_result += fabsf(current_acc_vector - acc_av_vector);
+    if (++vibration_counter >= 20) {
+        ESP_LOGI("VIBRATION", "Vibration: %.2f", vibration_total_result / 20);
+        vibration_total_result = 0;
+        vibration_counter = 0;
+    }
+
+
+}
 
 static void StControlFunc( drone_t * obj ) {
 
@@ -116,11 +210,6 @@ static void StControlFunc( drone_t * obj ) {
     }
 }
 
-static void StPropCalibrationFunc( drone_t * obj ) {
-
-    // printf( "Calibrating propellers\r\n" );
-}
-
 static void StCalibrationFunc( drone_t * obj ) {
     
     /* Calibration routine for Hobbywing Skywalker ESC's */
@@ -138,11 +227,11 @@ static void StCalibrationFunc( drone_t * obj ) {
     ESP_LOGW( STATE_MACHINE_TAG, "Press X button when all ESC are connected"  );
     while( 1 ) {
 
-        if( obj->attributes.global_variables.tx_buttons->cross ) {
+        if( obj->attributes.global_variables.tx_buttons.cross ) {
 
             #if WEBSV_TX
                 /* Reset button */
-                obj->attributes.global_variables.tx_buttons->cross = false;
+                obj->attributes.global_variables.tx_buttons.cross = false;
             #endif
 
             vTaskDelay( pdMS_TO_TICKS( 1000 ) );
@@ -157,11 +246,11 @@ static void StCalibrationFunc( drone_t * obj ) {
     ESP_LOGW( STATE_MACHINE_TAG, "Press X button when all ESC have latched maximum value"  );
     while( 1 ) {
 
-        if( obj->attributes.global_variables.tx_buttons->cross ) {
+        if( obj->attributes.global_variables.tx_buttons.cross ) {
 
             #if WEBSV_TX
                 /* Reset button */
-                obj->attributes.global_variables.tx_buttons->cross = false;
+                obj->attributes.global_variables.tx_buttons.cross = false;
             #endif
 
             vTaskDelay( pdMS_TO_TICKS( 1000 ) );
@@ -183,11 +272,11 @@ static void StCalibrationFunc( drone_t * obj ) {
     ESP_LOGW( STATE_MACHINE_TAG, "Press X button when all ESC have latched minimum value"  );
     while( 1 ) {
 
-        if( obj->attributes.global_variables.tx_buttons->cross ) {
+        if( obj->attributes.global_variables.tx_buttons.cross ) {
         
             #if WEBSV_TX
                 /* Reset button */
-                obj->attributes.global_variables.tx_buttons->cross = false;
+                obj->attributes.global_variables.tx_buttons.cross = false;
             #endif
 
             break;
@@ -201,11 +290,16 @@ static void StCalibrationFunc( drone_t * obj ) {
 
     #if WEBSV_TX
         /* Reset button */
-        obj->attributes.global_variables.tx_buttons->triangle = false;  /* TESTING */
+        obj->attributes.global_variables.tx_buttons.triangle = false;  /* TESTING */
     #endif
 }
 
-static void StResetFunc( drone_t * obj ) {
+static void StResetFunc( drone_t * drone ) {
+
+    for (int i = 0; i < ( sizeof( drone->attributes.components.pwm ) ) / ( sizeof( drone->attributes.components.pwm[ 0 ] ) ); i++ ) {
+        /* Set all pwm duty cycle to minimum */
+        drone->attributes.components.pwm[ i ]->set_pwm_dc( drone->attributes.components.pwm[ i ], drone->attributes.components.pwm[ i ]->dc_min );
+    }
 
     esp_restart();
 }
@@ -221,7 +315,7 @@ static state_func_row_t state_function_array[] = {
     { .name = "ST_WAITING",               .func = &StWaitingFunc },
     { .name = "ST_CALIBRATION",           .func = &StCalibrationFunc },
     { .name = "ST_CONTROL",               .func = &StControlFunc },
-    { .name = "ST_PROPELLER_CALIBRATION", .func = &StPropCalibrationFunc },
+    { .name = "ST_PROPELLER_CALIBRATION", .func = &StControlVibrationCheck },
     { .name = "ST_RESET",                 .func = &StResetFunc },
 
 };
@@ -265,7 +359,7 @@ static const state_trans_row_t state_trans_matrix[] = {
     { .curr_state = ST_WAITING,               .event = EV_ANY,      .next_state = ST_WAITING },
     { .curr_state = ST_WAITING,               .event = EV_TRIANGLE, .next_state = ST_CALIBRATION },
     { .curr_state = ST_WAITING,               .event = EV_CIRCLE,   .next_state = ST_CONTROL },
-    { .curr_state = ST_WAITING,               .event = EV_CROSS,    .next_state = ST_PROPELLER_CALIBRATION },
+    { .curr_state = ST_WAITING,               .event = EV_SQUARE,    .next_state = ST_PROPELLER_CALIBRATION },
     { .curr_state = ST_WAITING,               .event = EV_PS,       .next_state = ST_RESET },
 
     /* From CALIBRATION to ... */
@@ -278,7 +372,8 @@ static const state_trans_row_t state_trans_matrix[] = {
     { .curr_state = ST_CONTROL,               .event = EV_PS,       .next_state = ST_RESET },
 
     /* From PROPELLER CALIBRATION to ... */
-    { .curr_state = ST_PROPELLER_CALIBRATION, .event = EV_ANY,      .next_state = ST_WAITING },
+    { .curr_state = ST_PROPELLER_CALIBRATION, .event = EV_ANY,      .next_state = ST_PROPELLER_CALIBRATION },
+    { .curr_state = ST_PROPELLER_CALIBRATION, .event = EV_SQUARE,   .next_state = ST_WAITING },
     { .curr_state = ST_PROPELLER_CALIBRATION, .event = EV_PS,       .next_state = ST_RESET },
 };
 
@@ -298,7 +393,7 @@ void StateMachine_Init( sm_state_machine_t * state_machine ) {
 
 void StateMachine_RunIteration(drone_t * drone) {
 
-    // printf( "Current state: %s\r\nCurrent event: %s\r\n", StateMachine_GetStateName( drone->attributes.state_machine.curr_state ), StateMachine_GetEventName( drone->attributes.state_machine.event ) );
+    sm_state_t prev_state = state_machine->curr_state;
 
     /* Loop through the entire transition matrix to match actual state and occurred event */
     for( int i = 0; i < sizeof( state_trans_matrix ) / sizeof( state_trans_matrix[ 0 ] ); i++ ) {
@@ -312,12 +407,21 @@ void StateMachine_RunIteration(drone_t * drone) {
                 /* Go to the next state */
                 drone->attributes.state_machine.curr_state = state_trans_matrix[ i ].next_state;
 
+                /* Log transition if state changed */
+                if (state_machine->curr_state != prev_state) {
+                    ESP_LOGI(STATE_MACHINE_TAG, "Transition: %s -> %s on event %s",
+                        StateMachine_GetStateName(prev_state),
+                        StateMachine_GetStateName(state_machine->curr_state),
+                        StateMachine_GetEventName(state_machine->event));
+                }
+
                 /* Run new actual state respective function */
                 state_function_array[ drone->attributes.state_machine.curr_state ].func( drone );
                 break;
             }
         }
     }
+
 }
 
 const char * StateMachine_GetStateName( sm_state_t state ) {
@@ -340,7 +444,43 @@ const char * StateMachine_GetEventName( sm_event_t event ) {
         case EV_CIRCLE:
             return "EV_CIRCLE";
             break;
-            
+
+        case EV_SQUARE:
+            return "EV_SQUARE";
+            break;
+
+        case EV_UP:
+            return "EV_UP";
+            break;
+
+        case EV_DOWN:
+            return "EV_DOWN";
+            break;
+
+        case EV_LEFT:
+            return "EV_LEFT";
+            break;
+
+        case EV_RIGHT:
+            return "EV_RIGHT";
+            break;
+
+        case EV_R1:
+            return "EV_R1";
+            break;
+
+        case EV_R2:
+            return "EV_R2";
+            break;
+
+        case EV_L1:
+            return "EV_L1";
+            break;
+
+        case EV_L2:
+            return "EV_L2";
+            break;
+
         case EV_ANY:
             return "EV_ANY";
             break;

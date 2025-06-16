@@ -12,6 +12,7 @@
 
 #include <cmd_functions.h>
 
+#include "button_helper.h"
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
@@ -21,125 +22,100 @@
 /**
  * @brief Get ocurred event and update state machine object with it
  * @param state_machine: Address of state machine
- * @param obj: Drone object
+ * @param drone: Drone object
  * @retval none
  */
-static void getEvent( sm_state_machine_t * state_machine, drone_t obj ) {
+static void getEvent( sm_state_machine_t * state_machine, drone_t* drone ) {
 
-    switch( state_machine->curr_state ) {
-        
-        case ST_IDLE:
+    state_machine->event = EV_ANY;
 
-            /* If user pressed X and drone isn't initialized */
-            if( ( obj.attributes.global_variables.tx_buttons->cross ) && ( !obj.attributes.init_ok ) ) {
-                
-                state_machine->event = EV_CROSS;
-            }
+    // Handle pending state transitions requests first
+    if (drone->attributes.request_state_transition) {
+        state_machine->event = drone->attributes.requested_transition_event;
+        drone->attributes.request_state_transition = false;
+        drone->attributes.requested_transition_event = EV_ANY; // Reset the requested transition event
+        return;
+    }
 
-            /* If user pressed PS */
-            else if( ( obj.attributes.global_variables.tx_buttons->ps ) ) {
 
-                state_machine->event = EV_PS;
-            }
 
-            /* If no one of above buttons is being pressed */
-            else {
+    /* Previous = Current */
+    memcpy(&drone->attributes.buttons.previous,
+           &drone->attributes.buttons.current,
+           sizeof(tx_buttons_t));
 
-                state_machine->event = EV_ANY;
-            }
+    /* Current = Global.tx_buttons*/
+    memcpy(&drone->attributes.buttons.current,
+           &drone->attributes.global_variables.tx_buttons,
+           sizeof(tx_buttons_t));
 
-            break;
 
-        case ST_INIT:
-
-            /* If user pressed PS */
-            if( ( obj.attributes.global_variables.tx_buttons->ps ) ) {
-
-                state_machine->event = EV_PS;
-
-            } else {
-
-                state_machine->event = EV_ANY;
-            }
-
-            break;
-
-        case ST_WAITING:
-
-            /* If user pressed PS */
-            if( ( obj.attributes.global_variables.tx_buttons->ps ) ) {
-
-                state_machine->event = EV_PS;
-
-            } else if( obj.attributes.global_variables.tx_buttons->cross ) {
-
-                state_machine->event = EV_CROSS;
-
-            } else if( obj.attributes.global_variables.tx_buttons->circle ) {
-
-                state_machine->event = EV_CIRCLE;
-
-            } else if( obj.attributes.global_variables.tx_buttons->triangle ) {
-
-                state_machine->event = EV_TRIANGLE;
-
-            } else {
-
-                state_machine->event = EV_ANY;
-            }
-
-            break;
-
-        case ST_CALIBRATION:
-
-            /* If user pressed PS */
-            if( ( obj.attributes.global_variables.tx_buttons->ps ) ) {
-
-                state_machine->event = EV_PS;
-
-            } else {
-            
-                state_machine->event = EV_ANY;
-            }
-
-            break;
-
-        case ST_CONTROL:
-            /* If user pressed PS */
-            if( obj.attributes.global_variables.tx_buttons->ps ) {
-
-                state_machine->event = EV_PS;
-
-            } else {
-
-                state_machine->event = EV_ANY;
-            }
-
-            break;
-
+    switch (state_machine->curr_state) {
         case ST_PROPELLER_CALIBRATION:
-            
-            /* If user pressed PS */
-            if( ( obj.attributes.global_variables.tx_buttons->ps ) ) {
-
-                state_machine->event = EV_PS;
-
-            } else {
-
+            if (pressed(drone, EV_SQUARE)) {
+                printf("Propeller calibration finished\n");
                 state_machine->event = EV_ANY;
-            }
-
+                return;
+            }  // positive edge
             break;
 
         default:
-            break;
+            /* If user pressed PS */
+            if( pressed(drone, EV_PS) ) {
+                state_machine->event = EV_PS;
+
+            } else if( pressed(drone, EV_START) ) {
+                state_machine->event = EV_START;
+            }
+            /* If user pressed Cross*/
+             else if( pressed(drone, EV_CROSS) ) {
+                state_machine->event = EV_CROSS;
+
+            /* If user pressed Circle*/
+            } else if( pressed(drone, EV_CIRCLE) ) {
+                state_machine->event = EV_CIRCLE;
+
+            /* If user pressed Triangle*/
+            } else if( pressed(drone, EV_TRIANGLE) ) {
+                state_machine->event = EV_TRIANGLE;
+
+            } else if( pressed(drone, EV_SQUARE) ) {
+                state_machine->event = EV_SQUARE;
+                printf("Square pressed\n");
+
+            } else if( pressed(drone, EV_UP) ) {
+                state_machine->event = EV_UP;
+
+            } else if( pressed(drone, EV_DOWN) ) {
+                state_machine->event = EV_DOWN;
+
+            } else if( pressed(drone, EV_LEFT) ) {
+                state_machine->event = EV_LEFT;
+
+            } else if( pressed(drone, EV_RIGHT) ) {
+                state_machine->event = EV_RIGHT;
+
+            } else if( pressed(drone, EV_R1) ) {
+                state_machine->event = EV_R1;
+
+            } else if( pressed(drone, EV_R2) ) {
+                state_machine->event = EV_R2;
+
+            } else if( pressed(drone, EV_L1) ) {
+                state_machine->event = EV_L1;
+
+            } else if( pressed(drone, EV_L2) ) {
+                state_machine->event = EV_L2;
+
+            }
+    
     }
 }
 
 void vTaskStateMachine_Run( void * pvParameters ) {
 
     /* Cast parameter into Drone object */
-    drone_t * obj = ( drone_t * ) pvParameters;
+    drone_t * drone = ( drone_t * ) pvParameters;
 
     /* Create a state_machine object */
 
@@ -156,10 +132,10 @@ void vTaskStateMachine_Run( void * pvParameters ) {
     while( 1 ) {
 
         /* Get occurred event */
-        getEvent( &obj->attributes.state_machine, *obj );
+        getEvent( &drone->attributes.state_machine, drone );
 
         /* Go to the next state and run it's respective function */
-        StateMachine_RunIteration(obj);
+        StateMachine_RunIteration( &drone->attributes.state_machine, drone );
         
         vTaskDelay( pdMS_TO_TICKS( 10 ) );
     }
@@ -246,10 +222,10 @@ void vTaskprint( void * drone_ ) {
                 drone->attributes.sp.yaw_dot,
                 drone->attributes.states.z,
                 drone->attributes.sp.z,
-                drone->attributes.components.pwm[0]->get_pwm_dc(drone->attributes.components.pwm[0]),
-                drone->attributes.components.pwm[1]->get_pwm_dc(drone->attributes.components.pwm[1]),
-                drone->attributes.components.pwm[2]->get_pwm_dc(drone->attributes.components.pwm[2]),
-                drone->attributes.components.pwm[3]->get_pwm_dc(drone->attributes.components.pwm[3]),
+                drone->attributes.components.pwm[0]->get_pwm_dc(drone->attributes.components.pwm[0])*1000,
+                drone->attributes.components.pwm[1]->get_pwm_dc(drone->attributes.components.pwm[1])*1000,
+                drone->attributes.components.pwm[2]->get_pwm_dc(drone->attributes.components.pwm[2])*1000,
+                drone->attributes.components.pwm[3]->get_pwm_dc(drone->attributes.components.pwm[3])*1000,
 
                 // roll gains
                 drone->attributes.components.controllers[ROLL]->gain.kp,
@@ -480,21 +456,20 @@ void vTaskUartEvent( void * pvParameters ) {
                 case UART_DATA:
 
                     /* Avoid overlapping between UART and Bluetooth */
-                    if( !obj->attributes.global_variables.serial_data->state ) {
+                    if( !obj->attributes.global_variables.serial_data.state ) {
 
                         /* Data received flag HIGH */
-                        obj->attributes.global_variables.serial_data->state = true;
+                        obj->attributes.global_variables.serial_data.state = true;
 
                         /* Update data length */
-                        obj->attributes.global_variables.serial_data->len = uart_event.size;
+                        obj->attributes.global_variables.serial_data.len = uart_event.size;
 
                         /* Store received data into drone's global variable */
-                        uart_read_bytes( uart_num, obj->attributes.global_variables.serial_data->data, uart_event.size, 100 );
-
+                        uart_read_bytes( uart_num, obj->attributes.global_variables.serial_data.data, uart_event.size, 100 );
                         LocalParseUartCmd(obj);
 
                         /* Echo received data */
-                        uart_write_bytes( uart_num, obj->attributes.global_variables.serial_data->data, uart_event.size );
+                        uart_write_bytes( uart_num, obj->attributes.global_variables.serial_data.data, uart_event.size );
 
                         /* Clear UART Rx buffer */
                         uart_flush( uart_num );
@@ -535,6 +510,7 @@ static cmd_function_t cmd_function_array[] = {
     {.cmd_name = "pid actions", .func = &PidActionsCmdFunc},
     {.cmd_name = "var update",  .func = &VarsUpdateCmdFunc},
     {.cmd_name = "sp update",  .func = &SpUpdateCmdFunc},
+    {.cmd_name = "nvs_store", .func = &NvsStoreCmdFunc }
 };
 
 
@@ -549,17 +525,17 @@ void vTaskParseCommand( void * pvParameters ) {
     while( 1 ) {
 
         /* If data received */
-        if( obj->attributes.global_variables.serial_data->state ) {
+        if( obj->attributes.global_variables.serial_data.state ) {
 
             /* Reset state to default value */
-            obj->attributes.global_variables.serial_data->state = false;
+            obj->attributes.global_variables.serial_data.state = false;
 
             /* Error detection flags */
             bool err = false;
             bool eof = false;
 
             /* Pointer to store each char of substring */
-            char * ptr = ( char * ) malloc( 256 * sizeof( char ) ); /* PENDIENTE REEMPLAZAR POR 'char * ptr[ 256 ];' */
+            char ptr[256] = {0};
 
             /* Pointer of char ( array of 4 strings ) */
             char * ptrArr[ 4 ] = { 0 };
@@ -571,7 +547,7 @@ void vTaskParseCommand( void * pvParameters ) {
             int ptrArrIndex = 0;
 
             /* Loop through data received */
-            for( int i = 0; i < obj->attributes.global_variables.serial_data->len; i++ ) {
+            for( int i = 0; i < obj->attributes.global_variables.serial_data.len; i++ ) {
 
                 /**
                  * Frame's format: <pid,state,@,value>
@@ -586,7 +562,7 @@ void vTaskParseCommand( void * pvParameters ) {
                  */
 
                 /* Get actual char */
-                char currChar = obj->attributes.global_variables.serial_data->data[ i ];
+                char currChar = obj->attributes.global_variables.serial_data.data[ i ];
 
                 /* Checek if start of frame is correct */
                 if( !i ) {

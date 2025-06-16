@@ -27,8 +27,17 @@ typedef enum state_machine_events {
     EV_CROSS,
     EV_TRIANGLE,
     EV_CIRCLE,
-    EV_PS
-
+    EV_SQUARE,
+    EV_PS,
+    EV_START,
+    EV_UP,
+    EV_DOWN,
+    EV_LEFT,
+    EV_RIGHT,
+    EV_R1,
+    EV_R2,
+    EV_L1,
+    EV_L2
 } sm_event_t;
 
 /**

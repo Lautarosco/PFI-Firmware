@@ -1,6 +1,5 @@
 #include <drone_flash.h>
 
-
 /* Function implementations */
 
 esp_err_t __write_to_flash( const char* namespace, drone_flash_params_t key_param, const void* value, size_t size ) {

@@ -55,7 +55,27 @@ typedef struct csv_row {
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
+/* Private functions declaration */
 
+/**
+ * @brief Write data to NVS of MCU
+ * @param namespace: Label of the data
+ * @param key_param: Name of the parameter
+ * @param value: Data to be written
+ * @param size: Size of data
+ * @retval ESP_OK if success - ESP_ERROR
+ */
+esp_err_t __write_to_flash( const char* namespace, drone_flash_params_t key_param, const void* value, size_t size );
+
+/**
+ * @brief Read data from NVS of MCU
+ * @param namespace: Label of the data
+ * @param key_param: Name of the parameter
+ * @param value: Variable to stored read data
+ * @param size: Size of data
+ * @retval ESP_OK if success - ESP_ERROR
+ */
+esp_err_t __read_from_flash( const char* namespace, drone_flash_params_t key_param, void* value, size_t size );
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
@@ -347,7 +367,7 @@ static void save_to_nvs( drone_t * obj ) {
 }
 
 /**
- * @brief Read Drone parameters stored in flash memory
+ * @brief Read Drone parameters stored in flash memory and update the running parameters
  * @param obj: Direction of Drone object
  * @retval none
  */
@@ -365,9 +385,9 @@ static void read_from_nvs( drone_t * obj ) {
 
         /* Continue reading NVS */
         else {
-
             __read_from_flash( NVS_NAMESPACE, i, &read_var, sizeof( read_var ) );
-            ESP_LOGI( DRONE_TAG, "%s: %.2f", GetKeyName( i ), read_var );
+            *(float*) (obj->attributes.flash_params_arr[i]) = read_var;
+            ESP_LOGI( DRONE_TAG, "Updated %s: %.2f", GetKeyName( i ), read_var );
         }
     }
 }
@@ -402,10 +422,9 @@ static esp_err_t drone_init( drone_t * obj ) {
         )
     );
     
-
-    obj->attributes.components.bmi.Gyro.offset.x = obj->attributes.config.imu_cfg.gyro_offset.x;
-    obj->attributes.components.bmi.Gyro.offset.y = obj->attributes.config.imu_cfg.gyro_offset.y;
-    obj->attributes.components.bmi.Gyro.offset.z = obj->attributes.config.imu_cfg.gyro_offset.z;
+    //obj->attributes.components.bmi.Gyro.offset.x = obj->attributes.config.imu_cfg.gyro_offset.x;
+    //obj->attributes.components.bmi.Gyro.offset.y = obj->attributes.config.imu_cfg.gyro_offset.y;
+    //obj->attributes.components.bmi.Gyro.offset.z = obj->attributes.config.imu_cfg.gyro_offset.z;
 
     /* Fast offset compensation for bmi sensor */
     obj->attributes.components.bmi.foc( &( obj->attributes.components.bmi ) );
@@ -445,6 +464,8 @@ static esp_err_t drone_init( drone_t * obj ) {
     gpio_set_level( GPIO_NUM_2, true );
 
     ESP_LOGI( DRONE_TAG, "Drone object initialized" );
+
+    obj->methods.read_from_flash(obj);
 
     /* Drone object is initialized */
     obj->attributes.init_ok = true;
@@ -544,18 +565,6 @@ drone_t * Drone( void ) {
     /* Set Drone Class generic configs */
     drone->attributes.config = GetDroneConfigs();  // este GetDroneConfig está bien porque es el único que se tiene que usar
 
-    /* Assign memmory to Transmitter object buttons */
-    drone->attributes.global_variables.tx_buttons = malloc( sizeof( tx_buttons_t ) );
-
-    memset( drone->attributes.global_variables.tx_buttons, 0, sizeof( tx_buttons_t ) );
-
-    /* Assign memory to Bluetooth data */
-    drone->attributes.global_variables.serial_data = malloc( sizeof( SerialData_t ) );
-
-    memset( drone->attributes.global_variables.serial_data, 0, sizeof( SerialData_t ) );
-
-    /* Bluetooth data default values */
-    drone->attributes.global_variables.serial_data->data = malloc( 256 * sizeof( char ) );
 
     /* Pointer to Drone functions ( methods ) */
     drone->methods.update_states    = UpdateStates;
@@ -690,10 +699,10 @@ drone_t * Drone( void ) {
     /* =============== START Global variables assignment =============== */
 
     /* Assign Transmitter buttons global variable memmory address to 'GlobalTxButtons' variable */
-    GlobalTxButtons = drone->attributes.global_variables.tx_buttons;
+    GlobalTxButtons = &drone->attributes.global_variables.tx_buttons;
 
     /* Assign Bluetooth data global variable memmory address to 'GlobalSerialData' variable */
-    GlobalSerialData = drone->attributes.global_variables.serial_data;
+    GlobalSerialData = &drone->attributes.global_variables.serial_data;
 
     /* Point 'GlobalRollGains' global variable to roll controller */
     GlobalRollGains = &(drone->attributes.components.controllers[ROLL]->gain);

@@ -242,6 +242,9 @@ void PidGainsCmdFunc( drone_t * obj, char * arr[ 4 ] ) {
     }
 }
 
+void NvsStoreCmdFunc( drone_t * obj, char * arr[ 4 ]) {
+    obj->methods.save_to_nvs(obj);
+}
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
