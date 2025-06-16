@@ -393,7 +393,7 @@ void StateMachine_Init( sm_state_machine_t * state_machine ) {
 
 void StateMachine_RunIteration(drone_t * drone) {
 
-    sm_state_t prev_state = state_machine->curr_state;
+    sm_state_t prev_state = drone->attributes.state_machine.curr_state;
 
     /* Loop through the entire transition matrix to match actual state and occurred event */
     for( int i = 0; i < sizeof( state_trans_matrix ) / sizeof( state_trans_matrix[ 0 ] ); i++ ) {
@@ -408,11 +408,11 @@ void StateMachine_RunIteration(drone_t * drone) {
                 drone->attributes.state_machine.curr_state = state_trans_matrix[ i ].next_state;
 
                 /* Log transition if state changed */
-                if (state_machine->curr_state != prev_state) {
+                if (drone->attributes.state_machine.curr_state != prev_state) {
                     ESP_LOGI(STATE_MACHINE_TAG, "Transition: %s -> %s on event %s",
                         StateMachine_GetStateName(prev_state),
-                        StateMachine_GetStateName(state_machine->curr_state),
-                        StateMachine_GetEventName(state_machine->event));
+                        StateMachine_GetStateName(drone->attributes.state_machine.curr_state),
+                        StateMachine_GetEventName(drone->attributes.state_machine.event));
                 }
 
                 /* Run new actual state respective function */

@@ -127,7 +127,7 @@ void vTaskStateMachine_Run( void * pvParameters ) {
     /* TESTING */
 
     /* Initialize state_machine object */
-    StateMachine_Init( &obj->attributes.state_machine );
+    StateMachine_Init( &drone->attributes.state_machine );
 
     while( 1 ) {
 
@@ -135,7 +135,7 @@ void vTaskStateMachine_Run( void * pvParameters ) {
         getEvent( &drone->attributes.state_machine, drone );
 
         /* Go to the next state and run it's respective function */
-        StateMachine_RunIteration( &drone->attributes.state_machine, drone );
+        StateMachine_RunIteration(drone);
         
         vTaskDelay( pdMS_TO_TICKS( 10 ) );
     }
@@ -187,7 +187,6 @@ void vTaskprint( void * drone_ ) {
      * @example i.e, <static:roll/P,%f>  This will send proportional action of roll pid to plotter app
      */
     static char buf[1024];
-    extern sm_state_machine_t state_machine;
 
     while( 1 ) {
 
@@ -252,7 +251,7 @@ void vTaskprint( void * drone_ ) {
                 drone->attributes.components.controllers[YAW_D]->gain.kd,
             
                 // state machine current state
-                StateMachine_GetStateName(state_machine.curr_state)
+                StateMachine_GetStateName(drone->attributes.state_machine.curr_state)
             );
             printf("%s", buf);
         
@@ -271,7 +270,7 @@ static void vLocalUartTxCmd(void *pvParameters) {
     drone_t *drone = (drone_t *) pvParameters;
 
     // Reset serial_data flag
-    drone->attributes.global_variables.serial_data->state = false;
+    drone->attributes.global_variables.serial_data.state = false;
 
     // tx:{button:cross,action:press}
     char char_ptr[256];
@@ -281,9 +280,9 @@ static void vLocalUartTxCmd(void *pvParameters) {
 
     bool eof = false;
 
-    for (int i = 3; i < drone->attributes.global_variables.serial_data->len; i++)
+    for (int i = 3; i < drone->attributes.global_variables.serial_data.len; i++)
     {   
-        char curr_char = drone->attributes.global_variables.serial_data->data[i];
+        char curr_char = drone->attributes.global_variables.serial_data.data[i];
 
         if(i == 3) {
             if(curr_char == '{') {
@@ -410,11 +409,11 @@ static void vLocalUartTxCmd(void *pvParameters) {
 
 static void LocalParseUartCmd(drone_t *drone) {
     const char * tx_label = "tx:";
-    if(drone->attributes.global_variables.serial_data->len >= strlen(tx_label)) {
+    if(drone->attributes.global_variables.serial_data.len >= strlen(tx_label)) {
         bool tx_cmd = true;
         for (int i = 0; i < strlen(tx_label); i++)
         {
-            if(drone->attributes.global_variables.serial_data->data[i] != tx_label[i]) {
+            if(drone->attributes.global_variables.serial_data.data[i] != tx_label[i]) {
                 tx_cmd = false;
                 break;
             }

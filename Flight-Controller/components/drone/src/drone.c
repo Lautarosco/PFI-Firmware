@@ -532,12 +532,12 @@ static void UpdateSetPoint(drone_t * drone) {
     // 1. Update only if current state machine state is ST_CONTROL
     if(drone->attributes.state_machine.curr_state == ST_CONTROL) {
         // Triangle for + delta
-        if(drone->attributes.global_variables.tx_buttons->triangle) {
+        if(drone->attributes.global_variables.tx_buttons.triangle) {
             drone->attributes.sp.roll += 0.1;
         }
 
         // Triangle for - delta
-        else if(drone->attributes.global_variables.tx_buttons->cross) {
+        else if(drone->attributes.global_variables.tx_buttons.cross) {
             drone->attributes.sp.roll -= 0.1;
         }
     }
