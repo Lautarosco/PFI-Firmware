@@ -2,9 +2,11 @@
 #include <stdio.h>
 
 #include <bmp280_hal_drivers/bmp280_hal_api.h>
-#include <com.h>
 #include <bmp280_registers.h>
 #include <bmp280_data_types.h>
+
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 #include <esp_log.h>
 #include <string.h>
@@ -13,7 +15,7 @@
 
 /* #################### CONSTANTS #################### */
 
-static const char * bmp280_tag = "BMP280";
+static const char * bmp280_tag = "[BMP280]";
 
 static comp_words_t comp_words; /* Compensation words used for calibration */
 
@@ -95,30 +97,52 @@ static esp_err_t bmp280_Measure(i2c_master_dev_handle_t bmp280_i2c_bus_handler);
 static double bmp280_GetAltitude(double p, double p0);
 
 
+/**
+ * @brief Calculate pressure 'n' times and get average value. Should be used as an alternative to sea level pressure
+ * 
+ * @param bmp: Bmp280 object
+ * @param n: Total samples
+ * 
+ * @return 64-bit calculated average pressure
+ */
+static double bmp280_GetAvgPressure(bmp280_t bmp, int n);
+
+
+/**
+ * @brief Calculate altitude 'n' times and get average value
+ * 
+ * @param bmp: Bmp280 object
+ * @param p0: Relative pressure. It could be sea level pressure or average pressure obtained with get_avg_pressure method
+ * @param n: Total samples
+ * 
+ * @return 64-bit calculated average altitude
+ */
+static double bmp280_GetAvgAltitude(bmp280_t bmp, double p0, int n);
+
+
 /* #################### DEFINITIONS #################### */
 
-bmp280_t * Bmp280(void) {
-    bmp280_t * bmp = (bmp280_t *) malloc(sizeof(bmp280_t));
-
+void Bmp280(bmp280_t *bmp) {
     memset(bmp, 0, sizeof(bmp280_t));   /* Initialize all attributes to 0 */
 
     /* Function pointers assignment */
-    bmp->init            = bmp280_Init;
-    bmp->get_temperature = bmp280_GetTemp;
-    bmp->get_pressure    = bmp280_GetPress;
-    bmp->measure         = bmp280_Measure;
-    bmp->get_altitude    = bmp280_GetAltitude;
-
-    return bmp;
+    bmp->init             = bmp280_Init;
+    bmp->measure          = bmp280_Measure;
+    bmp->get_temperature  = bmp280_GetTemp;
+    bmp->get_pressure     = bmp280_GetPress;
+    bmp->get_altitude     = bmp280_GetAltitude;
+    bmp->get_avg_pressure = bmp280_GetAvgPressure;
+    bmp->get_avg_altitude = bmp280_GetAvgAltitude;
 }
 
 
-static esp_err_t bmp280_Init(bmp280_t * bmp, i2c_master_bus_handle_t * master_i2c_bus_handler, int addr, int sda, int scl) {
-    bmp->addr = addr;
-    bmp->i2c.sda = sda;
-    bmp->i2c.scl = scl;
+static esp_err_t bmp280_Init(bmp280_t *bmp, bmp280_serial_interface_t *serial_handler) {
+    memcpy(&(bmp->serial_handler), serial_handler, sizeof(bmp280_serial_interface_t));  /* Copy serial_handler parameter into bmp's serial_handler attribute */
+    // bmp->i2c.sda = sda;
+    // bmp->i2c.scl = scl;
 
-    bmp280_hal_i2cInit(master_i2c_bus_handler, &(bmp->i2c.bmp280_i2c_bus_handler), bmp->addr, bmp->i2c.sda, bmp->i2c.scl);
+    /* ESTO LO TIENE QUE HACER EL MCU PORQUE ES EL MAESTRO */
+    // bmp280_hal_i2cInit(master_i2c_bus_handler, &(bmp->i2c.bmp280_i2c_bus_handler), bmp->addr, bmp->i2c.sda, bmp->i2c.scl);
   
     /* Reset device in order to clean all registers */
     if(bmp280_hal_Reset(bmp->i2c.bmp280_i2c_bus_handler) != ESP_OK) {
@@ -126,7 +150,7 @@ static esp_err_t bmp280_Init(bmp280_t * bmp, i2c_master_bus_handle_t * master_i2
     }
 
     /* Retrieve chip ID from registers */
-    bmp280_hal_GetChipID(bmp);
+    bmp280_hal_GetChipID(bmp->i2c.bmp280_i2c_bus_handler, &(bmp->id));
 
 
     /**
@@ -256,10 +280,35 @@ static double bmp280_GetPress(void) {
 }
 
 
-double bmp280_GetRelativeP(bmp280_t bmp, int n) {
-    return bmp280_hal_GetRelativeP(bmp, n);
+static double bmp280_GetAvgPressure(bmp280_t bmp, int n) {
+    double p0 = 0.0;
+    for(int i = 0; i < n; i++) {
+        bmp.measure(bmp.i2c.bmp280_i2c_bus_handler);
+        p0 += bmp.get_pressure();
+
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+    p0 /= n;
+
+    ESP_LOGI(bmp280_tag, "Average pressure: %lf", p0);
+
+    return p0;
 }
 
+static double bmp280_GetAvgAltitude(bmp280_t bmp, double p0, int n) {
+    double z = 0.0;
+    for(int i = 0; i < n; i++) {
+        bmp.measure(bmp.i2c.bmp280_i2c_bus_handler);
+        z += bmp.get_altitude(bmp.get_pressure(), p0);
+
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+    z /= n;
+
+    ESP_LOGI(bmp280_tag, "Average altitude: %lf", z);
+
+    return z;
+}
 
 static double bmp280_GetAltitude(double p, double p0) {    
     return 44330.0 * (1 - pow(p / p0, 1 / 5.255));

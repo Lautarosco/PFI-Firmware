@@ -1,11 +1,10 @@
-#ifndef COM_H
-#define COM_H
+#ifndef I2C_INTERFACE_H
+#define I2C_INTERFACE_H
 
-#include <stdint.h>
-#include <esp_err.h>
-#include <stdbool.h>
 #include <driver/i2c_master.h>
+#include <esp_err.h>
 
+/* ================= Master functions ================= */
 
 /**
  * @brief Initialize I2C interface
@@ -19,12 +18,12 @@
  *      - ESP_ERR_INVALID_ARG Parameter error
  *      - ESP_FAIL Driver installation error
  */
-esp_err_t i2c_init(i2c_master_bus_handle_t * bus_handler, int sda, int scl);
+esp_err_t i2c_init(i2c_master_bus_handle_t * master_handler, int sda, int scl);
 
 /**
  * @brief Add slave to I2C bus
  * 
- * @param bus_handler: Master bus handler
+ * @param master_handler: Master bus handler
  * @param dev_handler: Slave bus handler
  * @param addr: Slave address
  * @param addr_len: Length of address
@@ -35,7 +34,21 @@ esp_err_t i2c_init(i2c_master_bus_handle_t * bus_handler, int sda, int scl);
  *      - ESP_ERR_INVALID_ARG: I2C bus initialization failed because of invalid argument.
  *      - ESP_ERR_NO_MEM: Create I2C bus failed because of out of memory.
  */
-esp_err_t i2c_add_device(i2c_master_bus_handle_t bus_handler, i2c_master_dev_handle_t * dev_handler, uint8_t addr, i2c_addr_bit_len_t addr_len, int scl_freq);
+esp_err_t i2c_add_device(i2c_master_bus_handle_t master_handler, i2c_master_dev_handle_t * dev_handler, uint8_t addr, i2c_addr_bit_len_t addr_len, int scl_freq);
+
+/**
+ * @brief Seek devices connected to I2C bus
+ * 
+ * @param bus_handler: Master bus handler
+ * @param slave_addr: Address of sensor to be found on I2C bus
+ * 
+ * @retval
+ *      - true if found
+ *      - false if not found
+ */
+// bool i2c_scan(i2c_master_bus_handle_t bus_handler, uint8_t slave_addr);
+
+/* ================= Device functions ================= */
 
 /**
  * @brief Read bytes
@@ -50,7 +63,7 @@ esp_err_t i2c_add_device(i2c_master_bus_handle_t bus_handler, i2c_master_dev_han
  *      - ESP_ERR_INVALID_ARG: I2C master transmit parameter invalid
  *      - ESP_ERR_TIMEOUT: Operation timeout(larger than xfer_timeout_ms) because the bus is busy or hardware crash
  */
-esp_err_t i2c_read_bytes(i2c_master_dev_handle_t dev_handler, uint8_t reg_addr, uint8_t * data, size_t len);
+esp_err_t i2c_read_bytes(void *dev_handler, uint8_t reg_addr, uint8_t *buff, uint16_t len);
 
 /**
  * @brief Write bytes
@@ -64,18 +77,6 @@ esp_err_t i2c_read_bytes(i2c_master_dev_handle_t dev_handler, uint8_t reg_addr, 
  *      - ESP_ERR_INVALID_ARG: I2C master transmit parameter invalid
  *      - ESP_ERR_TIMEOUT: Operation timeout(larger than xfer_timeout_ms) because the bus is busy or hardware crash
  */
-esp_err_t i2c_write_bytes(i2c_master_dev_handle_t dev_handler, uint8_t reg_addr, uint8_t data);
-
-/**
- * @brief Seek devices connected to I2C bus
- * 
- * @param bus_handler: Master bus handler
- * @param slave_addr: Address of sensor to be found on I2C bus
- * 
- * @retval
- *      - true if found
- *      - false if not found
- */
-bool i2c_scan(i2c_master_bus_handle_t bus_handler, uint8_t slave_addr);
+esp_err_t i2c_write_bytes(void *dev_handler, uint8_t reg_addr, const uint8_t data, uint16_t len);
 
 #endif

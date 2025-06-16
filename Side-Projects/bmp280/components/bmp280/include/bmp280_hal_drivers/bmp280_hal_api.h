@@ -1,7 +1,6 @@
-#ifndef BMP280_HAL_MODE_H
-#define BMP280_HAL_MODE_H
+#ifndef BMP280_HAL_API_H
+#define BMP280_HAL_API_H
 
-#include <com.h>
 #include <bmp280_registers.h>
 #include <bmp280_data_types.h>
 
@@ -9,7 +8,6 @@
 
 #include <esp_err.h>
 #include <stdint.h>
-
 
 typedef struct comp_words {
     uint16_t dig_T1;
@@ -40,14 +38,14 @@ typedef struct comp_words {
 esp_err_t bmp280_hal_Reset(i2c_master_dev_handle_t bmp280_i2c_bus_handler);
 
 /**
- * @brief Get chip ID
+ * @brief Get chip ID and store it into given buffer
  * 
- * @param bmp: Bmp280 object
  * @param bmp280_i2c_bus_handler: bmp280 I2C bus handler
+ * @param buff: buffer to store chip ID
  * 
  * @return ESP_OK if success - ESP_FAIL
  */
-esp_err_t bmp280_hal_GetChipID(bmp280_t * bmp);
+esp_err_t bmp280_hal_GetChipID(i2c_master_dev_handle_t bmp280_i2c_bus_handler, uint8_t *buff);
 
 /**
  * @brief Set power mode. Available options are Sleep, Forced and Normal mode
@@ -173,15 +171,5 @@ esp_err_t bmp280_hal_WriteSerial(uint8_t reg_addr, i2c_master_dev_handle_t bmp28
  *      - ESP_FAIL
  */
 esp_err_t bmp280_hal_ReadCompWords(comp_words_t * comp_words, i2c_master_dev_handle_t bmp280_i2c_bus_handler);
-
-/**
- * @brief Calculate pressure 'n' times and get average value. Should be used as an alternative to sea level pressure
- * 
- * @param bmp: Bmp280 object
- * @param n: Total samples
- * 
- * @return 64-bit calculated average pressure
- */
-double bmp280_hal_GetRelativeP(bmp280_t bmp, int n);
 
 #endif

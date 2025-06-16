@@ -5,19 +5,11 @@
 #include <esp_err.h>
 #include <driver/i2c_master.h>
 
-
-typedef struct __i2c_cfg {
-    int sda;                                            /* I2C SDA (data) GPIO */
-    int scl;                                            /* I2C SCL (clock) GPIO */
-    i2c_master_dev_handle_t bmp280_i2c_bus_handler;     /* bmp280 I2C bus handler */
-} __i2c_cfg_t;
-
 typedef struct bmp280 bmp280_t;
 
 typedef struct bmp280 {
-    uint8_t addr;       /* [A] Address - 0x76 if SDO = 0 or 0x77 if SDO = 1 */
-    __i2c_cfg_t i2c;    /* [A] I2C interface settings */
-    uint8_t id;         /* [A] Chip ID - should be 0x58 */
+    /* [A] Chip ID - should be 0x58 */
+    uint8_t id;
     
     /**
      * @brief [M] Initialize Bmp280 Class
@@ -29,7 +21,7 @@ typedef struct bmp280 {
      * 
      * @return ESP_OK if success - ESP_FAIL
      */
-    esp_err_t (*init)(bmp280_t * bmp, i2c_master_bus_handle_t * master_i2c_bus_handler, int addr, int sda, int scl);
+    esp_err_t (*init)(bmp280_t *bmp);
 
     /**
      * @brief [M] Compensate raw temperature values stored in registers and return temperature
@@ -66,6 +58,27 @@ typedef struct bmp280 {
      * @return 64-bit estimated altitude
      */
     double (*get_altitude)(double p, double p0);
+
+    /**
+     * @brief [M] Calculate pressure 'n' times and get average value. Should be used as an alternative to sea level pressure
+     * 
+     * @param bmp: Bmp280 object
+     * @param n: Total samples
+     * 
+     * @return 64-bit calculated average pressure
+     */
+    double (*get_avg_pressure)(bmp280_t bmp, int n);
+
+    /**
+     * @brief [M] Calculate altitude 'n' times and get average value
+     * 
+     * @param bmp: Bmp280 object
+     * @param p0: Relative pressure. It could be sea level pressure or average pressure obtained with get_avg_pressure method
+     * @param n: Total samples
+     * 
+     * @return 64-bit calculated average altitude
+     */
+    double (*get_avg_altitude)(bmp280_t bmp, double p0, int n);
 } bmp280_t;
 
 #endif

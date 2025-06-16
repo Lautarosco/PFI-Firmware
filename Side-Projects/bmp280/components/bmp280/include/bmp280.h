@@ -5,20 +5,10 @@
 #include <driver/i2c_master.h>
 
 /**
- * @brief Make an instance of Bmp280 Class
- * 
- * @return Pointer to Bmp280 object
+ * @brief Takes a bmp280_t variable to make an instance of Bmp280 Class
+ * @param bmp: bmp280_t bmp
+ * @return none
  */
-bmp280_t * Bmp280(void);
-
-/**
- * @brief Calculate pressure 'n' times and get average value. Should be used as an alternative to sea level pressure
- * 
- * @param bmp: Bmp280 object
- * @param n: Total samples
- * 
- * @return 64-bit calculated average pressure
- */
-double bmp280_GetRelativeP(bmp280_t bmp, int n);
+void Bmp280(bmp280_t *bmp);
 
 #endif

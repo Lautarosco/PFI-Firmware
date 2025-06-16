@@ -1,6 +1,5 @@
 #include <bmp280_hal_drivers/bmp280_hal_api.h>
 
-#include <com.h>
 #include <bmp280_registers.h>
 #include <bmp280_structs.h>
 #include <bmp280_data_types.h>
@@ -15,7 +14,7 @@
 
 /* #################### CONSTANTS #################### */
 
-static const char * bmp280_tag = "[BMP280]";
+static const char * bmp280_tag = "[BMP280_HAL]";
 
 
 /* #################### STRUCTS #################### */
@@ -46,8 +45,12 @@ static compensation_words_t comp_words_arr[12] = {
 
 /* #################### DEFINITIONS #################### */
 
-esp_err_t bmp280_hal_Reset(i2c_master_dev_handle_t bmp280_i2c_bus_handler) {
-    if(i2c_write_bytes(bmp280_i2c_bus_handler, BMP280_RESET_REG, 0xB6) != ESP_OK) {
+esp_err_t bmp280_hal_Reset(bmp280_serial_interface_t *serial_handler) {
+    const uint8_t reset_cmd = 0xB6;
+
+    esp_err_t ret = serial_handler->write(serial_handler->dev_handler, BMP280_RESET_REG, &reset_cmd, sizeof(reset_cmd));
+
+    if(ret != ESP_OK) {
         ESP_LOGE(bmp280_tag, "%s in line %d: Reset device --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     } else {
@@ -57,12 +60,12 @@ esp_err_t bmp280_hal_Reset(i2c_master_dev_handle_t bmp280_i2c_bus_handler) {
 }
 
 
-esp_err_t bmp280_hal_GetChipID(bmp280_t * bmp) {
-    if(bmp280_hal_ReadSerial(BMP280_ID_REG, bmp->i2c.bmp280_i2c_bus_handler, &(bmp->id), 1) != ESP_OK) {
+esp_err_t bmp280_hal_GetChipID(i2c_master_dev_handle_t bmp280_i2c_bus_handler, uint8_t *buff) {
+    if(bmp280_hal_ReadSerial(BMP280_ID_REG, bmp280_i2c_bus_handler, buff, 1) != ESP_OK) {
         ESP_LOGE(bmp280_tag, "%s in line %d: Get chip ID --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     } else {
-        ESP_LOGI(bmp280_tag, "Get chip ID --> OK ---- ID is <0x%X>", bmp->id);
+        ESP_LOGI(bmp280_tag, "Get chip ID --> OK ---- ID is <0x%X>", *buff);
         return ESP_OK;
     }
 }
@@ -243,8 +246,7 @@ esp_err_t bmp280_hal_ReadRawTP(i2c_master_dev_handle_t bmp280_i2c_bus_handler, b
 }
 
 
-esp_err_t bmp280_hal_i2cInit(i2c_master_bus_handle_t * i2c_master_bus_handler, i2c_master_dev_handle_t * bmp280_i2c_bus_handler,
-                             uint8_t slave_addr, int sda, int scl) {
+esp_err_t bmp280_hal_i2cInit(i2c_master_bus_handle_t * i2c_master_bus_handler, i2c_master_dev_handle_t * bmp280_i2c_bus_handler, uint8_t slave_addr, int sda, int scl) {
     if(i2c_init(i2c_master_bus_handler, sda, scl) != ESP_OK) {
         ESP_LOGE(bmp280_tag, "Failed to initialized I2C interface");
         return ESP_FAIL;
@@ -312,20 +314,4 @@ esp_err_t bmp280_hal_ReadCompWords(comp_words_t * comp_words, i2c_master_dev_han
     comp_words->dig_P9 = comp_words_arr[11]._signed;
 
     return ESP_OK;
-}
-
-
-double bmp280_hal_GetRelativeP(bmp280_t bmp, int n) {
-    double p0 = 0.0;
-    for(int i = 0; i < n; i++) {
-        bmp.measure(bmp.i2c.bmp280_i2c_bus_handler);
-        p0 += bmp.get_pressure();
-
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
-    p0 /= n;
-
-    ESP_LOGI(bmp280_tag, "Average pressure: %lf", p0);
-
-    return p0;
 }

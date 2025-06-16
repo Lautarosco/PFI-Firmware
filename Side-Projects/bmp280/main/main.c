@@ -5,8 +5,7 @@
 #include <freertos/task.h>
 #include <math.h>
 
-
-#define BMP280_ADDR     0x76    /* Sensor address */
+#define BMP280_ADDR     0x76    /* Sensor address - 0x76 if SDO = 0 or 0x77 if SDO = 1 */
 #define GPIO_SDA        21      /* I2C SDA data */
 #define GPIO_SCL        22      /* I2C SCL clock */
 
@@ -19,25 +18,27 @@ void vTaskBmp280Measure(void * bmp);
 
 
 void app_main(void) {
-    bmp280_t * bmp = Bmp280();
+    bmp280_t bmp;
+    Bmp280(&bmp);   /* Make an instance of Bmp280 Class */
 
-    if(bmp->init(bmp, &master_i2c_bus_handler, BMP280_ADDR, GPIO_SDA, GPIO_SCL) != ESP_OK) {
+    if(bmp.init(&bmp, &master_i2c_bus_handler, BMP280_ADDR, GPIO_SDA, GPIO_SCL) != ESP_OK) {
         return;
     }
 
-    double p0 = bmp280_GetRelativeP(*bmp, 100);
-    double p0 = 1015.5; /* Relative pressure (depends on location) */
+    double p0 = bmp.get_avg_pressure(bmp, 1500);    /* n = 6000 ~ 4 minutes */
+    // double p0 = 1015.867004; /* Relative pressure (depends on location) */
+    double z0 = bmp.get_avg_altitude(bmp, p0, 100);
     double t = 0.0;
     double p = 0.0;
     double z = 0.0;
 
-    xTaskCreatePinnedToCore(vTaskBmp280Measure, "task1", 1024 * 2, (void *) bmp, 1, NULL, 1);
+    xTaskCreatePinnedToCore(vTaskBmp280Measure, "task1", 1024 * 2, (void *) &bmp, 1, NULL, 1);
 
     while(1) {
 
-        t = bmp->get_temperature();
-        p = bmp->get_pressure();
-        z = bmp->get_altitude(p, p0);
+        t = bmp.get_temperature();
+        p = bmp.get_pressure();
+        z = bmp.get_altitude(p, p0) - z0;
 
         printf("Temperature: %lf °C\tPressure: %lf hPa\tAltitude: %lf m\r\n", t, p, z);
 
