@@ -29,6 +29,16 @@ static void getEvent( sm_state_machine_t * state_machine, drone_t* drone ) {
 
     state_machine->event = EV_ANY;
 
+    // Handle pending state transitions requests first
+    if (drone->attributes.request_state_transition) {
+        state_machine->event = drone->attributes.requested_transition_event;
+        drone->attributes.request_state_transition = false;
+        drone->attributes.requested_transition_event = EV_ANY; // Reset the requested transition event
+        return;
+    }
+
+
+
     /* Previous = Current */
     memcpy(&drone->attributes.buttons.previous,
            &drone->attributes.buttons.current,

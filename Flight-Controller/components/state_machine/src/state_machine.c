@@ -72,20 +72,20 @@ static void StWaitingFunc( drone_t * obj ) {
 
 
 float filtered_roll = 0.0f;
-#define DC_ON   0.05f
-#define DC_OFF  0.8f
+
+#define AVG (drone->attributes.components.pwm[ pwm_num ]->dc_max+drone->attributes.components.pwm[ pwm_num ]->dc_min)/2  // buscar una solucion mas prolija
 
 static void toggle_motor(drone_t* drone, int pwm_num);
 static void toggle_motor(drone_t* drone, int pwm_num) {
 
+    float current_pwm_dc = drone->attributes.components.pwm[ pwm_num ]->get_pwm_dc(drone->attributes.components.pwm[ pwm_num ]);
+    printf("Current PWM DC for motor %d: %.2f\n", pwm_num, current_pwm_dc);
 
-    #define AVG (DC_ON+DC_OFF)/2
-
-    if (drone->attributes.components.pwm[0]->get_pwm_dc(drone->attributes.components.pwm[ pwm_num ]) > AVG) {
+    if (current_pwm_dc > AVG) {
 
         drone->attributes.components.pwm[ pwm_num ]->set_pwm_dc(
             drone->attributes.components.pwm[ pwm_num ],
-            DC_OFF
+            drone->attributes.components.pwm[ pwm_num ]->dc_min
         );
         printf("Motor %d OFF\n", pwm_num);
 
@@ -93,7 +93,7 @@ static void toggle_motor(drone_t* drone, int pwm_num) {
 
         drone->attributes.components.pwm[ pwm_num ]->set_pwm_dc(
             drone->attributes.components.pwm[ pwm_num ],
-            DC_ON
+            drone->attributes.components.pwm[ pwm_num ]->dc_max*0  // TODO: no hacerlo tan grande
         );
         printf("Motor %d ON\n", pwm_num);
 
@@ -116,10 +116,12 @@ static void StControlVibrationCheck(drone_t* drone) {
         for (int pwm_num = 0; pwm_num < 4; pwm_num++) {
             drone->attributes.components.pwm[pwm_num]->set_pwm_dc(
                 drone->attributes.components.pwm[pwm_num],
-                DC_OFF);
+                drone->attributes.components.pwm[ pwm_num ]->dc_min);
         }
         initialized = false;  // Reset for next entry
         printf("Exiting vibration check mode\n");
+        drone->attributes.request_state_transition = true;
+        drone->attributes.requested_transition_event = EV_SQUARE;
         return;
     }
     
@@ -292,7 +294,12 @@ static void StCalibrationFunc( drone_t * obj ) {
     #endif
 }
 
-static void StResetFunc( drone_t * obj ) {
+static void StResetFunc( drone_t * drone ) {
+
+    for (int i = 0; i < ( sizeof( drone->attributes.components.pwm ) ) / ( sizeof( drone->attributes.components.pwm[ 0 ] ) ); i++ ) {
+        /* Set all pwm duty cycle to minimum */
+        drone->attributes.components.pwm[ i ]->set_pwm_dc( drone->attributes.components.pwm[ i ], drone->attributes.components.pwm[ i ]->dc_min );
+    }
 
     esp_restart();
 }
@@ -386,6 +393,8 @@ void StateMachine_Init( sm_state_machine_t * state_machine ) {
 
 void StateMachine_RunIteration( sm_state_machine_t * state_machine, drone_t * drone ) {
 
+    sm_state_t prev_state = state_machine->curr_state;
+
     /* Loop through the entire transition matrix to match actual state and occurred event */
     for( int i = 0; i < sizeof( state_trans_matrix ) / sizeof( state_trans_matrix[ 0 ] ); i++ ) {
 
@@ -397,6 +406,14 @@ void StateMachine_RunIteration( sm_state_machine_t * state_machine, drone_t * dr
 
                 /* Go to the next state */
                 state_machine->curr_state = state_trans_matrix[ i ].next_state;
+
+                /* Log transition if state changed */
+                if (state_machine->curr_state != prev_state) {
+                    ESP_LOGI(STATE_MACHINE_TAG, "Transition: %s -> %s on event %s",
+                        StateMachine_GetStateName(prev_state),
+                        StateMachine_GetStateName(state_machine->curr_state),
+                        StateMachine_GetEventName(state_machine->event));
+                }
 
                 /* Run new actual state respective function */
                 state_function_array[ state_machine->curr_state ].func( drone );
@@ -427,7 +444,43 @@ const char * StateMachine_GetEventName( sm_event_t event ) {
         case EV_CIRCLE:
             return "EV_CIRCLE";
             break;
-            
+
+        case EV_SQUARE:
+            return "EV_SQUARE";
+            break;
+
+        case EV_UP:
+            return "EV_UP";
+            break;
+
+        case EV_DOWN:
+            return "EV_DOWN";
+            break;
+
+        case EV_LEFT:
+            return "EV_LEFT";
+            break;
+
+        case EV_RIGHT:
+            return "EV_RIGHT";
+            break;
+
+        case EV_R1:
+            return "EV_R1";
+            break;
+
+        case EV_R2:
+            return "EV_R2";
+            break;
+
+        case EV_L1:
+            return "EV_L1";
+            break;
+
+        case EV_L2:
+            return "EV_L2";
+            break;
+
         case EV_ANY:
             return "EV_ANY";
             break;

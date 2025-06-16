@@ -96,7 +96,12 @@ static esp_err_t Pwm_SetDc( pwm_t * obj, float duty ) {
                 ESP_LOGE( PWM_TAG, "[ pwm %d ] Failed to update duty dycle", obj->tag + 1 );
                 return ESP_FAIL;
             }
+        } else {
+
+            ESP_LOGE( PWM_TAG, "[ pwm %d ] Duty Cycle '%f' is out of range. Select values from %f to %f", obj->tag + 1, duty, obj->dc_min, obj->dc_max );
+            return ESP_FAIL;
         }
+
     }
 
     return ESP_OK;

@@ -2,6 +2,7 @@
 #define DRONE_STRUCTS_H
 
 #include <drone_globals.h>
+#include "state_machine.h"
 #include <bmi160.h>
 #include <transmitter.h>
 #include <pwm.h>
@@ -174,7 +175,7 @@ typedef struct drone_states {
 /** @brief Drone's components */
 typedef struct drone_components {
     
-    /* bmi160 component ( PENDIENTE PASARLO A PUNTERO ) */
+    /* bmi160 component  */
     bmi160_t bmi;
 
     /* Transmitter component */
@@ -333,6 +334,9 @@ typedef struct drone_attributes {
 
     /* Drone's init flag */
     bool init_ok;
+
+    bool request_state_transition;
+    sm_event_t requested_transition_event;
 
 
 } drone_attributes_t;
