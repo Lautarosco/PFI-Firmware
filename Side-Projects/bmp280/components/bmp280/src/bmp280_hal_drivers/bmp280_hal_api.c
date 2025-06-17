@@ -14,7 +14,7 @@
 
 /* #################### CONSTANTS #################### */
 
-static const char * bmp280_tag = "[BMP280_HAL]";
+static const char * bmp280_hal_tag = "[BMP280_HAL]";
 
 
 /* #################### STRUCTS #################### */
@@ -45,170 +45,209 @@ static compensation_words_t comp_words_arr[12] = {
 
 /* #################### DEFINITIONS #################### */
 
-esp_err_t bmp280_hal_Reset(bmp280_serial_interface_t *serial_handler) {
+esp_err_t bmp280_hal_Reset(dev_serial_iface_t *dev_iface) {
     const uint8_t reset_cmd = 0xB6;
 
-    esp_err_t ret = serial_handler->write(serial_handler->dev_handler, BMP280_RESET_REG, &reset_cmd, sizeof(reset_cmd));
+    esp_err_t ret = dev_iface->write_func(dev_iface->handler, BMP280_RESET_REG, reset_cmd, sizeof(reset_cmd), IFACE_I2C);
 
     if(ret != ESP_OK) {
-        ESP_LOGE(bmp280_tag, "%s in line %d: Reset device --> FAILED", __func__, __LINE__);
+        ESP_LOGE(bmp280_hal_tag, "%s in line %d: Reset device --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     } else {
-        ESP_LOGI(bmp280_tag, "Reset device --> OK");
+        ESP_LOGI(bmp280_hal_tag, "Reset device --> OK");
         return ESP_OK;
     }
 }
 
 
-esp_err_t bmp280_hal_GetChipID(i2c_master_dev_handle_t bmp280_i2c_bus_handler, uint8_t *buff) {
-    if(bmp280_hal_ReadSerial(BMP280_ID_REG, bmp280_i2c_bus_handler, buff, 1) != ESP_OK) {
-        ESP_LOGE(bmp280_tag, "%s in line %d: Get chip ID --> FAILED", __func__, __LINE__);
+esp_err_t bmp280_hal_GetChipID(dev_serial_iface_t *dev_iface, uint8_t *buff) {
+    if(bmp280_hal_ReadSerial(dev_iface, BMP280_ID_REG, buff, 1) != ESP_OK) {
+        ESP_LOGE(bmp280_hal_tag, "%s in line %d: Get chip ID --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     } else {
-        ESP_LOGI(bmp280_tag, "Get chip ID --> OK ---- ID is <0x%X>", *buff);
+        ESP_LOGI(bmp280_hal_tag, "Get chip ID --> OK ---- ID is <0x%X>", *buff);
         return ESP_OK;
     }
 }
 
 
-esp_err_t bmp280_hal_SetPowerMode(i2c_master_dev_handle_t bmp280_i2c_bus_handler, bmp280_PowerMode_t power_mode) {
-    /* Read current value of ctrl_meas register */
+esp_err_t bmp280_hal_SetPowerMode(dev_serial_iface_t *dev_iface, bmp280_PowerMode_t power_mode) {
     uint8_t ctrl_meas;
-    if(i2c_read_bytes(bmp280_i2c_bus_handler, BMP280_CTRL_MEAS_REG, &ctrl_meas, 1) != ESP_OK) {
-        ESP_LOGE(bmp280_tag, "%s in line %d: Read from ctrl_meas register --> FAILED", __func__, __LINE__);
+
+    /* Read current value of ctrl_meas register */
+    esp_err_t ret = dev_iface->read_func(dev_iface->handler, BMP280_CTRL_MEAS_REG, &ctrl_meas, 1, IFACE_I2C);
+    if(ret != ESP_OK) {
+        ESP_LOGE(bmp280_hal_tag, "%s in line %d: Read from ctrl_meas register --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
     uint8_t mask = 0xFC;    /* Clear bits <1:0> of ctrl_meas <0xF4> register */
 
-    if(i2c_write_bytes(bmp280_i2c_bus_handler, BMP280_CTRL_MEAS_REG, (ctrl_meas & mask) | power_mode) != ESP_OK) {
-        ESP_LOGE(bmp280_tag, "%s in line %d: Write to ctrl_meas register --> FAILED", __func__, __LINE__);
+    ret = dev_iface->write_func(dev_iface->handler, BMP280_CTRL_MEAS_REG, (ctrl_meas & mask) | power_mode, sizeof(mask), IFACE_I2C);
+    if(ret != ESP_OK) {
+        ESP_LOGE(bmp280_hal_tag, "%s in line %d: Write to ctrl_meas register --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
-    // ESP_LOGI(bmp280_tag, "Set power mode --> OK ---- power mode is %d", power_mode);
+    ESP_LOGI(bmp280_hal_tag, "Set power mode --> OK ---- power mode is %d", power_mode);
 
     return ESP_OK;
 }
 
 
-esp_err_t bmp280_hal_SetOsT(i2c_master_dev_handle_t bmp280_i2c_bus_handler, bmp280_OsT_t temp_os) {
-    /* Read current value of ctrl_meas register */
+esp_err_t bmp280_hal_SetOsT(dev_serial_iface_t *dev_iface, bmp280_OsT_t temp_os) {
     uint8_t ctrl_meas;
-    if(i2c_read_bytes(bmp280_i2c_bus_handler, BMP280_CTRL_MEAS_REG, &ctrl_meas, 1) != ESP_OK) {
-        ESP_LOGE(bmp280_tag, "%s in line %d: Read from ctrl_meas register --> FAILED", __func__, __LINE__);
+    
+    /* Read current value of ctrl_meas register */
+    esp_err_t ret = dev_iface->read_func(dev_iface->handler, BMP280_CTRL_MEAS_REG, &ctrl_meas, 1, IFACE_I2C);
+    if(ret != ESP_OK) {
+        ESP_LOGE(bmp280_hal_tag, "%s in line %d: Read from ctrl_meas register --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
     uint8_t mask = 0x1F;    /* Clear bits <7:5> of ctrl_meas <0xF4> register */
 
-    if(i2c_write_bytes(bmp280_i2c_bus_handler, BMP280_CTRL_MEAS_REG, (ctrl_meas & mask) | (temp_os << 5)) != ESP_OK) {
-        ESP_LOGE(bmp280_tag, "%s in line %d: Write to ctrl_meas register --> FAILED", __func__, __LINE__);
+    ret = dev_iface->write_func(dev_iface->handler, BMP280_CTRL_MEAS_REG, (ctrl_meas & mask) | (temp_os << 5), sizeof(mask), IFACE_I2C);
+    if(ret != ESP_OK) {
+        ESP_LOGE(bmp280_hal_tag, "%s in line %d: Write to ctrl_meas register --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
     memset((void *) &ctrl_meas, 0, sizeof(ctrl_meas));
-    i2c_read_bytes(bmp280_i2c_bus_handler, BMP280_CTRL_MEAS_REG, &ctrl_meas, 1);
-    ESP_LOGI(bmp280_tag, "Set oversampling temperature --> OK ---- os. temp is '%s'", bmp280_GetOsTName((ctrl_meas & (0b111 << 5)) >> 5));
+    ret = dev_iface->read_func(dev_iface->handler, BMP280_CTRL_MEAS_REG, &ctrl_meas, 1, IFACE_I2C);
+    if(ret != ESP_OK) {
+        ESP_LOGE(bmp280_hal_tag, "%s in line %d: Read from ctrl_meas register --> FAILED", __func__, __LINE__);
+        return ESP_FAIL;
+    }
+    ESP_LOGI(bmp280_hal_tag, "Set oversampling temperature --> OK ---- os. temp is '%s'", bmp280_GetOsTName((ctrl_meas & (0b111 << 5)) >> 5));
 
     return ESP_OK;
 }
 
 
-esp_err_t bmp280_hal_SetOsP(i2c_master_dev_handle_t bmp280_i2c_bus_handler, bmp280_OsP_t press_os) {
-    /* Read current value of ctrl_meas register */
+esp_err_t bmp280_hal_SetOsP(dev_serial_iface_t *dev_iface, bmp280_OsP_t press_os) {
     uint8_t ctrl_meas;
-    if(i2c_read_bytes(bmp280_i2c_bus_handler, BMP280_CTRL_MEAS_REG, &ctrl_meas, 1) != ESP_OK) {
-        ESP_LOGE(bmp280_tag, "%s in line %d: Read from ctrl_meas register --> FAILED", __func__, __LINE__);
+
+    /* Read current value of ctrl_meas register */
+    esp_err_t ret = dev_iface->read_func(dev_iface->handler, BMP280_CTRL_MEAS_REG, &ctrl_meas, 1, IFACE_I2C);
+    if(ret != ESP_OK) {
+        ESP_LOGE(bmp280_hal_tag, "%s in line %d: Read from ctrl_meas register --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
     uint8_t mask = 0xE3;    /* Clear bits <4:2> of ctrl_meas <0xF4> register */
 
-    if(i2c_write_bytes(bmp280_i2c_bus_handler, BMP280_CTRL_MEAS_REG, (ctrl_meas & mask) | (press_os << 2)) != ESP_OK) {
-        ESP_LOGE(bmp280_tag, "%s in line %d: Write to ctrl_meas register --> FAILED", __func__, __LINE__);
+    ret = dev_iface->write_func(dev_iface->handler, BMP280_CTRL_MEAS_REG, (ctrl_meas & mask) | (press_os << 2), sizeof(mask), IFACE_I2C);
+    if(ret != ESP_OK) {
+        ESP_LOGE(bmp280_hal_tag, "%s in line %d: Write to ctrl_meas register --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
     memset((void *) &ctrl_meas, 0, sizeof(ctrl_meas));
-    i2c_read_bytes(bmp280_i2c_bus_handler, BMP280_CTRL_MEAS_REG, &ctrl_meas, 1);
-    ESP_LOGI(bmp280_tag, "Set oversampling pressure --> OK ---- os. press is '%s'", bmp280_GetOsPName((ctrl_meas & (0b111 << 2)) >> 2));
+    ret = dev_iface->read_func(dev_iface->handler, BMP280_CTRL_MEAS_REG, &ctrl_meas, 1, IFACE_I2C);
+    if(ret != ESP_OK) {
+        ESP_LOGE(bmp280_hal_tag, "%s in line %d: Read from ctrl_meas register --> FAILED", __func__, __LINE__);
+        return ESP_FAIL;
+    }
+    ESP_LOGI(bmp280_hal_tag, "Set oversampling pressure --> OK ---- os. press is '%s'", bmp280_GetOsPName((ctrl_meas & (0b111 << 2)) >> 2));
 
     return ESP_OK;
 }
 
 
-esp_err_t bmp280_hal_SetTsb(i2c_master_dev_handle_t bmp280_i2c_bus_handler, bmp280_TStandby_t t_sb) {
-    /* Read current value of config register */
+esp_err_t bmp280_hal_SetTsb(dev_serial_iface_t *dev_iface, bmp280_TStandby_t t_sb) {
     uint8_t config;
-    if(i2c_read_bytes(bmp280_i2c_bus_handler, BMP280_CONFIG_REG, &config, 1) != ESP_OK) {
-        ESP_LOGE(bmp280_tag, "%s in line %d: Read from config register --> FAILED", __func__, __LINE__);
+
+    /* Read current value of config register */
+    esp_err_t ret = dev_iface->read_func(dev_iface->handler, BMP280_CONFIG_REG, &config, 1, IFACE_I2C);
+    if(ret != ESP_OK) {
+        ESP_LOGE(bmp280_hal_tag, "%s in line %d: Read from config register --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
     uint8_t mask = 0x1F;    /* Clear bits <7:5> of config <0xF5> register */
 
-    if(i2c_write_bytes(bmp280_i2c_bus_handler, BMP280_CONFIG_REG, (config & mask) | (t_sb << 5)) != ESP_OK) {
-        ESP_LOGE(bmp280_tag, "%s in line %d: Write to config register --> FAILED", __func__, __LINE__);
+    ret = dev_iface->write_func(dev_iface->handler, BMP280_CONFIG_REG, (config & mask) | (t_sb << 5), sizeof(mask), IFACE_I2C);
+    if(ret != ESP_OK) {
+        ESP_LOGE(bmp280_hal_tag, "%s in line %d: Write to config register --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
-
     
     memset((void *) &config, 0, sizeof(config));
-    i2c_read_bytes(bmp280_i2c_bus_handler, BMP280_CONFIG_REG, &config, 1);
-    ESP_LOGI(bmp280_tag, "Set standby time --> OK ---- t_sb is '%s'", bmp280_GetTsbName((config & (0b111 << 5)) >> 5));
+    ret = dev_iface->read_func(dev_iface->handler, BMP280_CONFIG_REG, &config, 1, IFACE_I2C);
+    if(ret != ESP_OK) {
+        ESP_LOGE(bmp280_hal_tag, "%s in line %d: Read from config register --> FAILED", __func__, __LINE__);
+        return ESP_FAIL;
+    }
+    ESP_LOGI(bmp280_hal_tag, "Set standby time --> OK ---- t_sb is '%s'", bmp280_GetTsbName((config & (0b111 << 5)) >> 5));
 
     return ESP_OK;
 }
 
 
-esp_err_t bmp280_hal_SetIIR(i2c_master_dev_handle_t bmp280_i2c_bus_handler, bmp280_IIRCoeff_t coeff) {
-    /* Read current value of config register */
+esp_err_t bmp280_hal_SetIIR(dev_serial_iface_t *dev_iface, bmp280_IIRCoeff_t coeff) {
     uint8_t config;
-    if(i2c_read_bytes(bmp280_i2c_bus_handler, BMP280_CONFIG_REG, &config, 1) != ESP_OK) {
-        ESP_LOGE(bmp280_tag, "%s in line %d: Read from config register --> FAILED", __func__, __LINE__);
+
+    /* Read current value of config register */
+    esp_err_t ret = dev_iface->read_func(dev_iface->handler, BMP280_CONFIG_REG, &config, 1, IFACE_I2C);
+    if(ret != ESP_OK) {
+        ESP_LOGE(bmp280_hal_tag, "%s in line %d: Read from config register --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
     uint8_t mask = 0xE3;    /* Clear bits <4:2> of config <0xF5> register */
 
-    if(i2c_write_bytes(bmp280_i2c_bus_handler, BMP280_CONFIG_REG, (config & mask) | (coeff << 2)) != ESP_OK) {
-        ESP_LOGE(bmp280_tag, "%s in line %d: Write to config register --> FAILED", __func__, __LINE__);
+    ret = dev_iface->write_func(dev_iface->handler, BMP280_CONFIG_REG, (config & mask) | (coeff << 2), sizeof(mask), IFACE_I2C);
+    if(ret != ESP_OK) {
+        ESP_LOGE(bmp280_hal_tag, "%s in line %d: Write to config register --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
     memset((void *) &config, 0, sizeof(config));
-    i2c_read_bytes(bmp280_i2c_bus_handler, BMP280_CONFIG_REG, &config, 1);
-    ESP_LOGI(bmp280_tag, "Set IIR coefficient --> OK ---- IIR coeff. is '%s'", bmp280_GetIIRName((config & (0b111 << 2)) >> 2));
+    ret = dev_iface->read_func(dev_iface->handler, BMP280_CONFIG_REG, &config, 1, IFACE_I2C);
+    if(ret != ESP_OK) {
+        ESP_LOGE(bmp280_hal_tag, "%s in line %d: Read from config register --> FAILED", __func__, __LINE__);
+        return ESP_FAIL;
+    }
+    ESP_LOGI(bmp280_hal_tag, "Set IIR coefficient --> OK ---- IIR coeff. is '%s'", bmp280_GetIIRName((config & (0b111 << 2)) >> 2));
 
     return ESP_OK;
 }
 
 
-esp_err_t bmp280_hal_SetSerial(i2c_master_dev_handle_t bmp280_i2c_bus_handler, bmp280_SerialInterface_t serial) {
+esp_err_t bmp280_hal_SetSerial(dev_serial_iface_t *dev_iface, bmp280_SerialInterface_t serial) {
     /* Read current value of config register */
     uint8_t config;
-    if(i2c_read_bytes(bmp280_i2c_bus_handler, BMP280_CONFIG_REG, &config, 1) != ESP_OK) {
-        ESP_LOGE(bmp280_tag, "%s in line %d: Read from config register --> FAILED", __func__, __LINE__);
+
+    /* Read current value of config register */
+    esp_err_t ret = dev_iface->read_func(dev_iface->handler, BMP280_CONFIG_REG, &config, 1, IFACE_I2C);
+    if(ret != ESP_OK) {
+        ESP_LOGE(bmp280_hal_tag, "%s in line %d: Read from config register --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
     uint8_t mask = 0xFE;    /* Clear bit 0 of config <0xF4> register */
 
-    if(i2c_write_bytes(bmp280_i2c_bus_handler, BMP280_CONFIG_REG, (config & mask) | serial) != ESP_OK) {
-        ESP_LOGE(bmp280_tag, "%s in line %d: Write to config register --> FAILED", __func__, __LINE__);
+    ret = dev_iface->write_func(dev_iface->handler, BMP280_CONFIG_REG, (config & mask) | serial, sizeof(mask), IFACE_I2C);
+    if(ret != ESP_OK) {
+        ESP_LOGE(bmp280_hal_tag, "%s in line %d: Write to config register --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
     
     memset((void *) &config, 0, sizeof(config));
-    i2c_read_bytes(bmp280_i2c_bus_handler, BMP280_CONFIG_REG, &config, 1);
-    ESP_LOGI(bmp280_tag, "Set serial interface --> OK ---- serial interface is '%s'", bmp280_GetSerialName(config & 0b1));
+    ret = dev_iface->read_func(dev_iface->handler, BMP280_CONFIG_REG, &config, 1, IFACE_I2C);
+    if(ret != ESP_OK) {
+        ESP_LOGE(bmp280_hal_tag, "%s in line %d: Read from config register --> FAILED", __func__, __LINE__);
+        return ESP_FAIL;
+    }
+    ESP_LOGI(bmp280_hal_tag, "Set serial interface --> OK ---- serial interface is '%s'", bmp280_GetSerialName(config & 0b1));
 
     return ESP_OK;
 }
 
 
-esp_err_t bmp280_hal_ReadRawTP(i2c_master_dev_handle_t bmp280_i2c_bus_handler, bmp280_s32_t * adc_t, bmp280_s32_t * adc_p) {
+esp_err_t bmp280_hal_ReadRawTP(dev_serial_iface_t *dev_iface, bmp280_s32_t * adc_t, bmp280_s32_t * adc_p) {
+    esp_err_t ret;
     uint8_t buff[6];
 
     uint8_t status;
@@ -216,14 +255,16 @@ esp_err_t bmp280_hal_ReadRawTP(i2c_master_dev_handle_t bmp280_i2c_bus_handler, b
 
     /* Wait until im_update <0> bit of status register is set to 0 */
     do {
-        if(i2c_read_bytes(bmp280_i2c_bus_handler, BMP280_STATUS_REG, &status, 1) != ESP_OK) {
+        ret = dev_iface->read_func(dev_iface->handler, BMP280_STATUS_REG, &status, 1, IFACE_I2C);
+        if(ret != ESP_OK) {
             return ESP_FAIL;
         }
     } while (mask & status);
 
     /* Perform a burst read from press_msb <0xF7> to temp_xlsb <0XFC> */
 
-    if(i2c_read_bytes(bmp280_i2c_bus_handler, BMP280_PRESS_MSB_REG, buff, 6) != ESP_OK) {
+    ret = dev_iface->read_func(dev_iface->handler, BMP280_PRESS_MSB_REG, buff, 6, IFACE_I2C);
+    if(ret != ESP_OK) {
         return ESP_FAIL;
     }
 
@@ -246,16 +287,10 @@ esp_err_t bmp280_hal_ReadRawTP(i2c_master_dev_handle_t bmp280_i2c_bus_handler, b
 }
 
 
-esp_err_t bmp280_hal_i2cInit(i2c_master_bus_handle_t * i2c_master_bus_handler, i2c_master_dev_handle_t * bmp280_i2c_bus_handler, uint8_t slave_addr, int sda, int scl) {
-    if(i2c_init(i2c_master_bus_handler, sda, scl) != ESP_OK) {
-        ESP_LOGE(bmp280_tag, "Failed to initialized I2C interface");
-        return ESP_FAIL;
-    }
-    if(i2c_add_device(*i2c_master_bus_handler, bmp280_i2c_bus_handler, slave_addr, I2C_ADDR_BIT_7, 100000) != ESP_OK) {
-        ESP_LOGE(bmp280_tag, "Failed to add bmp280 to I2C bus");
-        return ESP_FAIL;
-    }
-    if(!i2c_scan(*i2c_master_bus_handler, slave_addr)) {
+esp_err_t bmp280_hal_ReadSerial(dev_serial_iface_t *dev_iface, uint8_t reg_addr, uint8_t * buff, int n_bytes) {
+    esp_err_t ret = dev_iface->read_func(dev_iface->handler, reg_addr, buff, n_bytes, IFACE_I2C);
+    if(ret != ESP_OK) {
+        ESP_LOGE(bmp280_hal_tag, "%s in line %d: Read bytes --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
@@ -263,9 +298,10 @@ esp_err_t bmp280_hal_i2cInit(i2c_master_bus_handle_t * i2c_master_bus_handler, i
 }
 
 
-esp_err_t bmp280_hal_ReadSerial(uint8_t reg_addr, i2c_master_dev_handle_t bmp280_i2c_bus_handler, uint8_t * buff, int n_bytes) {
-    if(i2c_read_bytes(bmp280_i2c_bus_handler, reg_addr, buff, n_bytes) != ESP_OK) {
-        ESP_LOGE(bmp280_tag, "Failed to read bytes");
+esp_err_t bmp280_hal_WriteSerial(dev_serial_iface_t *dev_iface, uint8_t reg_addr, uint8_t data) {
+    esp_err_t ret = dev_iface->write_func(dev_iface->handler, reg_addr, data, sizeof(data), IFACE_I2C);
+    if(ret != ESP_OK) {
+        ESP_LOGE(bmp280_hal_tag, "%s in line %d: Write bytes --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
@@ -273,24 +309,14 @@ esp_err_t bmp280_hal_ReadSerial(uint8_t reg_addr, i2c_master_dev_handle_t bmp280
 }
 
 
-esp_err_t bmp280_hal_WriteSerial(uint8_t reg_addr, i2c_master_dev_handle_t bmp280_i2c_bus_handler, uint8_t data) {
-    if(i2c_write_bytes(bmp280_i2c_bus_handler, reg_addr, data) != ESP_OK) {
-        ESP_LOGE(bmp280_tag, "Failed to write bytes");
-        return ESP_FAIL;
-    }
-
-    return ESP_OK;
-}
-
-
-esp_err_t bmp280_hal_ReadCompWords(comp_words_t * comp_words, i2c_master_dev_handle_t bmp280_i2c_bus_handler) {
+esp_err_t bmp280_hal_ReadCompWords(dev_serial_iface_t *dev_iface, comp_words_t * comp_words) {
     uint8_t buff[2];
 
     /* Loop through all compensation words */
     for(int word_index = 0; word_index < ((sizeof(comp_words_arr) / (sizeof(comp_words_arr[0])))); word_index++) {
 
         /* Read each compensation word register (LSB/MSB) */
-        bmp280_hal_ReadSerial(comp_words_arr[word_index].addr, bmp280_i2c_bus_handler, buff, 2);
+        bmp280_hal_ReadSerial(dev_iface, comp_words_arr[word_index].addr, buff, 2);
 
         /* dig_T1 and dig_P1 are unsigned while the rest are signed */
         if((!word_index) || (word_index == 3)) {

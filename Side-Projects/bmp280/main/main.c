@@ -1,27 +1,62 @@
+/* General headers */
 #include <stdio.h>
-#include <bmp280.h>
 #include <esp_log.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <math.h>
 
-#define BMP280_ADDR     0x76    /* Sensor address - 0x76 if SDO = 0 or 0x77 if SDO = 1 */
-#define GPIO_SDA        21      /* I2C SDA data */
-#define GPIO_SCL        22      /* I2C SCL clock */
+/* Components headers */
+#include <bmp280.h>     /* bmp280 header */
+#include <serial.h>     /* Serial interfaces driver */
 
-static const char * main_tag = "MAIN APP";  /* Main tag */
+#define BMP280_ADDR             0x76    /* Sensor address - 0x76 if SDO = 0 or 0x77 if SDO = 1 */
+#define BMP280_I2C_SCL_F_HZ     100000  /* I2C SCL (clock) line frequency in Hz */
+#define GPIO_SDA                21      /* I2C SDA data */
+#define GPIO_SCL                22      /* I2C SCL clock */
 
-i2c_master_bus_handle_t master_i2c_bus_handler; /* I2C bus handler for master device (MCU) */
+static const char *main_tag = "MAIN APP";  /* Main tag */
 
-
-void vTaskBmp280Measure(void * bmp);
+void vTaskBmp280Measure(void *bmp);
 
 
 void app_main(void) {
+    esp_err_t ret;
+
+    /* ======== I2C master setup ======== */
+    i2c_master_bus_handle_t master_i2c_handler = NULL;  /* I2C bus handler for master device (MCU) */
+    ret = i2c_init(&master_i2c_handler, GPIO_SDA, GPIO_SCL);   /* Initialize I2C interface */
+    if(ret != ESP_OK) {
+        ESP_LOGE(main_tag, "%s in line %d: Failed to initialice I2C interface", __func__, __LINE__);
+        return;
+    }
+
+    /* ======== bmp I2C setup ======== */
+    i2c_master_dev_handle_t bmp280_i2c_handler = NULL; /* I2C bus bmp280 handler */
+
+    /* bmp serial configs */
+    dev_serial_iface_t bmp_serial_iface = {
+        .i2c_cfg = {
+            .device_address          = BMP280_ADDR,             /* bmp serial address */
+            .dev_addr_length         = I2C_ADDR_BIT_LEN_7,      /* bmp address length */
+            .scl_speed_hz            = BMP280_I2C_SCL_F_HZ,     /* SCL line frequency */
+            .flags.disable_ack_check = false,                   /* Enable ACK detection */
+            .scl_wait_us             = 0                        /* Default response timeout */  
+        },
+        .type                        = IFACE_I2C,               /* Type of serial interface used */
+        .handler                     = bmp280_i2c_handler,      /* bmp serial (I2C) handler */
+        .read_func                   = i2c_read_bytes,         /* Serial (I2C) read function */
+        .write_func                  = i2c_write_bytes         /* Serial (I2C) write function */
+    };
+
+    ret = i2c_add_new_device(master_i2c_handler, &(bmp_serial_iface.i2c_cfg), bmp_serial_iface.handler, bmp_serial_iface.type);
+    if(ret != ESP_OK) {
+        return;
+    }
+    
     bmp280_t bmp;
     Bmp280(&bmp);   /* Make an instance of Bmp280 Class */
 
-    if(bmp.init(&bmp, &master_i2c_bus_handler, BMP280_ADDR, GPIO_SDA, GPIO_SCL) != ESP_OK) {
+    if(bmp.init(&bmp, &bmp_serial_iface) != ESP_OK) {
         return;
     }
 
@@ -47,11 +82,11 @@ void app_main(void) {
 }
 
 
-void vTaskBmp280Measure(void * _bmp) {
-    bmp280_t * bmp = (bmp280_t *) _bmp;
+void vTaskBmp280Measure(void *_bmp) {
+    bmp280_t *bmp = (bmp280_t *) _bmp;
 
     while(1) {
-        bmp->measure(bmp->i2c.bmp280_i2c_bus_handler);
+        bmp->measure();
 
         vTaskDelay(pdMS_TO_TICKS(10));
     }

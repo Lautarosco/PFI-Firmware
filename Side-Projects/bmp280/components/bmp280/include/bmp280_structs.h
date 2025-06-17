@@ -1,27 +1,35 @@
 #ifndef BMP280_STRUCTS_H
 #define BMP280_STRUCTS_H
 
+/* Gereral headers */
 #include <stdint.h>
 #include <esp_err.h>
-#include <driver/i2c_master.h>
+#include <stdbool.h>
+
+/* Components headers */
+#include <serial.h>         /* Serial interfaces driver */
 
 typedef struct bmp280 bmp280_t;
 
 typedef struct bmp280 {
     /* [A] Chip ID - should be 0x58 */
     uint8_t id;
+
+    /* [A] Flag to check if Bmp280 object was already initialized */
+    bool init_ok;
+
+    /* [A] bmp serial interface */
+    dev_serial_iface_t serial_iface;
     
     /**
      * @brief [M] Initialize Bmp280 Class
      * 
      * @param bmp: Pointer to Bmp280 object
-     * @param addr: Sensor address
-     * @param sda: SDA data pin
-     * @param scl: SCL clock pin
+     * @param bmp_iface: bmp serial interface
      * 
      * @return ESP_OK if success - ESP_FAIL
      */
-    esp_err_t (*init)(bmp280_t *bmp);
+    esp_err_t (*init)(bmp280_t *bmp, dev_serial_iface_t *bmp_iface);
 
     /**
      * @brief [M] Compensate raw temperature values stored in registers and return temperature

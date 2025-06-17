@@ -27,19 +27,19 @@ esp_err_t i2c_init(i2c_master_bus_handle_t * master_handler, int sda, int scl) {
     }
 }
 
-esp_err_t i2c_add_device(i2c_master_bus_handle_t master_handler, i2c_master_dev_handle_t * dev_handler, uint8_t addr, i2c_addr_bit_len_t addr_len, int scl_freq) {
-    i2c_device_config_t i2c_dev_cfg = {
-        .dev_addr_length = addr_len,
-        .device_address = addr,
-        .scl_speed_hz = scl_freq
-    };
-
-    if(i2c_master_bus_add_device(master_handler, &i2c_dev_cfg, dev_handler) != ESP_OK) {
-        ESP_LOGE(i2c_tag, "%s in line %d: Failed adding <0x%X> to I2C bus", __func__, __LINE__, addr);
-        return ESP_FAIL;
+esp_err_t i2c_add_new_device(i2c_master_bus_handle_t master_handler, i2c_device_config_t *dev_config, i2c_master_dev_handle_t *dev_handler, serial_iface_type_t serial_iface_type) {
+    if(serial_iface_type != IFACE_I2C) {
+        ESP_LOGE(i2c_tag, "%s in line %d: Device serial interface is not I2C", __func__, __LINE__);
+        return ESP_ERR_INVALID_ARG;
     } else {
-        ESP_LOGI(i2c_tag, "<0x%X> device was successfully added to I2C bus", addr);
-        return ESP_OK;
+        esp_err_t ret = i2c_master_bus_add_device(master_handler, dev_config, dev_handler);
+        if(ret != ESP_OK) {
+            ESP_LOGE(i2c_tag, "%s in line %d: Add <0x%X> to I2C bus --> FAILED", __func__, __LINE__, dev_config->device_address);
+            return ESP_FAIL;
+        } else {
+            ESP_LOGI(i2c_tag, "Add <0x%X> to I2C bus --> OK", __func__, __LINE__, dev_config->device_address);
+            return ESP_OK;
+        }
     }
 }
 
@@ -64,11 +64,21 @@ bool i2c_scan(i2c_master_bus_handle_t bus_handler, uint8_t slave_addr) {
 
 /* ================= Device functions ================= */
 
-esp_err_t i2c_read_bytes(void *dev_handler, uint8_t reg_addr, uint8_t *buff, uint16_t len) {
-    return i2c_master_transmit_receive(dev_handler, &reg_addr, 1, buff, len, 1000 / portTICK_PERIOD_MS);
+esp_err_t i2c_read_bytes(void *dev_handler, uint8_t reg_addr, uint8_t *buff, uint16_t len, serial_iface_type_t serial_iface_type) {
+    if(serial_iface_type != IFACE_I2C) {
+        ESP_LOGE(i2c_tag, "%s in line %d: Device serial interface is not I2C", __func__, __LINE__);
+        return ESP_ERR_INVALID_ARG;
+    } else {
+        return i2c_master_transmit_receive((i2c_master_dev_handle_t) dev_handler, &reg_addr, 1, buff, len, 1000 / portTICK_PERIOD_MS);
+    }
 }
 
-esp_err_t i2c_write_bytes(void *dev_handler, uint8_t reg_addr, const uint8_t data, uint16_t len) {
-    uint8_t buff[2] = {reg_addr, data};
-    return i2c_master_transmit(dev_handler, buff, sizeof(buff), 1000 / portTICK_PERIOD_MS);
+esp_err_t i2c_write_bytes(void *dev_handler, uint8_t reg_addr, const uint8_t data, uint16_t len, serial_iface_type_t serial_iface_type) {
+    if(serial_iface_type != IFACE_I2C) {
+        ESP_LOGE(i2c_tag, "%s in line %d: Device serial interface is not I2C", __func__, __LINE__);
+        return ESP_ERR_INVALID_ARG;
+    } else {
+        uint8_t buff[2] = {reg_addr, data};
+        return i2c_master_transmit((i2c_master_dev_handle_t) dev_handler, buff, sizeof(buff), 1000 / portTICK_PERIOD_MS);
+    }
 }

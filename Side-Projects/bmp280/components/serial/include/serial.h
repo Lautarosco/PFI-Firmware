@@ -1,71 +1,54 @@
 #ifndef SERIAL_H
 #define SERIAL_H
 
+#include <i2c_interface.h>
+#include <serial_types.h>
 #include <esp_err.h>
 
-/**
- * @brief [M] Read register address and store bytes
- * 
- * @param dev_handler: Device serial interface handler
- * @param reg_addr: Register address
- * @param buff: Buffer to store data
- * @param len: Length of data
- * 
- * @retval
- *      - ESP_OK
- *      - ESP_FAIL
- */
-typedef esp_err_t (*serial_read_func)(void *dev_handler, uint8_t reg_addr, uint8_t *buff, uint16_t len);
-
-/**
- * @brief [M] Write data to register address
- * 
- * @param dev_handler: Device serial interface handler
- * @param reg_addr: Register address
- * @param data: Data to be written
- * @param len: Length of data
- * 
- * @retval
- *      - ESP_OK
- *      - ESP_FAIL
- */
-typedef esp_err_t (*serial_write_func)(void *dev_handler, uint8_t reg_addr, const uint8_t data, uint16_t len);
-
-typedef struct serial_interface {
+typedef struct dev_serial_iface {
+    /**
+     * @brief Read bytes
+     * 
+     * @param dev_handler: Device bus handler
+     * @param reg_addr: Register to read from
+     * @param buff: Variable to store data
+     * @param len: Total bytes to be read
+     * @param serial_iface_type: Device type of serial interface
+     * 
+     * @return
+     *      - ESP_OK: I2C master transmit-receive success
+     *      - ESP_ERR_INVALID_ARG: I2C master transmit parameter invalid
+     *      - ESP_ERR_TIMEOUT: Operation timeout(larger than xfer_timeout_ms) because the bus is busy or hardware crash
+     */
+    esp_err_t (*read_func)(void *dev_handler, uint8_t reg_addr, uint8_t *buff, uint16_t len, serial_iface_type_t serial_iface_type);
 
     /**
-     * @brief [M] Read register address and store bytes
+     * @brief Write bytes
      * 
-     * @param dev_handler: Device serial interface handler
-     * @param reg_addr: Register address
-     * @param buff: Buffer to store data
-     * @param len: Length of data
+     * @param dev_handler: Device bus handler
+     * @param reg_addr: Register to be written
+     * @param data: Data to be written reg_addr
+     * @param len: Total bytes to be read
+     * @param serial_iface_type: Device type of serial interface
      * 
-     * @retval
-     *      - ESP_OK
-     *      - ESP_FAIL
+     * @return
+     *      - ESP_OK: I2C master transmit success
+     *      - ESP_ERR_INVALID_ARG: I2C master transmit parameter invalid
+     *      - ESP_ERR_TIMEOUT: Operation timeout(larger than xfer_timeout_ms) because the bus is busy or hardware crash
      */
-    serial_read_func read;
+    esp_err_t (*write_func)(void *dev_handler, uint8_t reg_addr, const uint8_t data, uint16_t len, serial_iface_type_t serial_iface_type);
 
-    /**
-     * @brief [M] Write data to register address
-     * 
-     * @param dev_handler: Device serial interface handler
-     * @param reg_addr: Register address
-     * @param data: Data to be written
-     * @param len: Length of data
-     * 
-     * @retval
-     *      - ESP_OK
-     *      - ESP_FAIL
-     */
-    serial_write_func write;
-
-    /* Device serial handler */
+    /* [A] Device serial handler */
     void *handler;
 
-    /* Device address */
-    uint8_t addr;
-} serial_interface_t;
+    /* Type of serial interface */
+    serial_iface_type_t type;
+
+    union
+    {
+        i2c_device_config_t i2c_cfg;
+        // spi_struct_t spi; // TODO
+    };
+} dev_serial_iface_t;
 
 #endif

@@ -40,19 +40,14 @@ static inline float pow_float(int base, int n) {return (float) (base << (n - 1))
 /* #################### PROTOTYPES #################### */
 
 /**
- * @brief Initialize an Bmp280 object
+ * @brief [M] Initialize Bmp280 Class
  * 
  * @param bmp: Pointer to Bmp280 object
- * @param master_i2c_bus_handler: master (MCU) I2C bus handler
- * @param addr: Address of bmp280 sensor
- * @param sda: I2C SDA data
- * @param scl: I2C SCL clock
+ * @param bmp_iface: bmp serial interface
  * 
- * @return
- *      - ESP_OK if success
- *      - ESP_FAIL
+ * @return ESP_OK if success - ESP_FAIL
  */
-static esp_err_t bmp280_Init(bmp280_t * bmp, i2c_master_bus_handle_t * master_i2c_bus_handler, int addr, int sda, int scl);
+static esp_err_t bmp280_Init(bmp280_t *bmp, dev_serial_iface_t *bmp_iface);
 
 
 /**
@@ -136,10 +131,8 @@ void Bmp280(bmp280_t *bmp) {
 }
 
 
-static esp_err_t bmp280_Init(bmp280_t *bmp, bmp280_serial_interface_t *serial_handler) {
-    memcpy(&(bmp->serial_handler), serial_handler, sizeof(bmp280_serial_interface_t));  /* Copy serial_handler parameter into bmp's serial_handler attribute */
-    // bmp->i2c.sda = sda;
-    // bmp->i2c.scl = scl;
+static esp_err_t bmp280_Init(bmp280_t *bmp, dev_serial_iface_t *bmp_iface) {
+    memcpy(&(bmp->serial_iface), bmp_iface, sizeof(dev_serial_iface_t));
 
     /* ESTO LO TIENE QUE HACER EL MCU PORQUE ES EL MAESTRO */
     // bmp280_hal_i2cInit(master_i2c_bus_handler, &(bmp->i2c.bmp280_i2c_bus_handler), bmp->addr, bmp->i2c.sda, bmp->i2c.scl);
