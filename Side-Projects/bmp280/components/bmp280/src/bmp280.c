@@ -71,13 +71,13 @@ static double bmp280_GetPress(void);
 /**
  * @brief Get raw pressure and temperature data
  * 
- * @param bmp280_i2c_bus_handler: Bmp280 I2C bus handler
+ * @param bmp_iface: bmp280 serial interface
  * 
  * @return
  *      - ESP_OK if success
  *      - ESP_FAIL
  */
-static esp_err_t bmp280_Measure(i2c_master_dev_handle_t bmp280_i2c_bus_handler);
+static esp_err_t bmp280_Measure(dev_serial_iface_t bmp_iface);
 
 
 /**
@@ -132,18 +132,16 @@ void Bmp280(bmp280_t *bmp) {
 
 
 static esp_err_t bmp280_Init(bmp280_t *bmp, dev_serial_iface_t *bmp_iface) {
+    /* Copy serial interface parameter into's bmp serial_iface attribute */
     memcpy(&(bmp->serial_iface), bmp_iface, sizeof(dev_serial_iface_t));
-
-    /* ESTO LO TIENE QUE HACER EL MCU PORQUE ES EL MAESTRO */
-    // bmp280_hal_i2cInit(master_i2c_bus_handler, &(bmp->i2c.bmp280_i2c_bus_handler), bmp->addr, bmp->i2c.sda, bmp->i2c.scl);
   
     /* Reset device in order to clean all registers */
-    if(bmp280_hal_Reset(bmp->i2c.bmp280_i2c_bus_handler) != ESP_OK) {
+    if(bmp280_hal_Reset(bmp->serial_iface) != ESP_OK) {
         return ESP_FAIL;
     }
 
     /* Retrieve chip ID from registers */
-    bmp280_hal_GetChipID(bmp->i2c.bmp280_i2c_bus_handler, &(bmp->id));
+    bmp280_hal_GetChipID(bmp->serial_iface, &(bmp->id));
 
 
     /**
@@ -154,13 +152,13 @@ static esp_err_t bmp280_Init(bmp280_t *bmp, dev_serial_iface_t *bmp_iface) {
      * set spi3w_en to 0b0 (default value => disabled)
      */
 
-    if(bmp280_hal_SetSerial(bmp->i2c.bmp280_i2c_bus_handler, I2C) != ESP_OK) {
+    if(bmp280_hal_SetSerial(bmp->serial_iface, I2C) != ESP_OK) {
         return ESP_FAIL;
     }
-    if(bmp280_hal_SetIIR(bmp->i2c.bmp280_i2c_bus_handler, IIR_16) != ESP_OK) {
+    if(bmp280_hal_SetIIR(bmp->serial_iface, IIR_16) != ESP_OK) {
         return ESP_FAIL;
     }
-    if(bmp280_hal_SetTsb(bmp->i2c.bmp280_i2c_bus_handler, TS_MANUAL) != ESP_OK) {
+    if(bmp280_hal_SetTsb(bmp->serial_iface, TS_MANUAL) != ESP_OK) {
         return ESP_FAIL;
     }
 
@@ -172,19 +170,19 @@ static esp_err_t bmp280_Init(bmp280_t *bmp, dev_serial_iface_t *bmp_iface) {
      * set mode bits (1, 0) to 0b01 (Forced mode) => @attention always set force mode again before taking a new measurement
      */
 
-    if(bmp280_hal_SetPowerMode(bmp->i2c.bmp280_i2c_bus_handler, FORCED_MODE) != ESP_OK) {
+    if(bmp280_hal_SetPowerMode(bmp->serial_iface, FORCED_MODE) != ESP_OK) {
         return ESP_FAIL;
     }
-    if(bmp280_hal_SetOsP(bmp->i2c.bmp280_i2c_bus_handler, P_OS_X16) != ESP_OK) {
+    if(bmp280_hal_SetOsP(bmp->serial_iface, P_OS_X16) != ESP_OK) {
         return ESP_FAIL;
     }
-    if(bmp280_hal_SetOsT(bmp->i2c.bmp280_i2c_bus_handler, T_OS_X2) != ESP_OK) {
+    if(bmp280_hal_SetOsT(bmp->serial_iface, T_OS_X2) != ESP_OK) {
         return ESP_FAIL;
     }
 
-    bmp280_hal_ReadCompWords(&comp_words, bmp->i2c.bmp280_i2c_bus_handler);  /* Get compensation words stored in chip registers */
+    bmp280_hal_ReadCompWords(bmp->serial_iface, &comp_words);  /* Get compensation words stored in chip registers */
 
-    bmp280_Measure(bmp->i2c.bmp280_i2c_bus_handler);    /* Measure once to update registers and avoid reading wrong values */
+    bmp280_Measure(bmp->serial_iface);    /* Measure once to update registers and avoid reading wrong values */
 
     ESP_LOGI(bmp280_tag, "Initialize Bmp280 object --> OK");
 
@@ -201,14 +199,13 @@ static esp_err_t bmp280_Init(bmp280_t *bmp, dev_serial_iface_t *bmp_iface) {
  *      - ESP_OK if success
  *      - ESP_FAIL
  */
-static esp_err_t bmp280_Measure(i2c_master_dev_handle_t bmp280_i2c_bus_handler) {
-
+static esp_err_t bmp280_Measure(dev_serial_iface_t bmp_iface) {
     /* Enable Forced mode */
-    if(bmp280_hal_SetPowerMode(bmp280_i2c_bus_handler, FORCED_MODE) != ESP_OK) {
+    if(bmp280_hal_SetPowerMode(bmp_iface, FORCED_MODE) != ESP_OK) {
         return ESP_FAIL;
     }
 
-    bmp280_hal_ReadRawTP(bmp280_i2c_bus_handler, &adc_t, &adc_p);
+    bmp280_hal_ReadRawTP(bmp_iface, &adc_t, &adc_p);
 
     return ESP_OK;
 }
@@ -274,31 +271,35 @@ static double bmp280_GetPress(void) {
 
 
 static double bmp280_GetAvgPressure(bmp280_t bmp, int n) {
+    ESP_LOGI(bmp280_tag, "Computing average pressure. Estimated time: %.2f minutes", n / 1500.0f);
+
     double p0 = 0.0;
     for(int i = 0; i < n; i++) {
-        bmp.measure(bmp.i2c.bmp280_i2c_bus_handler);
+        bmp.measure(bmp.serial_iface);
         p0 += bmp.get_pressure();
 
         vTaskDelay(pdMS_TO_TICKS(10));
     }
     p0 /= n;
 
-    ESP_LOGI(bmp280_tag, "Average pressure: %lf", p0);
+    ESP_LOGI(bmp280_tag, "Average pressure: %lf hPa", p0);
 
     return p0;
 }
 
 static double bmp280_GetAvgAltitude(bmp280_t bmp, double p0, int n) {
+    ESP_LOGI(bmp280_tag, "Computing average altitude. Estimated time: %.2f minutes", n / 1500.0f);
+
     double z = 0.0;
     for(int i = 0; i < n; i++) {
-        bmp.measure(bmp.i2c.bmp280_i2c_bus_handler);
+        bmp.measure(bmp.serial_iface);
         z += bmp.get_altitude(bmp.get_pressure(), p0);
 
         vTaskDelay(pdMS_TO_TICKS(10));
     }
     z /= n;
 
-    ESP_LOGI(bmp280_tag, "Average altitude: %lf", z);
+    ESP_LOGI(bmp280_tag, "Average altitude: %lf m", z);
 
     return z;
 }

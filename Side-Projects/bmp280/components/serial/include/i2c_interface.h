@@ -34,7 +34,7 @@ esp_err_t i2c_init(i2c_master_bus_handle_t * master_handler, int sda, int scl);
  *      - ESP_ERR_INVALID_ARG if serial interface is not I2C
  *      - ESP_FAIL Failed to add device to I2C bus
  */
-esp_err_t i2c_add_new_device(i2c_master_bus_handle_t master_handler, i2c_device_config_t *dev_config, i2c_master_dev_handle_t *dev_handler, serial_iface_type_t serial_iface_type);
+esp_err_t i2c_add_new_device(i2c_master_bus_handle_t master_handler, i2c_device_config_t *dev_config, void *dev_handler, serial_iface_type_t serial_iface_type);
 
 /**
  * @brief Seek devices connected to I2C bus

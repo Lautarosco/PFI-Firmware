@@ -15,9 +15,6 @@ typedef struct bmp280 {
     /* [A] Chip ID - should be 0x58 */
     uint8_t id;
 
-    /* [A] Flag to check if Bmp280 object was already initialized */
-    bool init_ok;
-
     /* [A] bmp serial interface */
     dev_serial_iface_t serial_iface;
     
@@ -50,11 +47,11 @@ typedef struct bmp280 {
     /**
      * @brief [M] Measure pressure and temperature
      * 
-     * @param bmp: Bmp280 object
+     * @param bmp_iface: bmp280 serial interface
      * 
      * @return ESP_OK if success - ESP_FAIL
      */
-    esp_err_t (*measure)(i2c_master_dev_handle_t bmp280_i2c_bus_handler);
+    esp_err_t (*measure)(dev_serial_iface_t bmp_iface);
 
     /**
      * @brief [M] Calculate altitude based on measured pressure 'p' and relative pressure 'p0'. The latter should be calculated with

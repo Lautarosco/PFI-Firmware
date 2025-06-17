@@ -35,7 +35,7 @@ typedef struct comp_words {
  *      - ESP_OK if success
  *      - ESP_FAIL
  */
-esp_err_t bmp280_hal_Reset(dev_serial_iface_t *dev_iface);
+esp_err_t bmp280_hal_Reset(dev_serial_iface_t dev_iface);
 
 /**
  * @brief Get chip ID and store it into given buffer
@@ -45,7 +45,7 @@ esp_err_t bmp280_hal_Reset(dev_serial_iface_t *dev_iface);
  * 
  * @return ESP_OK if success - ESP_FAIL
  */
-esp_err_t bmp280_hal_GetChipID(dev_serial_iface_t *dev_iface, uint8_t *buff);
+esp_err_t bmp280_hal_GetChipID(dev_serial_iface_t dev_iface, uint8_t *buff);
 
 /**
  * @brief Set power mode. Available options are Sleep, Forced and Normal mode
@@ -55,7 +55,7 @@ esp_err_t bmp280_hal_GetChipID(dev_serial_iface_t *dev_iface, uint8_t *buff);
  * 
  * @return ESP_OK if success - ESP_FAIL 
  */
-esp_err_t bmp280_hal_SetPowerMode(dev_serial_iface_t *dev_iface, bmp280_PowerMode_t power_mode);
+esp_err_t bmp280_hal_SetPowerMode(dev_serial_iface_t dev_iface, bmp280_PowerMode_t power_mode);
 
 /**
  * @brief Set temperature oversampling. More oversampling means more resolution
@@ -65,7 +65,7 @@ esp_err_t bmp280_hal_SetPowerMode(dev_serial_iface_t *dev_iface, bmp280_PowerMod
  * 
  * @return ESP_OK if success - ESP_FAIL 
  */
-esp_err_t bmp280_hal_SetOsT(dev_serial_iface_t *dev_iface, bmp280_OsT_t temp_os);
+esp_err_t bmp280_hal_SetOsT(dev_serial_iface_t dev_iface, bmp280_OsT_t temp_os);
 
 /**
  * @brief Set pressure oversampling. More oversampling means more resolution
@@ -75,7 +75,7 @@ esp_err_t bmp280_hal_SetOsT(dev_serial_iface_t *dev_iface, bmp280_OsT_t temp_os)
  * 
  * @return ESP_OK if success - ESP_FAIL
  */
-esp_err_t bmp280_hal_SetOsP(dev_serial_iface_t *dev_iface, bmp280_OsP_t press_os);
+esp_err_t bmp280_hal_SetOsP(dev_serial_iface_t dev_iface, bmp280_OsP_t press_os);
 
 /**
  * @brief Set sampling time (use only when power mode is set to 'Normal mode')
@@ -85,7 +85,7 @@ esp_err_t bmp280_hal_SetOsP(dev_serial_iface_t *dev_iface, bmp280_OsP_t press_os
  * 
  * @return ESP_OK if success - ESP_FAIL
  */
-esp_err_t bmp280_hal_SetTsb(dev_serial_iface_t *dev_iface, bmp280_TStandby_t t_sb);
+esp_err_t bmp280_hal_SetTsb(dev_serial_iface_t dev_iface, bmp280_TStandby_t t_sb);
 
 /**
  * @brief Set IIR filter coefficient
@@ -95,7 +95,7 @@ esp_err_t bmp280_hal_SetTsb(dev_serial_iface_t *dev_iface, bmp280_TStandby_t t_s
  * 
  * @return ESP_OK if success - ESP_FAIL
  */
-esp_err_t bmp280_hal_SetIIR(dev_serial_iface_t *dev_iface, bmp280_IIRCoeff_t coeff);
+esp_err_t bmp280_hal_SetIIR(dev_serial_iface_t dev_iface, bmp280_IIRCoeff_t coeff);
 
 /**
  * @brief Set serial interface
@@ -105,7 +105,7 @@ esp_err_t bmp280_hal_SetIIR(dev_serial_iface_t *dev_iface, bmp280_IIRCoeff_t coe
  * 
  * @return ESP_OK if success - ESP_FAIL
  */
-esp_err_t bmp280_hal_SetSerial(dev_serial_iface_t *dev_iface, bmp280_SerialInterface_t serial);
+esp_err_t bmp280_hal_SetSerial(dev_serial_iface_t dev_iface, bmp280_SerialInterface_t serial);
 
 /**
  * @brief Read raw pressure and temperature data from registers
@@ -116,7 +116,7 @@ esp_err_t bmp280_hal_SetSerial(dev_serial_iface_t *dev_iface, bmp280_SerialInter
  * 
  * @return ESP_OK if success - ESP_FAIL
  */
-esp_err_t bmp280_hal_ReadRawTP(dev_serial_iface_t *dev_iface, bmp280_s32_t * adc_t, bmp280_s32_t * adc_p);
+esp_err_t bmp280_hal_ReadRawTP(dev_serial_iface_t dev_iface, bmp280_s32_t * adc_t, bmp280_s32_t * adc_p);
 
 /**
  * @brief Read data from registers
@@ -130,7 +130,7 @@ esp_err_t bmp280_hal_ReadRawTP(dev_serial_iface_t *dev_iface, bmp280_s32_t * adc
  *      - ESP_OK if success
  *      - ESP_FAIL
  */
-esp_err_t bmp280_hal_ReadSerial(dev_serial_iface_t *dev_iface, uint8_t reg_addr, uint8_t * buff, int n_bytes);
+esp_err_t bmp280_hal_ReadSerial(dev_serial_iface_t dev_iface, uint8_t reg_addr, uint8_t * buff, int n_bytes);
 
 /**
  * @brief Read data from registers
@@ -143,7 +143,7 @@ esp_err_t bmp280_hal_ReadSerial(dev_serial_iface_t *dev_iface, uint8_t reg_addr,
  *      - ESP_OK if success
  *      - ESP_FAIL
  */
-esp_err_t bmp280_hal_WriteSerial(dev_serial_iface_t *dev_iface, uint8_t reg_addr, uint8_t data);
+esp_err_t bmp280_hal_WriteSerial(dev_serial_iface_t dev_iface, uint8_t reg_addr, uint8_t data);
 
 /**
  * @brief Read compensation words stored in chip registers
@@ -155,6 +155,6 @@ esp_err_t bmp280_hal_WriteSerial(dev_serial_iface_t *dev_iface, uint8_t reg_addr
  *      - ESP_OK if success
  *      - ESP_FAIL
  */
-esp_err_t bmp280_hal_ReadCompWords(dev_serial_iface_t *dev_iface, comp_words_t * comp_words);
+esp_err_t bmp280_hal_ReadCompWords(dev_serial_iface_t dev_iface, comp_words_t * comp_words);
 
 #endif

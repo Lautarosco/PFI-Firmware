@@ -43,9 +43,9 @@ void app_main(void) {
             .scl_wait_us             = 0                        /* Default response timeout */  
         },
         .type                        = IFACE_I2C,               /* Type of serial interface used */
-        .handler                     = bmp280_i2c_handler,      /* bmp serial (I2C) handler */
-        .read_func                   = i2c_read_bytes,         /* Serial (I2C) read function */
-        .write_func                  = i2c_write_bytes         /* Serial (I2C) write function */
+        .handler                     = &bmp280_i2c_handler,     /* bmp serial (I2C) handler */
+        .read_func                   = i2c_read_bytes,          /* Serial (I2C) read function */
+        .write_func                  = i2c_write_bytes          /* Serial (I2C) write function */
     };
 
     ret = i2c_add_new_device(master_i2c_handler, &(bmp_serial_iface.i2c_cfg), bmp_serial_iface.handler, bmp_serial_iface.type);
@@ -62,7 +62,7 @@ void app_main(void) {
 
     double p0 = bmp.get_avg_pressure(bmp, 1500);    /* n = 6000 ~ 4 minutes */
     // double p0 = 1015.867004; /* Relative pressure (depends on location) */
-    double z0 = bmp.get_avg_altitude(bmp, p0, 100);
+    double z0 = bmp.get_avg_altitude(bmp, p0, 1500);
     double t = 0.0;
     double p = 0.0;
     double z = 0.0;
@@ -86,7 +86,7 @@ void vTaskBmp280Measure(void *_bmp) {
     bmp280_t *bmp = (bmp280_t *) _bmp;
 
     while(1) {
-        bmp->measure();
+        bmp->measure(bmp->serial_iface);
 
         vTaskDelay(pdMS_TO_TICKS(10));
     }
