@@ -57,15 +57,15 @@ typedef struct bmp280 {
      * @brief [M] Calculate altitude based on measured pressure 'p' and relative pressure 'p0'. The latter should be calculated with
      * 'bmp280_GetRelativeP' function or use sea level value, ~1013.25 hPa (value taken from https://cdn-shop.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf, p. 16, Sec. 3.6)
      * 
-     * @param p: Measured pressure
-     * @param p0: Relative pressure
+     * @param p: Measured pressure in hPa
+     * @param p0: Relative pressure in hPa
      * 
      * @return 64-bit estimated altitude
      */
     double (*get_altitude)(double p, double p0);
 
     /**
-     * @brief [M] Calculate pressure 'n' times and get average value. Should be used as an alternative to sea level pressure
+     * @brief [M] Calculate pressure 'n' times and get average value in hPa. Should be used as an alternative to sea level pressure
      * 
      * @param bmp: Bmp280 object
      * @param n: Total samples
@@ -75,10 +75,10 @@ typedef struct bmp280 {
     double (*get_avg_pressure)(bmp280_t bmp, int n);
 
     /**
-     * @brief [M] Calculate altitude 'n' times and get average value
+     * @brief [M] Calculate altitude 'n' times and get average value in meters
      * 
      * @param bmp: Bmp280 object
-     * @param p0: Relative pressure. It could be sea level pressure or average pressure obtained with get_avg_pressure method
+     * @param p0: Relative pressure in hPa. It could be sea level pressure or average pressure obtained with get_avg_pressure method
      * @param n: Total samples
      * 
      * @return 64-bit calculated average altitude

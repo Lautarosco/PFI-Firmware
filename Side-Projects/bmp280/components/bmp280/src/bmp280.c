@@ -84,8 +84,8 @@ static esp_err_t bmp280_Measure(dev_serial_iface_t bmp_iface);
  * @brief Calculate altitude based on measured pressure 'p' and relative pressure 'p0'. The latter should be calculated with
  * 'bmp280_GetRelativeP' function or use sea level value, ~1013.25 hPa (value taken from https://cdn-shop.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf, p. 16, 3.6)
  * 
- * @param p: Measured pressure
- * @param p0: Relative pressure
+ * @param p: Measured pressure in hPa
+ * @param p0: Relative pressure in hPA
  * 
  * @return 64-bit estimated altitude
  */
@@ -93,7 +93,7 @@ static double bmp280_GetAltitude(double p, double p0);
 
 
 /**
- * @brief Calculate pressure 'n' times and get average value. Should be used as an alternative to sea level pressure
+ * @brief Calculate pressure 'n' times and get average value in hPA. Should be used as an alternative to sea level pressure
  * 
  * @param bmp: Bmp280 object
  * @param n: Total samples
@@ -104,10 +104,10 @@ static double bmp280_GetAvgPressure(bmp280_t bmp, int n);
 
 
 /**
- * @brief Calculate altitude 'n' times and get average value
+ * @brief Calculate altitude 'n' times and get average value in meters
  * 
  * @param bmp: Bmp280 object
- * @param p0: Relative pressure. It could be sea level pressure or average pressure obtained with get_avg_pressure method
+ * @param p0: Relative pressure in hPa. It could be sea level pressure or average pressure obtained with get_avg_pressure method
  * @param n: Total samples
  * 
  * @return 64-bit calculated average altitude
@@ -134,6 +134,12 @@ void Bmp280(bmp280_t *bmp) {
 static esp_err_t bmp280_Init(bmp280_t *bmp, dev_serial_iface_t *bmp_iface) {
     /* Copy serial interface parameter into's bmp serial_iface attribute */
     memcpy(&(bmp->serial_iface), bmp_iface, sizeof(dev_serial_iface_t));
+
+    /* Check if any serial protocol was specified => If none then default value will be IFACE_NONE = 0 */
+    if(bmp->serial_iface.type == IFACE_NONE) {
+        ESP_LOGE(bmp280_tag, "%s in line %d: No serial protocol was specified", __func__, __LINE__);
+        return ESP_ERR_INVALID_ARG;
+    }
   
     /* Reset device in order to clean all registers */
     if(bmp280_hal_Reset(bmp->serial_iface) != ESP_OK) {

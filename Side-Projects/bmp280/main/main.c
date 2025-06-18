@@ -60,24 +60,28 @@ void app_main(void) {
         return;
     }
 
-    double p0 = bmp.get_avg_pressure(bmp, 1500);    /* n = 6000 ~ 4 minutes */
+    double p0 = bmp.get_avg_pressure(bmp, 1500);    /* n = 1500 samples ~ 1 minute */
     // double p0 = 1015.867004; /* Relative pressure (depends on location) */
     double z0 = bmp.get_avg_altitude(bmp, p0, 1500);
-    double t = 0.0;
+    // double t = 0.0;
     double p = 0.0;
     double z = 0.0;
 
     xTaskCreatePinnedToCore(vTaskBmp280Measure, "task1", 1024 * 2, (void *) &bmp, 1, NULL, 1);
 
+    char buff[1024];
+    
     while(1) {
 
-        t = bmp.get_temperature();
+        // t = bmp.get_temperature();
         p = bmp.get_pressure();
         z = bmp.get_altitude(p, p0) - z0;
 
-        printf("Temperature: %lf °C\tPressure: %lf hPa\tAltitude: %lf m\r\n", t, p, z);
+        printf("printer:z,%f\n", z);
 
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        // printf("Temperature: %lf °C\tPressure: %lf hPa\tAltitude: %lf m\r\n", t, p, z);
+
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
 
