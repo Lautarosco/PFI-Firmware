@@ -177,12 +177,9 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
         return ESP_OK;
     }
 
-    transmitter_t * Transmitter( drone_globals_t * global_variables ) {
+    void Transmitter( transmitter_t * Tx, drone_globals_t * global_variables ) {
 
         ESP_LOGI( "TRANSMITTER", "Making an instance of Transmitter Class..." );
-
-        /* Assign memory for a Transmitter object */
-        transmitter_t * Tx = ( transmitter_t * ) malloc( sizeof( transmitter_t ) );
 
         /* Initialize Transmitter mac address in 0 */
         for (int i = 0; i < MAC_ADDR_SIZE; i++) { Tx->mac_addr[ i ] = 0; }
@@ -195,7 +192,6 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
 
         ESP_LOGI( "TRANSMITTER", "Instance succesfully made" );
 
-        return Tx;
     }
 
 #elif WEBSV_TX
@@ -715,11 +711,9 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
         return ESP_OK;
     }
 
-    transmitter_t * Transmitter( drone_globals_t * global_variables ) {
+    void Transmitter( transmitter_t* Tx, drone_globals_t * global_variables ) {
 
         ESP_LOGI( "TRANSMITTER", "Making an instance of Transmitter Class..." );
-
-        transmitter_t * Tx = ( transmitter_t * ) malloc( sizeof( transmitter_t ) );
 
         /* Assign Drone object global variables to Transmitter object global variables  */
         Tx->global_variables = global_variables;
@@ -728,8 +722,6 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
         Tx->init = transmitter_init;
 
         ESP_LOGI( "TRANSMITTER", "Instance succesfully made" );
-
-        return Tx;
     }
 
 #endif

@@ -8,6 +8,6 @@
  * @param none
  * @retval Pointer to Mma object
  */
-mma_t * Mma( void );
+void Mma( mma_t* mma );
 
 #endif

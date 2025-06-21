@@ -76,17 +76,17 @@ float filtered_roll = 0.0f;
 static void toggle_motor(drone_t* drone, int pwm_num);
 static void toggle_motor(drone_t* drone, int pwm_num) {
 
-    float current_pwm_dc = drone->attributes.components.pwm[ pwm_num ]->get_pwm_dc(drone->attributes.components.pwm[ pwm_num ]);
+    float current_pwm_dc = drone->attributes.components.pwm[ pwm_num ].get_pwm_dc(&drone->attributes.components.pwm[ pwm_num ]);
     printf("Current PWM DC for motor %d: %.2f\n", pwm_num, current_pwm_dc);
 
-    float dc_min = drone->attributes.components.pwm[pwm_num]->dc_min;
+    float dc_min = drone->attributes.components.pwm[pwm_num].dc_min;
     float dc_target = dc_min*drone->attributes.config.mma_out_limits.lower; 
     float avg = (dc_min + dc_target) / 2.0;
 
     if (current_pwm_dc > avg) {
 
-        drone->attributes.components.pwm[ pwm_num ]->set_pwm_dc(
-            drone->attributes.components.pwm[ pwm_num ],
+        drone->attributes.components.pwm[ pwm_num ].set_pwm_dc(
+            &drone->attributes.components.pwm[ pwm_num ],
             dc_min  // Apagado
         );
         printf("Motor %d OFF with duty cycle: %f \n", pwm_num, dc_min);
@@ -96,10 +96,10 @@ static void toggle_motor(drone_t* drone, int pwm_num) {
         printf("dc_min: %f\n", dc_min);
         printf("dc_target: %f\n", dc_target);
         printf("avg: %f\n", avg);
-        printf("lower_limit: %f\n", drone->attributes.components.mma->limit.lower);
+        printf("lower_limit: %f\n", drone->attributes.components.mma.limit.lower);
         
-        drone->attributes.components.pwm[ pwm_num ]->set_pwm_dc(
-            drone->attributes.components.pwm[ pwm_num ],
+        drone->attributes.components.pwm[ pwm_num ].set_pwm_dc(
+            &drone->attributes.components.pwm[ pwm_num ],
             dc_target  // Velocidad minima
         );
         printf("Motor %d ON with duty cycle: %f \n", pwm_num, dc_target);
@@ -121,9 +121,9 @@ static void StVibrationCheck(drone_t* drone) {
         
         /* Turn off motors */
         for (int pwm_num = 0; pwm_num < 4; pwm_num++) {
-            drone->attributes.components.pwm[pwm_num]->set_pwm_dc(
-                drone->attributes.components.pwm[pwm_num],
-                drone->attributes.components.pwm[ pwm_num ]->dc_min);
+            drone->attributes.components.pwm[pwm_num].set_pwm_dc(
+                &drone->attributes.components.pwm[pwm_num],
+                drone->attributes.components.pwm[ pwm_num ].dc_min);
         }
         initialized = false;  // Reset for next entry
         printf("Exiting vibration check mode\n");
@@ -181,8 +181,8 @@ static void StControlFunc( drone_t * obj ) {
     // float alpha_ema = 2/(obj->attributes.global_variables.ema_filter_roll+1);
     // filtered_roll = alpha_ema*obj->attributes.states.roll + (1-alpha_ema)*filtered_roll;
 
-    float CRoll = obj->attributes.components.controllers[ ROLL ]->pidUpdate(
-        obj->attributes.components.controllers[ ROLL ],
+    float CRoll = obj->attributes.components.controllers[ ROLL ].pidUpdate(
+        &obj->attributes.components.controllers[ ROLL ],
         obj->attributes.states.roll,
         obj->attributes.sp.roll
     );
@@ -191,28 +191,28 @@ static void StControlFunc( drone_t * obj ) {
 
     obj->attributes.sp.roll_dot = CRoll;
 
-    float CRolld = obj->attributes.components.controllers[ ROLL_D ]->pidUpdate(
-        obj->attributes.components.controllers[ ROLL_D ],
+    float CRolld = obj->attributes.components.controllers[ ROLL_D ].pidUpdate(
+        &obj->attributes.components.controllers[ ROLL_D ],
         obj->attributes.states.roll_dot,
         obj->attributes.sp.roll_dot
     );
     
     /* Update MMA inputs with PID outputs */
-    obj->attributes.components.mma->input[ C_ROLL ] = CRolld;
+    obj->attributes.components.mma.input[ C_ROLL ] = CRolld;
 
     /* Compute MMA algorithm */
-    obj->attributes.components.mma->compute(
-        obj->attributes.components.mma,
-        obj->attributes.components.pwm[ 0 ]->dc_min * obj->attributes.config.mma_out_limits.lower,
-        obj->attributes.components.pwm[ 0 ]->dc_max * obj->attributes.config.mma_out_limits.upper
+    obj->attributes.components.mma.compute(
+        &obj->attributes.components.mma,
+        obj->attributes.components.pwm[ 0 ].dc_min * obj->attributes.config.mma_out_limits.lower,
+        obj->attributes.components.pwm[ 0 ].dc_max * obj->attributes.config.mma_out_limits.upper
     );
 
     /* Update all pwm duty cycle */
-    for(int i = 0; i < ( ( sizeof( obj->attributes.components.mma->output ) ) / ( sizeof( obj->attributes.components.mma->output[ 0 ] ) ) ); i++) {
+    for(int i = 0; i < ( ( sizeof( obj->attributes.components.mma.output ) ) / ( sizeof( obj->attributes.components.mma.output[ 0 ] ) ) ); i++) {
         
-        obj->attributes.components.pwm[ i ]->set_pwm_dc(
-            obj->attributes.components.pwm[ i ],
-            obj->attributes.components.mma->output[ i ]
+        obj->attributes.components.pwm[ i ].set_pwm_dc(
+            &obj->attributes.components.pwm[ i ],
+            obj->attributes.components.mma.output[ i ]
         );
     }
 }
@@ -226,7 +226,7 @@ static void StCalibrationFunc( drone_t * obj ) {
 
     for( int i = 0; i < ( sizeof( obj->attributes.components.pwm ) ) / ( sizeof( obj->attributes.components.pwm[ 0 ] ) ); i++ ) {
 
-        obj->attributes.components.pwm[ i ]->set_pwm_dc( obj->attributes.components.pwm[ i ], obj->attributes.components.pwm[ i ]->dc_max );
+        obj->attributes.components.pwm[ i ].set_pwm_dc( &obj->attributes.components.pwm[ i ], obj->attributes.components.pwm[ i ].dc_max );
     }
 
     /* 2. Wait until ESC's are connected ( user pressed X button )  */
@@ -271,7 +271,7 @@ static void StCalibrationFunc( drone_t * obj ) {
 
     for( int i = 0; i < ( sizeof( obj->attributes.components.pwm ) ) / ( sizeof( obj->attributes.components.pwm[ 0 ] ) ); i++ ) {
 
-        obj->attributes.components.pwm[ i ]->set_pwm_dc( obj->attributes.components.pwm[ i ], obj->attributes.components.pwm[ i ]->dc_min );
+        obj->attributes.components.pwm[ i ].set_pwm_dc( &obj->attributes.components.pwm[ i ], obj->attributes.components.pwm[ i ].dc_min );
     }
 
     /* 5. Wait until ESC's have latched minimum value ( user pressed X button ) */
@@ -305,7 +305,7 @@ static void StResetFunc( drone_t * drone ) {
 
     for (int i = 0; i < ( sizeof( drone->attributes.components.pwm ) ) / ( sizeof( drone->attributes.components.pwm[ 0 ] ) ); i++ ) {
         /* Set all pwm duty cycle to minimum */
-        drone->attributes.components.pwm[ i ]->set_pwm_dc( drone->attributes.components.pwm[ i ], drone->attributes.components.pwm[ i ]->dc_min );
+        drone->attributes.components.pwm[ i ].set_pwm_dc( &drone->attributes.components.pwm[ i ], drone->attributes.components.pwm[ i ].dc_min );
     }
 
     esp_restart();

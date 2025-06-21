@@ -10,27 +10,20 @@
 void app_main( void ) {
 
     /* Make an instance of Drone Class */
-    drone_t * drone = Drone();
-
-    /* Check if Drone instance was successfull */
-    if( drone == NULL ) {
-
-        ESP_LOGE( "MAIN", "Failed to make an instance of Dron Class... Restarting MCU" );
-        vTaskDelay( pdMS_TO_TICKS( 1000 ) );
-        esp_restart();
-    }
+    drone_t drone;
+    Drone(&drone);
 
     /* Run state machine */     
-    xTaskCreatePinnedToCore( vTaskStateMachine_Run, "Task1", 1024 * 10, ( void * ) ( drone ), 1, NULL, CORE_1 );
+    xTaskCreatePinnedToCore( vTaskStateMachine_Run, "Task1", 1024 * 10, ( void * ) ( &drone ), 1, NULL, CORE_1 );
 
     /* Update sensor measures */
-    xTaskCreatePinnedToCore( vTaskDroneMeasure, "Task2", 1024 * 3, ( void * ) ( drone ), 1, NULL, CORE_0 );
+    xTaskCreatePinnedToCore( vTaskDroneMeasure, "Task2", 1024 * 3, ( void * ) ( &drone ), 1, NULL, CORE_0 );
 
     /* Parse Bluetooth commands */
-    xTaskCreatePinnedToCore( vTaskParseCommand, "Task3", 1024 * 3, ( void * ) ( drone ), 1, NULL, CORE_0 );
+    xTaskCreatePinnedToCore( vTaskParseCommand, "Task3", 1024 * 3, ( void * ) ( &drone ), 1, NULL, CORE_0 );
 
     /* Print values over serial */
-    xTaskCreatePinnedToCore( vTaskprint, "Task4", 4096, ( void * ) ( drone ), 1, NULL, CORE_0 );
+    xTaskCreatePinnedToCore( vTaskprint, "Task4", 4096, ( void * ) ( &drone ), 1, NULL, CORE_0 );
 
-    xTaskCreatePinnedToCore( vTaskUartEvent, "Task5", 1024 * 5, ( void * ) ( drone ), 1, NULL, CORE_0 );
+    xTaskCreatePinnedToCore( vTaskUartEvent, "Task5", 1024 * 5, ( void * ) ( &drone ), 1, NULL, CORE_0 );
 }

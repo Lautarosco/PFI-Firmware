@@ -108,12 +108,9 @@ static void mma_init( mma_t * obj, float upper_limit, float lower_limit ) {
 
 /** @details Public functions definitions */
 
-mma_t * Mma( void ) {
+void Mma( mma_t* mma ) {
 
     ESP_LOGI( MMA_TAG, "Making an instance of Mma Class..." );
-
-    /* Assign memmory for Mma object */
-    mma_t * mma = ( mma_t * ) malloc( sizeof( mma_t ) );
 
     /* Default values for Mma Class attributes */
     for (int i = 0; i < ( ( sizeof( mma->input ) )  / ( sizeof( mma->input[ 0 ] ) ) ); i++) { mma->input[ i ]   = 0; }
@@ -129,6 +126,4 @@ mma_t * Mma( void ) {
 
     ESP_LOGI( MMA_TAG, "Instance successfully made" );
 
-    /* Return instance of Mma Class */
-    return mma;
 }
