@@ -422,6 +422,13 @@ static esp_err_t drone_init( drone_t * obj ) {
         )
     );
     
+    obj->attributes.components.bmi.Gyro.x = 0.0f;
+    obj->attributes.components.bmi.Gyro.y = 0.0f;
+    obj->attributes.components.bmi.Gyro.z = 0.0f;
+    obj->attributes.components.bmi.Acc.x = 0.0f;
+    obj->attributes.components.bmi.Acc.y = 0.0f;
+    obj->attributes.components.bmi.Acc.z = 0.0f;
+
     //obj->attributes.components.bmi.Gyro.offset.x = obj->attributes.config.imu_cfg.gyro_offset.x;
     //obj->attributes.components.bmi.Gyro.offset.y = obj->attributes.config.imu_cfg.gyro_offset.y;
     //obj->attributes.components.bmi.Gyro.offset.z = obj->attributes.config.imu_cfg.gyro_offset.z;
@@ -496,14 +503,14 @@ static void UpdateStates( drone_t * obj, float ts ) {
         float acc_y = obj->attributes.components.bmi.Acc.y;
         float acc_z = obj->attributes.components.bmi.Acc.z;
 
-        float gyro_x = obj->attributes.components.bmi.Gyro.x;
-        float gyro_y = obj->attributes.components.bmi.Gyro.y;
-        float gyro_z = obj->attributes.components.bmi.Gyro.z;
+        float gyro_x = FirstOrderIIR( obj->attributes.components.bmi.Gyro.x, obj->attributes.states.roll_dot, ts / 1000.0f, obj->attributes.config.IIR_coeff_roll_dot );
+        float gyro_y = FirstOrderIIR( obj->attributes.components.bmi.Gyro.y, obj->attributes.states.pitch_dot, ts / 1000.0f, obj->attributes.config.IIR_coeff_pitch_dot );;
+        float gyro_z = FirstOrderIIR( obj->attributes.components.bmi.Gyro.z, obj->attributes.states.yaw_dot, ts / 1000.0f, obj->attributes.config.IIR_coeff_yaw_dot );;
 
-        /* Update state's velocity */
-        obj->attributes.states.roll_dot  = gyro_x;
+        /* Apply first order IIR filter to gyroscope data */
+        obj->attributes.states.roll_dot = gyro_x;
         obj->attributes.states.pitch_dot = gyro_y;
-        obj->attributes.states.yaw_dot   = gyro_z;
+        obj->attributes.states.yaw_dot = gyro_z;
         
         /* Update state's position */
         float ALPHA = 0.95f;  // TODO: make this a parameter 
