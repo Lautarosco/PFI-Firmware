@@ -421,7 +421,8 @@ static esp_err_t drone_init( drone_t * obj ) {
             0.0f
         )
     );
-    
+    // Initialize sensor values to 0
+    obj->attributes.components.bmi.Temp.temperature = 0.0f;
     obj->attributes.components.bmi.Gyro.x = 0.0f;
     obj->attributes.components.bmi.Gyro.y = 0.0f;
     obj->attributes.components.bmi.Gyro.z = 0.0f;

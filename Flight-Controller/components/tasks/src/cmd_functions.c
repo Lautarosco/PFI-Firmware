@@ -134,9 +134,9 @@ typedef struct vars_update {
 
 void VarsUpdateCmdFunc(drone_t * drone, char * arr[4]) {
     vars_update_t general_vars[] = {
-        {.name = "ema_roll",  .addr = &(drone->attributes.global_variables.ema_filter_roll)},
-        {.name = "ema_pitch", .addr = &(drone->attributes.global_variables.ema_filter_pitch)},
-        {.name = "ema_yaw",   .addr = &(drone->attributes.global_variables.ema_filter_yaw)},
+        {.name = "ema_roll",  .addr = &(drone->attributes.config.IIR_coeff_roll_dot)},
+        {.name = "ema_pitch", .addr = &(drone->attributes.config.IIR_coeff_pitch_dot)},
+        {.name = "ema_yaw",   .addr = &(drone->attributes.config.IIR_coeff_yaw_dot)},
         {.name = NULL,        .addr = NULL}
     };
 
