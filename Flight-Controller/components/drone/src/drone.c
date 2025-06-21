@@ -421,7 +421,8 @@ static esp_err_t drone_init( drone_t * obj ) {
             0.0f
         )
     );
-    
+    // Initialize sensor values to 0
+    obj->attributes.components.bmi.Temp.temperature = 0.0f;
     obj->attributes.components.bmi.Gyro.x = 0.0f;
     obj->attributes.components.bmi.Gyro.y = 0.0f;
     obj->attributes.components.bmi.Gyro.z = 0.0f;
@@ -504,8 +505,8 @@ static void UpdateStates( drone_t * obj, float ts ) {
         float acc_z = obj->attributes.components.bmi.Acc.z;
 
         float gyro_x = FirstOrderIIR( obj->attributes.components.bmi.Gyro.x, obj->attributes.states.roll_dot, ts / 1000.0f, obj->attributes.config.IIR_coeff_roll_dot );
-        float gyro_y = FirstOrderIIR( obj->attributes.components.bmi.Gyro.y, obj->attributes.states.pitch_dot, ts / 1000.0f, obj->attributes.config.IIR_coeff_pitch_dot );;
-        float gyro_z = FirstOrderIIR( obj->attributes.components.bmi.Gyro.z, obj->attributes.states.yaw_dot, ts / 1000.0f, obj->attributes.config.IIR_coeff_yaw_dot );;
+        float gyro_y = FirstOrderIIR( obj->attributes.components.bmi.Gyro.y, obj->attributes.states.pitch_dot, ts / 1000.0f, obj->attributes.config.IIR_coeff_pitch_dot );
+        float gyro_z = FirstOrderIIR( obj->attributes.components.bmi.Gyro.z, obj->attributes.states.yaw_dot, ts / 1000.0f, obj->attributes.config.IIR_coeff_yaw_dot );
 
         /* Apply first order IIR filter to gyroscope data */
         obj->attributes.states.roll_dot = gyro_x;
