@@ -17,16 +17,17 @@ void app_main( void ) {
     Drone(&drone);
 
     /* Run state machine */     
-    xTaskCreatePinnedToCore( vTaskStateMachine_Run, "Task1", 1024 * 10, ( void * ) ( &drone ), 1, NULL, CORE_1 );
+    xTaskCreatePinnedToCore( vTaskStateMachine_Run, "APP_StateMachine", 1024 * 10, ( void * ) ( &drone ), 1, NULL, CORE_1 );
 
     /* Update sensor measures */
-    xTaskCreatePinnedToCore( vTaskDroneMeasure, "Task2", 1024 * 3, ( void * ) ( &drone ), 1, NULL, CORE_0 );
+    xTaskCreatePinnedToCore( vTaskDroneMeasure, "APP_Measure", 1024 * 3, ( void * ) ( &drone ), 1, NULL, CORE_0 );
 
     /* Parse Bluetooth commands */
-    xTaskCreatePinnedToCore( vTaskParseCommand, "Task3", 1024 * 3, ( void * ) ( &drone ), 1, NULL, CORE_0 );
+    xTaskCreatePinnedToCore( vTaskParseCommand, "APP_Parse", 1024 * 3, ( void * ) ( &drone ), 1, NULL, CORE_0 );
 
     /* Print values over serial */
-    xTaskCreatePinnedToCore( vTaskprint, "Task4", 4096, ( void * ) ( &drone ), 1, NULL, CORE_0 );
+    xTaskCreatePinnedToCore( vTaskprint, "APP_Print", 4096, ( void * ) ( &drone ), 1, NULL, CORE_0 );
 
-    xTaskCreatePinnedToCore( vTaskUartEvent, "Task5", 1024 * 5, ( void * ) ( &drone ), 1, NULL, CORE_0 );
+    xTaskCreatePinnedToCore( vTaskUartEvent, "APP_Uart", 1024 * 5, ( void * ) ( &drone ), 1, NULL, CORE_0 );
+
 }
