@@ -4,6 +4,9 @@
 #include <bmp390_ll_api.h>
 
 #include <string.h>
+#include <esp_log.h>
+
+const char *bmp390_hal_tag = "[BMP390_HAL]";
 
 /* =========== Private functions =========== */
 
@@ -51,6 +54,8 @@ static esp_err_t bmp390_hal_init(bmp390_t *bmp, device_interface_t *dev_iface, b
     if(bmp390_ll_set_odr(*dev_iface, bmp_settings.odr_sel) != ESP_OK) {
         return ESP_FAIL;
     }
+
+    ESP_LOGI(bmp390_hal_tag, "Initialize Bmp390 object --> OK");
 
     return ESP_OK;
 }

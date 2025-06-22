@@ -1,6 +1,8 @@
 #include <bmp390_ll_api.h>
 #include <bmp390_registers.h>
 
+#include <bmp390_modes_names.h>
+
 #include <esp_err.h>
 #include <esp_log.h>
 #include <stdbool.h>
@@ -19,7 +21,8 @@ esp_err_t bmp390_ll_get_chip_id(device_interface_t dev_iface, uint8_t *read_data
     *read_data = 0;
 
     /* Read CHIP_ID register and check for errors */
-    if((dev_iface.read_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_CHIP_ID_RO_REG, read_data, 1) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+    if((dev_iface.read_bytes(dev_iface.iface_cfg, BMP390_CHIP_ID_RO_REG, read_data, 1, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+        ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Read bytes --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
@@ -36,7 +39,8 @@ esp_err_t bmp390_ll_get_rev_id(device_interface_t dev_iface, uint8_t *read_data)
     *read_data = 0;
 
     /* Read REV_ID register and check for errors */
-    if((dev_iface.read_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_REV_ID_RO_REG, read_data, 1) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+    if((dev_iface.read_bytes(dev_iface.iface_cfg, BMP390_REV_ID_RO_REG, read_data, 1, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+        ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Read bytes --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
@@ -47,7 +51,8 @@ esp_err_t bmp390_ll_err(device_interface_t dev_iface) {
     uint8_t err_reg = 0;
 
     /* Read ERR_REG register and check for errors */
-    if(dev_iface.read_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_ERR_REG_RO_REG, &err_reg, 1) != ESP_OK) {
+    if(dev_iface.read_bytes(dev_iface.iface_cfg, BMP390_ERR_REG_RO_REG, &err_reg, 1, dev_iface.iface_sel) != ESP_OK) {
+        ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Read bytes --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
@@ -73,7 +78,8 @@ esp_err_t bmp390_ll_cmd_rdy_status(device_interface_t dev_iface) {
     uint8_t status = 0;
 
     /* Read STATUS register and check for errors */
-    if((dev_iface.read_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_STATUS_RO_REG, &status, 1) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+    if((dev_iface.read_bytes(dev_iface.iface_cfg, BMP390_STATUS_RO_REG, &status, 1, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+        ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Read bytes --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
@@ -88,7 +94,8 @@ esp_err_t bmp390_ll_drdy_press_status(device_interface_t dev_iface) {
     uint8_t status = 0;
 
     /* Read STATUS register and check for errors */
-    if((dev_iface.read_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_STATUS_RO_REG, &status, 1) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+    if((dev_iface.read_bytes(dev_iface.iface_cfg, BMP390_STATUS_RO_REG, &status, 1, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+        ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Read bytes --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
@@ -103,7 +110,8 @@ esp_err_t bmp390_ll_drdy_temp_status(device_interface_t dev_iface) {
     uint8_t status = 0;
 
     /* Read STATUS register and check for errors */
-    if((dev_iface.read_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_STATUS_RO_REG, &status, 1) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+    if((dev_iface.read_bytes(dev_iface.iface_cfg, BMP390_STATUS_RO_REG, &status, 1, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+        ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Read bytes --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
     
@@ -118,7 +126,8 @@ int bmp390_ll_detect_soft_reset(device_interface_t dev_iface) {
     uint8_t event = 0;
 
     /* Read EVENT register and check for errors */
-    if((dev_iface.read_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_EVENT_RO_REG, &event, 1) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+    if((dev_iface.read_bytes(dev_iface.iface_cfg, BMP390_EVENT_RO_REG, &event, 1, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+        ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Read bytes --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
@@ -141,7 +150,8 @@ esp_err_t bmp390_ll_spi_en(device_interface_t dev_iface, bmp390_if_conf_reg_spi_
         uint8_t if_conf = 0;
 
         /* Read IF_CONF register content and check for errors */
-        if((dev_iface.read_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_IF_CONF_RW_REG, &if_conf, 1) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+        if((dev_iface.read_bytes(dev_iface.iface_cfg, BMP390_IF_CONF_RW_REG, &if_conf, 1, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+            ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Read bytes --> FAILED", __func__, __LINE__);
             return ESP_FAIL;
         }
 
@@ -149,11 +159,12 @@ esp_err_t bmp390_ll_spi_en(device_interface_t dev_iface, bmp390_if_conf_reg_spi_
         uint8_t new_if_conf = (if_conf & ~(1U << BMP390_IF_CONF_SPI3_BIT)) | (spi_mode << BMP390_IF_CONF_SPI3_BIT);
         
         /* Write new register value to IF_CONF register and check for errors */
-        if((dev_iface.write_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_IF_CONF_RW_REG, &new_if_conf, 1)) || (bmp390_ll_err(dev_iface))) {
+        if((dev_iface.write_bytes(dev_iface.iface_cfg, BMP390_IF_CONF_RW_REG, new_if_conf, dev_iface.iface_sel)) || (bmp390_ll_err(dev_iface))) {
+            ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Set SPI mode --> FAILED", __func__, __LINE__);
             return ESP_FAIL;
         }
 
-        ESP_LOGI(bmp390_ll_tag, "Set SPI mode --> OK");
+        ESP_LOGI(bmp390_ll_tag, "Set SPI mode <%s> --> OK", bmp390_get_spi_mode_name(spi_mode));
         return ESP_OK;
     }
 
@@ -174,7 +185,8 @@ esp_err_t bmp390_ll_i2c_en_wdt(device_interface_t dev_iface, bmp390_if_conf_reg_
         uint8_t if_conf = 0;
 
         /* Read IF_CONF register content and check for errors */
-        if((dev_iface.read_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_IF_CONF_RW_REG, &if_conf, 1) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+        if((dev_iface.read_bytes(dev_iface.iface_cfg, BMP390_IF_CONF_RW_REG, &if_conf, 1, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+            ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Read bytes --> FAILED", __func__, __LINE__);
             return ESP_FAIL;
         }
         
@@ -182,11 +194,12 @@ esp_err_t bmp390_ll_i2c_en_wdt(device_interface_t dev_iface, bmp390_if_conf_reg_
         uint8_t new_if_conf = (if_conf & ~((1U << BMP390_IF_CONF_I2C_WDT_EN_BIT) | (1U << BMP390_IF_CONF_I2C_WDT_SEL_BIT))) | ((1U << BMP390_IF_CONF_I2C_WDT_EN_BIT) | (i2c_wdt_tout << BMP390_IF_CONF_I2C_WDT_SEL_BIT));
         
         /* Write IF_CONF register and check for errors */
-        if((dev_iface.write_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_IF_CONF_RW_REG, &new_if_conf, 1) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+        if((dev_iface.write_bytes(dev_iface.iface_cfg, BMP390_IF_CONF_RW_REG, new_if_conf, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+            ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Enable and configure I2C watchdog timeout --> FAILED", __func__, __LINE__);
             return ESP_FAIL;
         }
 
-        ESP_LOGI(bmp390_ll_tag, "Enable and configure I2C watchdog timeout --> OK");
+        ESP_LOGI(bmp390_ll_tag, "Enable and configure I2C watchdog timeout <%s> --> OK", bmp390_get_i2c_wdt_tout_name(i2c_wdt_tout));
         return ESP_OK;
     }
 
@@ -207,7 +220,8 @@ esp_err_t bmp390_ll_i2c_dis_wdt(device_interface_t dev_iface) {
 
         /* Read IF_CONF register content and check for errors */
         uint8_t if_conf = 0;
-        if((dev_iface.read_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_IF_CONF_RW_REG, &if_conf, 1) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+        if((dev_iface.read_bytes(dev_iface.iface_cfg, BMP390_IF_CONF_RW_REG, &if_conf, 1, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+            ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Read bytes --> FAILED", __func__, __LINE__);
             return ESP_FAIL;
         }
         
@@ -215,11 +229,12 @@ esp_err_t bmp390_ll_i2c_dis_wdt(device_interface_t dev_iface) {
         uint8_t new_if_conf = (if_conf & ~(1U << BMP390_IF_CONF_I2C_WDT_EN_BIT)) | (BMP390_IF_CONF_I2C_WDT_DIS << BMP390_IF_CONF_I2C_WDT_EN_BIT);
         
         /* Write IF_CONF register and check for errors */
-        if((dev_iface.write_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_IF_CONF_RW_REG, &new_if_conf, 1) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+        if((dev_iface.write_bytes(dev_iface.iface_cfg, BMP390_IF_CONF_RW_REG, new_if_conf, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+            ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Disable I2C watchdog timeout --> FAILED", __func__, __LINE__);
             return ESP_FAIL;
         }
 
-        ESP_LOGI(bmp390_ll_tag, "Enable and configure I2C watchdog timeout --> OK");
+        ESP_LOGI(bmp390_ll_tag, "Disable I2C watchdog timeout --> OK");
         return ESP_OK;
     }
     
@@ -231,7 +246,8 @@ esp_err_t bmp390_ll_set_pwr_mode(device_interface_t dev_iface, bmp390_pwr_ctrl_m
     uint8_t pwr_ctrl = 0;
 
     /* Read PWR_CTRL register content and check for errors */
-    if((dev_iface.read_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_PWR_CTRL_RW_REG, &pwr_ctrl, 1) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+    if((dev_iface.read_bytes(dev_iface.iface_cfg, BMP390_PWR_CTRL_RW_REG, &pwr_ctrl, 1, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+        ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Read bytes --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
@@ -239,11 +255,12 @@ esp_err_t bmp390_ll_set_pwr_mode(device_interface_t dev_iface, bmp390_pwr_ctrl_m
     uint8_t mask = (pwr_ctrl & ~(0b11 << BMP390_PWR_CTRL_MODE_BITS)) | (pwr_mode << BMP390_PWR_CTRL_MODE_BITS);
 
     /* Write mask to PWR_CTRL register and check for errors */
-    if((dev_iface.write_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_PWR_CTRL_RW_REG, &mask, 1) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+    if((dev_iface.write_bytes(dev_iface.iface_cfg, BMP390_PWR_CTRL_RW_REG, mask, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+        ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Set power mode --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
-    ESP_LOGI(bmp390_ll_tag, "Set power mode --> OK");
+    ESP_LOGI(bmp390_ll_tag, "Set power mode <%s> --> OK", bmp390_get_pwr_mode_name(pwr_mode));
     return ESP_OK; 
 }
 
@@ -251,7 +268,8 @@ esp_err_t bmp390_ll_press_en(device_interface_t dev_iface) {
     uint8_t pwr_ctrl = 0;
 
     /* Read PWR_CTRL register content and check for errors */
-    if((dev_iface.read_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_PWR_CTRL_RW_REG, &pwr_ctrl, 1) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+    if((dev_iface.read_bytes(dev_iface.iface_cfg, BMP390_PWR_CTRL_RW_REG, &pwr_ctrl, 1, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+        ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Read bytes --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
@@ -259,7 +277,8 @@ esp_err_t bmp390_ll_press_en(device_interface_t dev_iface) {
     uint8_t mask = (pwr_ctrl & ~(1U << BMP390_PWR_CTRL_PRESS_EN_BIT)) | (BMP390_PWR_CTRL_PRESS_EN << BMP390_PWR_CTRL_PRESS_EN_BIT);
 
     /* Write mask to PWR_CTRL register and check for errors */
-    if((dev_iface.write_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_PWR_CTRL_RW_REG, &mask, 1) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+    if((dev_iface.write_bytes(dev_iface.iface_cfg, BMP390_PWR_CTRL_RW_REG, mask, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+        ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Enable pressure sensor --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
@@ -271,7 +290,8 @@ esp_err_t bmp390_ll_temp_en(device_interface_t dev_iface) {
     uint8_t pwr_ctrl = 0;
 
     /* Read PWR_CTRL register content and check for errors */
-    if((dev_iface.read_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_PWR_CTRL_RW_REG, &pwr_ctrl, 1) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+    if((dev_iface.read_bytes(dev_iface.iface_cfg, BMP390_PWR_CTRL_RW_REG, &pwr_ctrl, 1, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+        ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Read bytes --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
@@ -279,7 +299,8 @@ esp_err_t bmp390_ll_temp_en(device_interface_t dev_iface) {
     uint8_t mask = (pwr_ctrl & ~(1U << BMP390_PWR_CTRL_TEMP_EN_BIT)) | (BMP390_PWR_CTRL_TEMP_EN << BMP390_PWR_CTRL_TEMP_EN_BIT);
 
     /* Write mask to PWR_CTRL register and check for errors */
-    if((dev_iface.write_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_PWR_CTRL_RW_REG, &mask, 1) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+    if((dev_iface.write_bytes(dev_iface.iface_cfg, BMP390_PWR_CTRL_RW_REG, mask, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+        ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Enable temperature sensor --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
@@ -296,18 +317,20 @@ esp_err_t bmp390_ll_set_osr_press(device_interface_t dev_iface, bmp390_osr_press
     uint8_t osr = 0;
 
     /* Read OSR register content and check for errors */
-    if((dev_iface.read_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_OSR_RW_REG, &osr, 1) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+    if((dev_iface.read_bytes(dev_iface.iface_cfg, BMP390_OSR_RW_REG, &osr, 1, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+        ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Read bytes --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
     /* Clear bits[2:0] of OSR register and set oversampling rate for pressure measurements */
     uint8_t mask = (osr & ~(0b111 << BMP390_OSR_P_BITS)) | (osr_press << BMP390_OSR_P_BITS);
 
-    if((dev_iface.write_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_OSR_RW_REG, &mask, 1) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+    if((dev_iface.write_bytes(dev_iface.iface_cfg, BMP390_OSR_RW_REG, mask, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+        ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Set pressure oversampling rate --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
-    ESP_LOGI(bmp390_ll_tag, "Set pressure oversampling rate --> OK");
+    ESP_LOGI(bmp390_ll_tag, "Set pressure oversampling rate <%s> --> OK", bmp390_get_osr_press_name(osr_press));
     return ESP_OK;
 }
 
@@ -320,18 +343,20 @@ esp_err_t bmp390_ll_set_osr_temp(device_interface_t dev_iface, bmp390_osr_temp_t
     uint8_t osr = 0;
 
     /* Read OSR register content and check for errors */
-    if((dev_iface.read_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_OSR_RW_REG, &osr, 1) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+    if((dev_iface.read_bytes(dev_iface.iface_cfg, BMP390_OSR_RW_REG, &osr, 1, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+        ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Read bytes --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
     /* Clear bits[2:0] of OSR register and set oversampling rate for temperature measurements */
     uint8_t mask = (osr & ~(0b111 << BMP390_OSR_T_BITS)) | (osr_temp << BMP390_OSR_T_BITS);
 
-    if((dev_iface.write_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_OSR_RW_REG, &mask, 1) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+    if((dev_iface.write_bytes(dev_iface.iface_cfg, BMP390_OSR_RW_REG, mask, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+        ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Set temperature oversampling rate --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
-    ESP_LOGI(bmp390_ll_tag, "Set temperature oversampling rate --> OK");
+    ESP_LOGI(bmp390_ll_tag, "Set temperature oversampling rate <%s> --> OK", bmp390_get_osr_temp_name(osr_temp));
     return ESP_OK;
 }
 
@@ -344,18 +369,20 @@ esp_err_t bmp390_ll_set_odr(device_interface_t dev_iface, bmp390_odr_sel_t odr_s
     uint8_t odr = 0;
 
     /* Read ODR register content and check for errors */
-    if((dev_iface.read_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_ODR_RW_REG, &odr, 1) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+    if((dev_iface.read_bytes(dev_iface.iface_cfg, BMP390_ODR_RW_REG, &odr, 1, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+        ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Read bytes --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
     /* Clear bits[4:0] of ODR register and set output data rates */
     uint8_t mask = (odr & ~(0b1111 << BMP390_ODR_ODR_SEL_BITS)) | (odr_sel << BMP390_ODR_ODR_SEL_BITS);
 
-    if((dev_iface.write_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_ODR_RW_REG, &mask, 1) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+    if((dev_iface.write_bytes(dev_iface.iface_cfg, BMP390_ODR_RW_REG, mask, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+        ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Set output data rate --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
-    ESP_LOGI(bmp390_ll_tag, "Set output data rate --> OK");
+    ESP_LOGI(bmp390_ll_tag, "Set output data rate <%s> --> OK", bmp390_get_odr_sel_name(odr_sel));
     return ESP_OK;
 }
 
@@ -368,18 +395,20 @@ esp_err_t bmp390_ll_set_iir_coef(device_interface_t dev_iface, bmp390_config_coe
     uint8_t config = 0;
 
     /* Read CONFIG register content and check for errors */
-    if((dev_iface.read_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_CONFIG_RW_REG, &config, 1) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+    if((dev_iface.read_bytes(dev_iface.iface_cfg, BMP390_CONFIG_RW_REG, &config, 1, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+        ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Read bytes --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
     /* Clear bits[3:1] of CONFIG register and set IIR filter coefficient */
     uint8_t mask = (config & ~(0b111 << BMP390_CONFIG_IIR_BITS)) | (iir_coef << BMP390_CONFIG_IIR_BITS);
 
-    if((dev_iface.write_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_CONFIG_RW_REG, &mask, 1) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+    if((dev_iface.write_bytes(dev_iface.iface_cfg, BMP390_CONFIG_RW_REG, mask, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+        ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Set IIR filter coefficient --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
-    ESP_LOGI(bmp390_ll_tag, "Set IIR filter coefficient --> OK");
+    ESP_LOGI(bmp390_ll_tag, "Set IIR filter coefficient <%s> --> OK", bmp390_get_iir_coef_name(iir_coef));
     return ESP_OK;
 }
 
@@ -387,18 +416,20 @@ esp_err_t bmp390_ll_exec_cmd(device_interface_t dev_iface, bmp390_cmd_t cmd_sel)
     uint8_t cmd = 0;
 
     /* Read CMD register content and check for errors */
-    if((dev_iface.read_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_CMD_RW_REG, &cmd, 1) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+    if((dev_iface.read_bytes(dev_iface.iface_cfg, BMP390_CMD_RW_REG, &cmd, 1, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+        ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Read bytes --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
     /* Clear all bits[7:0] of CONFIG register and set cmd to be executed */
     uint8_t mask = (cmd & ~0b11111111) | cmd_sel;
 
-    if((dev_iface.write_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_CMD_RW_REG, &mask, 1) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+    if((dev_iface.write_bytes(dev_iface.iface_cfg, BMP390_CMD_RW_REG, mask, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+        ESP_LOGE(bmp390_ll_tag, "{Function <%s> in line %d}: Set CMD --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
 
-    ESP_LOGI(bmp390_ll_tag, "Set CMD --> OK");
+    ESP_LOGI(bmp390_ll_tag, "Execute CMD <%s> --> OK", bmp390_get_cmd_name(cmd_sel));
     return ESP_OK;
 }
 
@@ -414,7 +445,7 @@ esp_err_t bmp390_ll_read_raw_data(device_interface_t dev_iface, uint32_t *adc_te
     *adc_press = 0;
 
     /* Read DATA register content and check for errors */
-    if((dev_iface.read_bytes(dev_iface.iface_cfg, dev_iface.iface_sel, BMP390_DATA_0_RO_REG, data, 6) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
+    if((dev_iface.read_bytes(dev_iface.iface_cfg, BMP390_DATA_0_RO_REG, data, 6, dev_iface.iface_sel) != ESP_OK) || (bmp390_ll_err(dev_iface) != ESP_OK)) {
         return ESP_FAIL;
     }
     

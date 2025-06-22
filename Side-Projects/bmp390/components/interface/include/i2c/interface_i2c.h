@@ -7,18 +7,21 @@
 /**
  * @brief Initialize I2C interface
  * 
- * @param i2c_configs: I2C configs
+ * @param i2c_master_bus_configs: I2C master bus configs
+ * @param i2c_master_handler: I2C master bus handler
  * 
  * @retval
  *      - ESP_OK: Success
  *      - ESP_FAIL: Failed to initalize I2C master bus
  */
-esp_err_t i2c_init(void *i2c_configs);
+esp_err_t i2c_init_master_bus(i2c_master_bus_config_t *i2c_master_bus_configs, i2c_master_bus_handle_t *i2c_master_handler);
 
 /**
  * @brief Add new device to I2C bus
  * 
- * @param i2c_configs: I2C configs
+ * @param i2c_master_handler: I2C master bus handler
+ * @param dev_configs: I2C device configs
+ * @param dev_handler: Device I2C bus handler
  * @param iface_type: Device selected interface
  * 
  * @retval
@@ -26,7 +29,7 @@ esp_err_t i2c_init(void *i2c_configs);
  *      - ESP_ERR_INVALID_ARG: Device selected interface is not I2C
  *      - ESP_FAIL: Failed to add new device to I2C bus
  */
-esp_err_t i2c_add_new_device(void *i2c_configs, digital_interfaces_t iface_type);
+esp_err_t i2c_add_new_device(i2c_master_bus_handle_t i2c_master_handler, i2c_device_config_t *dev_configs, i2c_master_dev_handle_t *dev_handler, digital_interfaces_t iface_type);
 
 /**
  * @brief Read n bytes of <reg_addr> register and store its content in <read_data> buffer
