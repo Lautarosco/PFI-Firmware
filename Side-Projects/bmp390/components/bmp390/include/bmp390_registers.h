@@ -33,62 +33,93 @@
  */
 
 
-#define BMP390_CMD_RW_REG                   0x7E    /* Available commands */
-#define BMP390_CMD_NOP                      0x00    /* No command */
-#define BMP390_CMD_FIFO_FLUSH               0xB0    /* Clears all data in the FIFO, does not change FIFO_CONFIG registers */
-#define BMP390_CMD_SOFTRESET                0xB6    /* Triggers a reset, all user configuration settings are overwritten with their default state */
+/* =========== CMD =========== */
 
-#define BMP390_CONFIG_RW_REG                0x1F    /* IIR coefficients */
-#define BMP390_CONFIG_IIR_BITS              0x01    /* Bits[3:1] Filter coefficient for IIR filter */
-#define BMP390_CONFIG_COEF_0                0b000   /* Filter coefficient is 0 --> Bypass mode */
-#define BMP390_CONFIG_COEF_1                0b001   /* Filter coefficient is 1 */
-#define BMP390_CONFIG_COEF_3                0b010   /* Filter coefficient is 3 */
-#define BMP390_CONFIG_COEF_7                0b011   /* Filter coefficient is 7 */
-#define BMP390_CONFIG_COEF_15               0b100   /* Filter coefficient is 15 */
-#define BMP390_CONFIG_COEF_31               0b101   /* Filter coefficient is 31*/
-#define BMP390_CONFIG_COEF_63               0b110   /* Filter coefficient is 63 */
-#define BMP390_CONFIG_COEF_127              0b111   /* Filter coefficient is 127 */
+#define BMP390_CMD_RW_REG       0x7E    /* Available commands */
 
-#define BMP390_ODR_RW_REG                   0x1D    /* Set the configuration of the output data rates */
-#define BMP390_ODR_ODR_SEL_BITS             0x00    /* Bits[4:0], Subdivision factor for pressure and temperature measurements is 2^value */
-#define BMP390_ODR_SEL_200_HZ               0x00    /* ODR 200 Hz, sampling period of 5 ms */
-#define BMP390_ODR_SEL_100_HZ               0x01    /* ODR 100 Hz, sampling period of 10 ms */
-#define BMP390_ODR_SEL_50_HZ                0x02    /* ODR 50 Hz, sampling period of 20 ms */
-#define BMP390_ODR_SEL_25_HZ                0x03    /* ODR 25 Hz, sampling period of 40 ms */
-#define BMP390_ODR_SEL_12P5_HZ              0x04    /* ODR 25/2 Hz, sampling period of 80 ms */
-#define BMP390_ODR_SEL_6P25_HZ              0x05    /* ODR 25/4 Hz, sampling period of 160 ms */
-#define BMP390_ODR_SEL_3P1_HZ               0x06    /* ODR 25/8 Hz, sampling period of 320 ms */
-#define BMP390_ODR_SEL_1P5_HZ               0x07    /* ODR 25/16 Hz, sampling period of 640 ms */
-#define BMP390_ODR_SEL_0P78_HZ              0x08    /* ODR 25/32 Hz, sampling period of 1.28 s */
-#define BMP390_ODR_SEL_0P39_HZ              0x09    /* ODR 25/64 Hz, sampling period of 2.56 s */
-#define BMP390_ODR_SEL_0P2_HZ               0x0A    /* ODR 25/128 Hz, sampling period of 5.12 s */
-#define BMP390_ODR_SEL_0P1_HZ               0x0B    /* ODR 25/256 Hz, sampling period of 10.24 s */
-#define BMP390_ODR_SEL_0P05_HZ              0x0C    /* ODR 25/512 Hz, sampling period of 20.48 s */
-#define BMP390_ODR_SEL_0P02_HZ              0x0D    /* ODR 25/1024 Hz, sampling period of 40.96 s */
-#define BMP390_ODR_SEL_0P01_HZ              0x0E    /* ODR 25/2048 Hz, sampling period of 81.92 s */
-#define BMP390_ODR_SEL_0P006_HZ             0x0F    /* ODR 25/4096 Hz, sampling period of 163.84 s */
-#define BMP390_ODR_SEL_0P003_HZ             0x10    /* ODR 25/8192 Hz, sampling period of 327.68 s */
-#define BMP390_ODR_SEL_0P0015_HZ            0x11    /* ODR 25/16384 Hz, sampling period of 655.36 s */
+typedef enum bmp390_cmd {
+    BMP390_CMD_FIFO_FLUSH = 176,        /* Clears all data in the FIFO, does not change FIFO_CONFIG registers */
+    BMP390_CMD_SOFTRESET = 182          /* Triggers a reset, all user configuration settings are overwritten with their default state */
+} bmp390_cmd_t;
 
-#define BMP390_OSR_RW_REG                   0x1C    /* Controls the oversampling settings for pressure and temperature measurements */
-#define BMP390_OSR_P_BITS                   0x00    /* Bits[2:0], Oversampling setting pressure measurement */
-#define BMP390_OSR_P_X1                     0b000   /* No oversampling */
-#define BMP390_OSR_P_X2                     0b001   /* x2 oversampling */
-#define BMP390_OSR_P_X4                     0b010   /* x4 oversampling */
-#define BMP390_OSR_P_X8                     0b011   /* x8 oversampling */
-#define BMP390_OSR_P_X16                    0b100   /* x16 oversampling */
-#define BMP390_OSR_P_X32                    0b101   /* x32 oversampling */
-#define BMP390_OSR_T_BITS                   0x03    /* Bits[5:3], Oversampling setting temperature measurement */
-#define BMP390_OSR_T_X1                     0b000   /* No oversampling */
-#define BMP390_OSR_T_X2                     0b001   /* x2 oversampling */
-#define BMP390_OSR_T_X4                     0b010   /* x4 oversampling */
-#define BMP390_OSR_T_X8                     0b011   /* x8 oversampling */
-#define BMP390_OSR_T_X16                    0b100   /* x16 oversampling */
-#define BMP390_OSR_T_X32                    0b101   /* x32 oversampling */
+/* =========== CONFIG =========== */
+
+#define BMP390_CONFIG_RW_REG        0x1F    /* IIR coefficients */
+
+typedef enum bmp390_config_bit {
+    BMP390_CONFIG_IIR_BITS = 1      /* Bits[3:1] Filter coefficient for IIR filter */
+} bmp390_config_bit_t;
+
+typedef enum bmp390_config_coef {
+    BMP390_CONFIG_COEF_0,       /* Filter coefficient is 0 --> Bypass mode */
+    BMP390_CONFIG_COEF_1,       /* Filter coefficient is 1 */
+    BMP390_CONFIG_COEF_3,       /* Filter coefficient is 3 */
+    BMP390_CONFIG_COEF_7,       /* Filter coefficient is 7 */
+    BMP390_CONFIG_COEF_15,      /* Filter coefficient is 15 */
+    BMP390_CONFIG_COEF_31,      /* Filter coefficient is 31*/
+    BMP390_CONFIG_COEF_63,      /* Filter coefficient is 63 */
+    BMP390_CONFIG_COEF_127      /* Filter coefficient is 127 */
+} bmp390_config_coef_t;
+
+/* =========== ODR =========== */
+
+#define BMP390_ODR_RW_REG       0x1D    /* Set the configuration of the output data rates */
+
+typedef enum bmp390_odr_sel_bit {
+    BMP390_ODR_ODR_SEL_BITS     /* Bits[4:0], Subdivision factor for pressure and temperature measurements is 2^value */
+} bmp390_odr_sel_bit_t;
+
+typedef enum bmp390_odr_sel {
+    BMP390_ODR_SEL_200_HZ,      /* ODR 200 Hz, sampling period of 5 ms */
+    BMP390_ODR_SEL_100_HZ,      /* ODR 100 Hz, sampling period of 10 ms */
+    BMP390_ODR_SEL_50_HZ,       /* ODR 50 Hz, sampling period of 20 ms */
+    BMP390_ODR_SEL_25_HZ,       /* ODR 25 Hz, sampling period of 40 ms */
+    BMP390_ODR_SEL_12P5_HZ,     /* ODR 25/2 Hz, sampling period of 80 ms */
+    BMP390_ODR_SEL_6P25_HZ,     /* ODR 25/4 Hz, sampling period of 160 ms */
+    BMP390_ODR_SEL_3P1_HZ,      /* ODR 25/8 Hz, sampling period of 320 ms */
+    BMP390_ODR_SEL_1P5_HZ,      /* ODR 25/16 Hz, sampling period of 640 ms */
+    BMP390_ODR_SEL_0P78_HZ,     /* ODR 25/32 Hz, sampling period of 1.28 s */
+    BMP390_ODR_SEL_0P39_HZ,     /* ODR 25/64 Hz, sampling period of 2.56 s */
+    BMP390_ODR_SEL_0P2_HZ,      /* ODR 25/128 Hz, sampling period of 5.12 s */
+    BMP390_ODR_SEL_0P1_HZ,      /* ODR 25/256 Hz, sampling period of 10.24 s */
+    BMP390_ODR_SEL_0P05_HZ,     /* ODR 25/512 Hz, sampling period of 20.48 s */
+    BMP390_ODR_SEL_0P02_HZ,     /* ODR 25/1024 Hz, sampling period of 40.96 s */
+    BMP390_ODR_SEL_0P01_HZ,     /* ODR 25/2048 Hz, sampling period of 81.92 s */
+    BMP390_ODR_SEL_0P006_HZ,    /* ODR 25/4096 Hz, sampling period of 163.84 s */
+    BMP390_ODR_SEL_0P003_HZ,    /* ODR 25/8192 Hz, sampling period of 327.68 s */
+    BMP390_ODR_SEL_0P0015_HZ    /* ODR 25/16384 Hz, sampling period of 655.36 s */
+} bmp390_odr_sel_t;
+
+/* =========== OSR =========== */
+
+#define BMP390_OSR_RW_REG       0x1C    /* Controls the oversampling settings for pressure and temperature measurements */
+
+typedef enum bmp390_osr_bit {
+    BMP390_OSR_P_BITS,          /* Bits[2:0], Oversampling setting pressure measurement */
+    BMP390_OSR_T_BITS = 3       /* Bits[5:3], Oversampling setting temperature measurement */
+} bmp390_osr_bit_t;
+
+typedef enum bmp390_osr_press {
+    BMP390_OSR_P_X1,        /* No oversampling 16 bit / 2.64 Pa */
+    BMP390_OSR_P_X2,        /* x2 oversampling 17 bit / 1.32 Pa */
+    BMP390_OSR_P_X4,        /* x4 oversampling 18 bit / 0.66 Pa */
+    BMP390_OSR_P_X8,        /* x8 oversampling 19 bit / 0.33 Pa */
+    BMP390_OSR_P_X16,       /* x16 oversampling 20 bit / 0.17 Pa */
+    BMP390_OSR_P_X32        /* x32 oversampling 21 bit / 0.085 Pa */
+} bmp390_osr_press_t;
+
+typedef enum bmp390_osr_temp {
+    BMP390_OSR_T_X1,        /* No oversampling 16 bit / 0.005 °C */
+    BMP390_OSR_T_X2,        /* x2 oversampling 17 bit / 0.0025 °C */
+    BMP390_OSR_T_X4,        /* x4 oversampling 18 bit / 0.0012 °C */
+    BMP390_OSR_T_X8,        /* x8 oversampling 19 bit / 0.0006 °C */
+    BMP390_OSR_T_X16,       /* x16 oversampling 20 bit / 0.0003 °C */
+    BMP390_OSR_T_X32        /* x32 oversampling 21 bit / 0.00015 °C */
+} bmp390_osr_temp_t;
 
 /* =========== PWR_CTRL =========== */
 
-#define BMP390_PWR_CTRL_RW_REG              0x1B    /* Enables or disables pressure and temperature measurements and set power mode */
+#define BMP390_PWR_CTRL_RW_REG      0x1B    /* Enables or disables pressure and temperature measurements and set power mode */
 
 typedef enum bmp390_pwr_ctrl_bit {
 BMP390_PWR_CTRL_PRESS_EN_BIT,           /* Bit 0, Enable or disable pressure sensor. 0: Disable pressure sensor, 1: Enable pressure sensor */
@@ -217,5 +248,29 @@ typedef enum bmp390_err_reg_bit {
 /* =========== CHIP_ID =========== */
 
 #define BMP390_CHIP_ID_RO_REG               0x00    /* Chip identification code */
+
+/* =========== CALIBRATION_DATA =========== */
+
+#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P11_SIGN                 0x45    /* signed */
+#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P10_SIGN                 0x44    /* signed */
+#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P9_MSB_SIGN              0x43    /* signed */
+#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P9_LSB_SIGN              0x42    /* signed */
+#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P8_SIGN                  0x41    /* signed */
+#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P7_SIGN                  0x40    /* signed */
+#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P6_MSB_UNSIGN            0x3F    /* unsigned */
+#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P6_LSB_UNSIGN            0x3E    /* unsigned */
+#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P5_MSB_UNSIGN            0x3D    /* unsigned */
+#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P5_LSB_UNSIGN            0x3C    /* unsigned */
+#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P4_SIGN                  0x3B    /* signed */
+#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P3_SIGN                  0x3A    /* signed */
+#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P2_MSB_SIGN              0x39    /* signed */
+#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P2_LSB_SIGN              0x38    /* signed */
+#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P1_MSB_SIGN              0x37    /* signed */
+#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P1_LSB_SIGN              0x36    /* signed */
+#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_T3_SIGN                  0x35    /* signed */
+#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_T2_MSB_UNSIGN            0x34    /* unsigned */
+#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_T2_LSB_UNSIGN            0x33    /* unsigned */
+#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_T1_MSB_UNSIGN            0x32    /* unsigned */
+#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_T1_LSB_UNSIGN            0x31    /* unsigned */
 
 #endif

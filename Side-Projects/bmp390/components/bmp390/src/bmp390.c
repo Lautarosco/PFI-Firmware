@@ -1,7 +1,66 @@
 #include <stdio.h>
-#include "bmp390.h"
+#include <bmp390.h>
 
-void func(void)
-{
+#include <bmp390_ll_api.h>
 
+#include <string.h>
+
+/* =========== Private functions =========== */
+
+static esp_err_t bmp390_hal_init(bmp390_t *bmp, device_interface_t *dev_iface, bmp390_configs_t bmp_settings) {
+    /* 1. Reset device to default settings */
+    if(bmp390_ll_exec_cmd(*dev_iface, BMP390_CMD_SOFTRESET) != ESP_OK) {
+        return ESP_FAIL;
+    }
+
+    /* 2. Wait until device is successfully reseted */
+    while(!bmp390_ll_detect_soft_reset(*dev_iface));
+
+    /* 3. Configure interface */
+    if(bmp_settings.i2c_wdt_en) {
+        if(bmp390_ll_i2c_en_wdt(*dev_iface, bmp_settings.i2c_wdt_tout) != ESP_OK) {
+            return ESP_FAIL;
+        }
+    }
+
+    /* 4. Set power mode */
+    if(bmp390_ll_set_pwr_mode(*dev_iface, bmp_settings.pwr_mode)) {
+        return ESP_FAIL;
+    }
+
+    /* . Enable pressure sensor and set its resolution */
+    if(bmp_settings.press_en) {
+        if((bmp390_ll_press_en(*dev_iface) != ESP_OK) || (bmp390_ll_set_osr_press(*dev_iface, bmp_settings.osr_press) != ESP_OK)) {
+            return ESP_FAIL;
+        }
+    }
+
+    /* . Enable pressure sensor and set its resolution */
+    if(bmp_settings.temp_en) {
+        if((bmp390_ll_temp_en(*dev_iface) != ESP_OK) || (bmp390_ll_set_osr_temp(*dev_iface, bmp_settings.osr_temp) != ESP_OK)) {
+            return ESP_FAIL;
+        }
+    }
+
+    /* 7. Set BMP390 internal IIR filter coefficient */
+    if(bmp390_ll_set_iir_coef(*dev_iface, bmp_settings.iir_coef) != ESP_OK) {
+        return ESP_FAIL;
+    }
+
+    /* 8. Set sampling frequency in Hz */
+    if(bmp390_ll_set_odr(*dev_iface, bmp_settings.odr_sel) != ESP_OK) {
+        return ESP_FAIL;
+    }
+
+    return ESP_OK;
+}
+
+/* =========== Public functions =========== */
+
+void Bmp390(bmp390_t *bmp) {
+    /* 1. Initialize all attributes to 0 */
+    memset(bmp, 0, sizeof(bmp390_t));
+
+    /* 2. Assign pointer to functions (methods of the Bmp390 Class) */
+    bmp->bmp390_hal_init = bmp390_hal_init;
 }

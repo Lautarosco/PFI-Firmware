@@ -3,17 +3,7 @@
 
 #include <esp_err.h>
 #include <stdint.h>
-
-typedef enum digital_interfaces {
-    /* No interface was selected */
-    NONE,
-
-    /* I2C interface */
-    I2C,
-
-    /* SPI interface */
-    SPI
-} digital_interfaces_t;
+#include <interface_types.h>
 
 typedef struct device_interface {
     /**
@@ -48,7 +38,7 @@ typedef struct device_interface {
      */
     esp_err_t (*write_bytes)(void *iface_cfg, digital_interfaces_t iface_sel, uint8_t reg_addr, uint8_t *write_data, int n_bytes);
     
-    /* Settings of selected interface --> Everything needed for the selected interface to work should be added here */
+    /* Settings of selected interface --> Here it should be added a struct with everything needed for the selected interface to work */
     void *iface_cfg;
 
     /* Type of interface */
