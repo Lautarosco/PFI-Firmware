@@ -14,9 +14,10 @@ void app_main(void)
     bmp390_t bmp;
     Bmp390(&bmp);
 
-    /* 2. Set I2C master configs */
+    /* 2.a Set I2C master bus handler */
     i2c_master_bus_handle_t i2c_master_handler = NULL;      /* I2C master bus handler */
 
+    /* 2.b Set I2C master bus configs */
     i2c_master_custom_t i2c_master = {
         .i2c_master_handler = &i2c_master_handler,
         .i2c_master_configs = {
@@ -29,9 +30,10 @@ void app_main(void)
         }
     };
 
-    /* 3. Set I2C device configs */
+    /* 3.a Set I2C device bus handler */
     i2c_master_dev_handle_t i2c_bmp_handler = NULL;         /* I2C BMP390 bus handler */
 
+    /* 3.b Set I2C BMP390 bus configs */
     i2c_dev_custom_t i2c_bmp = {
         .i2c_dev_handler = &i2c_bmp_handler,
         .i2c_dev_configs = {
@@ -43,6 +45,7 @@ void app_main(void)
         }
     };
 
+    /* 3.c Define I2C BMP390 interface settings */
     device_interface_t bmp_iface = {
         .dev_cfg     = &i2c_bmp,
         .master_cfg  = &i2c_master,
@@ -51,8 +54,8 @@ void app_main(void)
         .write_bytes = i2c_write_byte
     };
 
-
-    bmp390_configs_t bmp_configs = {
+    /* 4. Define BMP390 modes of operation */
+    bmp390_configs_t bmp_modes = {
         .i2c_wdt_en   = BMP390_IF_CONF_I2C_WDT_EN,
         .i2c_wdt_tout = BMP390_IF_CONF_I2C_WDT_SEL_1250US,
         .iir_coef     = BMP390_CONFIG_COEF_3,
@@ -64,12 +67,12 @@ void app_main(void)
         .pwr_mode     = BMP390_PWR_CTRL_NORMAL_MODE
     };
 
-    /* 3. Initialize I2C master bus */
+    /* 5. Initialize I2C master bus */
     i2c_init_master_bus(&(i2c_master.i2c_master_configs), &i2c_master_handler);
 
-    /* 4. Add BMP390 to I2C bus */
+    /* 6. Add BMP390 to I2C bus */
     i2c_add_new_device(i2c_master_handler, &(i2c_bmp.i2c_dev_configs), &i2c_bmp_handler, bmp_iface.iface_sel);
 
-    /* 5. Initialize BMP390 sensor */
-    bmp.init(&bmp, &bmp_iface, bmp_configs);
+    /* 7. Initialize BMP390 sensor */
+    bmp.init(&bmp, &bmp_iface, bmp_modes);
 }
