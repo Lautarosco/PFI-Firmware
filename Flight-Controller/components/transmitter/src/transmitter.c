@@ -686,24 +686,36 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
         ESP_LOGI( TRANSMITTER_TAG, "Initializing Transmitter object..." );
 
         /* Initialize No Volatile System partition */
+        ESP_LOGI( TRANSMITTER_TAG, "nvs_flash_init\n" );
         ESP_ERROR_CHECK( nvs_flash_init() );
 
         /* Initialize network interface */
+        ESP_LOGI( TRANSMITTER_TAG, "esp_netif_init\n" );
         ESP_ERROR_CHECK( esp_netif_init() );
 
         /* Initialize event loop to catch HTTP related events */
+        ESP_LOGI( TRANSMITTER_TAG, "esp_event_loop_create_default\n" );
         ESP_ERROR_CHECK( esp_event_loop_create_default() );
 
         /* Create default WiFi AP network interface */
+        ESP_LOGI( TRANSMITTER_TAG, "esp_netif_create_default_wifi_ap\n" );
         esp_netif_create_default_wifi_ap();
 
         /* Set up the SoftAP */
+        ESP_LOGI( TRANSMITTER_TAG, "wifi_init_softap\n" );
+
+        ESP_LOGI("MEM", "Free heap: %lu", esp_get_free_heap_size());
+        ESP_LOGI("MEM", "Minimum free heap: %lu", esp_get_minimum_free_heap_size());
+
+
         wifi_init_softap();
 
         /* Start HTTP server */
+        ESP_LOGI( TRANSMITTER_TAG, "start_webserver\n" );
         start_webserver();
 
         /* Initialize Bluetooth interface */
+        ESP_LOGI( TRANSMITTER_TAG, "bluetooth_init\n" );
         bluetooth_init();
 
         ESP_LOGI( TRANSMITTER_TAG, "Transmitter object initialized" );

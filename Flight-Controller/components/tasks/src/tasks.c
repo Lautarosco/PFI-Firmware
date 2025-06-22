@@ -147,15 +147,19 @@ void vTaskStateMachine_Run( void * pvParameters ) {
 
 void vTaskDroneMeasure( void * pvParameters ) {
 
+    printf("Entering vTaskDroneMeasure\n");
     /* Cast parameter into Drone object */
     drone_t * obj = ( drone_t * ) pvParameters;
+    printf("Casted drone object\n");
+    printf("init_ok: ");
+    printf("%d\n", obj->attributes.init_ok);
     
     while( 1 ) {
 
-        /* Measure attitude and update bmi sensor internal registers with respective values */
-        obj->attributes.components.bmi.measure( &( obj->attributes.components.bmi ) );
-
         if (obj->attributes.init_ok) {
+            /* Measure attitude and update bmi sensor internal registers with respective values */
+            obj->attributes.components.bmi.measure( &( obj->attributes.components.bmi ) );
+
             /* Update drone states */
             obj->methods.update_states( obj, 10 );
 
@@ -166,8 +170,9 @@ void vTaskDroneMeasure( void * pvParameters ) {
             obj->attributes.sp.z = 0;
         }
 
-        vTaskDelay( pdMS_TO_TICKS( 10 ) );
     }
+    vTaskDelay( pdMS_TO_TICKS( 10 ) );
+
 }
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */

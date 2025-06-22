@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <mma.h>
 #include <esp_log.h>
 
@@ -111,7 +112,7 @@ static void mma_init( mma_t * obj, float upper_limit, float lower_limit ) {
 void Mma( mma_t* mma ) {
 
     ESP_LOGI( MMA_TAG, "Making an instance of Mma Class..." );
-
+    memset( mma, 0, sizeof( mma_t ) );
     /* Default values for Mma Class attributes */
     for (int i = 0; i < ( ( sizeof( mma->input ) )  / ( sizeof( mma->input[ 0 ] ) ) ); i++) { mma->input[ i ]   = 0; }
     for (int i = 0; i < ( ( sizeof( mma->output ) ) / ( sizeof( mma->output[ 0 ] ) ) ); i++) { mma->output[ i ] = 0; }

@@ -175,6 +175,7 @@ static void Kalman( drone_t * obj, float ts_ms ) {
 static bool i2c_scan( void ) {
 
     bool found = false;
+    printf("Entered i2c_scan function\n");
     for( uint8_t address = 1; address < 127; address++ ) {
 
         i2c_cmd_handle_t cmd = i2c_cmd_link_create();
@@ -560,7 +561,8 @@ void Drone( drone_t * drone ) {
     ESP_LOGI( DRONE_TAG, "Making an instance of Drone Class..." );
 
     memset( drone, 0, sizeof( drone_t ) );
-
+    drone->attributes.init_ok = false;
+    
     /* Set Drone Class generic configs */
     drone->attributes.config = GetDroneConfigs();  // este GetDroneConfig está bien porque es el único que se tiene que usar
 
@@ -629,7 +631,7 @@ void Drone( drone_t * drone ) {
     // printf( "Upper limit ( after ): %.2f\r\n", drone->attributes.config.mma_out_limits.upper );
     // drone->attributes.config.mma_out_limits.lower = get_csv_row( csv_rows, n_rows, "lower_limit" ).var_value;
 
-
+    
 
     /* Make an instance of Bmi160 Class */
     #ifndef IGNORE_BMI
@@ -639,6 +641,7 @@ void Drone( drone_t * drone ) {
         drone->attributes.config.imu_cfg.imu_i2c_cfg.scl
     );
 
+    ESP_LOGI( DRONE_TAG, "BMI160 Init successful\n");
 
     /* Check if all devices are connected to i2c bus */
     if( !drone->methods.i2c_scan() ) {
@@ -647,6 +650,7 @@ void Drone( drone_t * drone ) {
         while( !found )
         {
             if( drone->methods.i2c_scan() ) {
+                ESP_LOGI( DRONE_TAG, "BMI160 found\n");
                 found = true;
                 break;
             }
@@ -657,26 +661,23 @@ void Drone( drone_t * drone ) {
     #endif
 
     /* Make an instance of Mma Class */
-    mma_t mma;
-    Mma(&mma);
-    drone->attributes.components.mma = mma;
-    
+
+    Mma(&drone->attributes.components.mma);
+    ESP_LOGI( DRONE_TAG, "MMA Init successful\n");
+
     /* Make an instance of Pid Class for all controllers */
     for(int i = 0; i < ( ( sizeof( drone->attributes.components.controllers ) ) / ( sizeof( drone->attributes.components.controllers[ 0 ] ) ) ); i++) {
         Pid( &drone->attributes.components.controllers[ i ], P_Basic, I_BackCalc, D_Basic );
     }
-
+    ESP_LOGI( DRONE_TAG, "PID controllers Init successful\n");
     /* Make an instance of Pwm Class for all pwm signals */
     for(int i = 0; i < ( sizeof( drone->attributes.components.pwm ) / sizeof( drone->attributes.components.pwm[ 0 ] ) ); i++) {
         Pwm(&drone->attributes.components.pwm[ i ], i);
     }
-    
+    ESP_LOGI( DRONE_TAG, "PWM signals Init successful\n");
     /* Make an instance of Transmitter Class */
-    transmitter_t Tx;
-    Transmitter( &Tx, &( drone->attributes.global_variables ) );
-    drone->attributes.components.Tx = Tx;
+    Transmitter( &drone->attributes.components.Tx, &( drone->attributes.global_variables ) );
 
-    ESP_LOGI( DRONE_TAG, "Instance succesfully made" );
 
     #if PLAYSTATION_TX & WEBSV_TX
         ESP_LOGE( DRONE_TAG, "Multiple transmitters can't be used simmultaneously. See transmitter_structs.h header file" );
@@ -698,7 +699,7 @@ void Drone( drone_t * drone ) {
         esp_restart();
 
     #endif
-
+    ESP_LOGI( DRONE_TAG, "Transmitter object initialized\n" );
 
     /* =============== START Global variables assignment =============== */
 
@@ -760,6 +761,8 @@ void Drone( drone_t * drone ) {
     gpio_set_level( GPIO_NUM_2, false );
     vTaskDelay( pdMS_TO_TICKS( 1000 ) );
     gpio_set_level( GPIO_NUM_2, true );
+
+    ESP_LOGI( DRONE_TAG, "Instance succesfully made" );
 
 }
 

@@ -333,7 +333,7 @@ void Pid(pid_controller_t * controller ,ControllerFunction * pFunc, ControllerFu
     ESP_LOGI( CONTROLLER_TAG, "Making an instance of Pid Class..." );
 
     /* Set default attributes values in 0 */
-    memset( controller, 0, sizeof( * controller ) );
+    memset( controller, 0, sizeof( pid_controller_t ) );
 
     /* Pointer assignment to Pid Class functions ( methods ) */
     controller->init          = pid_init;
