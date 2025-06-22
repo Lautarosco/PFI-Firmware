@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <bmp390.h>
+#include <hal/bmp390_hal_api.h>
 
 #include <i2c/interface_i2c.h>      /* I2C custom driver */
 

@@ -1,7 +1,7 @@
 #include <stdio.h>
-#include <bmp390.h>
+#include <hal/bmp390_hal_api.h>
 
-#include <bmp390_ll_api.h>
+#include <ll/bmp390_ll_api.h>
 
 #include <string.h>
 #include <esp_log.h>

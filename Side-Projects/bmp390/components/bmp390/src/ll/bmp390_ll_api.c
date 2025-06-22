@@ -1,7 +1,7 @@
-#include <bmp390_ll_api.h>
-#include <bmp390_registers.h>
+#include <ll/bmp390_ll_api.h>
+#include <ll/bmp390_registers.h>
 
-#include <bmp390_modes_names.h>
+#include <ll/bmp390_modes_names.h>
 
 #include <esp_err.h>
 #include <esp_log.h>
