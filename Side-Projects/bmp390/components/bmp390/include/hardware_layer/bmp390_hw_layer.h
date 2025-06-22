@@ -1,9 +1,9 @@
-#ifndef BMP390_LL_API_H
-#define BMP390_LL_API_H
+#ifndef BMP390_HW_LAYER_H
+#define BMP390_HW_LAYER_H
 
 #include <stdbool.h>
 #include <esp_err.h>
-#include <ll/bmp390_registers.h>
+#include <hardware_layer/bmp390_registers.h>
 
 typedef struct device_interface device_interface_t;
 
@@ -18,7 +18,7 @@ typedef struct device_interface device_interface_t;
  *      -   ESP_ERR_INVALID_ARG: <read_data> parameter is NULL
  *      -   ESP_FAIL: If read operation fails or errors exist
  */
-esp_err_t bmp390_ll_get_chip_id(device_interface_t dev_iface, uint8_t *read_data);
+esp_err_t bmp390_hwl_get_chip_id(device_interface_t dev_iface, uint8_t *read_data);
 
 /**
  * @brief Read mask revision of the ASIC and store it in <read_data> buffer
@@ -31,7 +31,7 @@ esp_err_t bmp390_ll_get_chip_id(device_interface_t dev_iface, uint8_t *read_data
  *      -   ESP_ERR_INVALID_ARG: <read_data> parameter is NULL
  *      -   ESP_FAIL: If read operation fails or errors exist
  */
-esp_err_t bmp390_ll_get_rev_id(device_interface_t dev_iface, uint8_t *read_data);
+esp_err_t bmp390_hwl_get_rev_id(device_interface_t dev_iface, uint8_t *read_data);
 
 /**
  * @brief Check sensor error conditions
@@ -42,7 +42,7 @@ esp_err_t bmp390_ll_get_rev_id(device_interface_t dev_iface, uint8_t *read_data)
  *      -   ESP_OK: If no errors occurred
  *      -   ESP_FAIL: Errors exist
  */
-esp_err_t bmp390_ll_err(device_interface_t dev_iface);
+esp_err_t bmp390_hwl_err(device_interface_t dev_iface);
 
 
 /**
@@ -55,7 +55,7 @@ esp_err_t bmp390_ll_err(device_interface_t dev_iface);
  *      -   ESP_ERR_NOT_FINISHED: Command in progress
  *      -   ESP_FAIL: If read operation fails or errors exist
  */
-esp_err_t bmp390_ll_cmd_rdy_status(device_interface_t dev_iface);
+esp_err_t bmp390_hwl_cmd_rdy_status(device_interface_t dev_iface);
 
 /**
  * @brief Check if pressure data is ready
@@ -67,7 +67,7 @@ esp_err_t bmp390_ll_cmd_rdy_status(device_interface_t dev_iface);
  *      -   ESP_ERR_NOT_FINISHED: Pressure data is not ready
  *      -   ESP_FAIL: If read operation fails or errors exist
  */
-esp_err_t bmp390_ll_drdy_press_status(device_interface_t dev_iface);
+esp_err_t bmp390_hwl_drdy_press_status(device_interface_t dev_iface);
 
 /**
  * @brief Check if temperature data is ready
@@ -79,7 +79,7 @@ esp_err_t bmp390_ll_drdy_press_status(device_interface_t dev_iface);
  *      -   ESP_ERR_NOT_FINISHED: Temperature data is not ready
  *      -   ESP_FAIL: If read operation fails or errors exist
  */
-esp_err_t bmp390_ll_drdy_temp_status(device_interface_t dev_iface);
+esp_err_t bmp390_hwl_drdy_temp_status(device_interface_t dev_iface);
 
 /**
  * @brief Check if device was powered up or soft reseted (Cleared on read)
@@ -91,7 +91,7 @@ esp_err_t bmp390_ll_drdy_temp_status(device_interface_t dev_iface);
  *      -   0: Shut down or still reseting
  *      -  (-1): If read operation fails or errors exist
  */
-int bmp390_ll_detect_soft_reset(device_interface_t dev_iface);
+int bmp390_hwl_detect_soft_reset(device_interface_t dev_iface);
 
 /**
  * @brief Enable SPI interface
@@ -103,7 +103,7 @@ int bmp390_ll_detect_soft_reset(device_interface_t dev_iface);
  *      -   ESP_ERR_INVALID_ARG: No interface selected
  *      -   ESP_FAIL: If read operation fails or errors exist
  */
-esp_err_t bmp390_ll_spi_en(device_interface_t dev_iface, bmp390_if_conf_reg_spi_t spi_mode);
+esp_err_t bmp390_hwl_spi_en(device_interface_t dev_iface, bmp390_if_conf_reg_spi_t spi_mode);
 
 /**
  * @brief Enable I2C watchdog timeout
@@ -116,7 +116,7 @@ esp_err_t bmp390_ll_spi_en(device_interface_t dev_iface, bmp390_if_conf_reg_spi_
  *      -   ESP_ERR_INVALID_ARG: No interface selected
  *      -   ESP_FAIL: If read operation fails or errors exist
  */
-esp_err_t bmp390_ll_i2c_en_wdt(device_interface_t dev_iface, bmp390_if_conf_reg_i2c_wdt_tout_t i2c_wdt_tout);
+esp_err_t bmp390_hwl_i2c_en_wdt(device_interface_t dev_iface, bmp390_if_conf_reg_i2c_wdt_tout_t i2c_wdt_tout);
 
 /**
  * @brief Disable I2C watchdog timeout
@@ -129,7 +129,7 @@ esp_err_t bmp390_ll_i2c_en_wdt(device_interface_t dev_iface, bmp390_if_conf_reg_
  *      -   ESP_ERR_INVALID_ARG: No interface selected
  *      -   ESP_FAIL: If read operation fails or errors exist
  */
-esp_err_t bmp390_ll_i2c_dis_wdt(device_interface_t dev_iface);
+esp_err_t bmp390_hwl_i2c_dis_wdt(device_interface_t dev_iface);
 
 /**
  * @brief Set power mode
@@ -141,7 +141,7 @@ esp_err_t bmp390_ll_i2c_dis_wdt(device_interface_t dev_iface);
  *      -   ESP_OK: Power mode setted successfully
  *      -   ESP_FAIL: If read operation fails or errors exist
  */
-esp_err_t bmp390_ll_set_pwr_mode(device_interface_t dev_iface, bmp390_pwr_ctrl_mode_t pwr_mode);
+esp_err_t bmp390_hwl_set_pwr_mode(device_interface_t dev_iface, bmp390_pwr_ctrl_mode_t pwr_mode);
 
 /**
  * @brief Enable pressure sensor
@@ -152,7 +152,7 @@ esp_err_t bmp390_ll_set_pwr_mode(device_interface_t dev_iface, bmp390_pwr_ctrl_m
  *      -   ESP_OK: Pressure sensor successfully enabled
  *      -   ESP_FAIL: If read operation fails or errors exist
  */
-esp_err_t bmp390_ll_press_en(device_interface_t dev_iface);
+esp_err_t bmp390_hwl_press_en(device_interface_t dev_iface);
 
 /**
  * @brief Enable temperature sensor
@@ -163,7 +163,7 @@ esp_err_t bmp390_ll_press_en(device_interface_t dev_iface);
  *      -   ESP_OK: Temperature sensor successfully enabled
  *      -   ESP_FAIL: If read operation fails or errors exist
  */
-esp_err_t bmp390_ll_temp_en(device_interface_t dev_iface);
+esp_err_t bmp390_hwl_temp_en(device_interface_t dev_iface);
 
 /**
  * @brief Set pressure resolution
@@ -176,7 +176,7 @@ esp_err_t bmp390_ll_temp_en(device_interface_t dev_iface);
  *      -   ESP_FAIL: If read operation fails or errors exist
  *      -   ESP_ERR_INVALID_ARG: Invalid <osr_press> parameter
  */
-esp_err_t bmp390_ll_set_osr_press(device_interface_t dev_iface, bmp390_osr_press_t osr_press);
+esp_err_t bmp390_hwl_set_osr_press(device_interface_t dev_iface, bmp390_osr_press_t osr_press);
 
 /**
  * @brief Set temperature resolution
@@ -189,7 +189,7 @@ esp_err_t bmp390_ll_set_osr_press(device_interface_t dev_iface, bmp390_osr_press
  *      -   ESP_FAIL: If read operation fails or errors exist
  *      -   ESP_ERR_INVALID_ARG: Invalid <osr_temp> parameter
  */
-esp_err_t bmp390_ll_set_osr_temp(device_interface_t dev_iface, bmp390_osr_temp_t osr_temp);
+esp_err_t bmp390_hwl_set_osr_temp(device_interface_t dev_iface, bmp390_osr_temp_t osr_temp);
 
 /**
  * @brief Set output rate
@@ -202,7 +202,7 @@ esp_err_t bmp390_ll_set_osr_temp(device_interface_t dev_iface, bmp390_osr_temp_t
  *      -   ESP_FAIL: If read operation fails or errors exist
  *      -   ESP_ERR_INVALID_ARG: Invalid <odr_sel> parameter
  */
-esp_err_t bmp390_ll_set_odr(device_interface_t dev_iface, bmp390_odr_sel_t odr_sel);
+esp_err_t bmp390_hwl_set_odr(device_interface_t dev_iface, bmp390_odr_sel_t odr_sel);
 
 /**
  * @brief Set IIR filter coefficient
@@ -215,7 +215,7 @@ esp_err_t bmp390_ll_set_odr(device_interface_t dev_iface, bmp390_odr_sel_t odr_s
  *      -   ESP_FAIL: If read operation fails or errors exist
  *      -   ESP_ERR_INVALID_ARG: Invalid <iir_coef> parameter
  */
-esp_err_t bmp390_ll_set_iir_coef(device_interface_t dev_iface, bmp390_config_coef_t iir_coef);
+esp_err_t bmp390_hwl_set_iir_coef(device_interface_t dev_iface, bmp390_config_coef_t iir_coef);
 
 /**
  * @brief Execute a command from the sensor available commands
@@ -227,7 +227,7 @@ esp_err_t bmp390_ll_set_iir_coef(device_interface_t dev_iface, bmp390_config_coe
  *      -   ESP_OK: Set command success
  *      -   ESP_FAIL: If read operation fails or errors exist
  */
-esp_err_t bmp390_ll_exec_cmd(device_interface_t dev_iface, bmp390_cmd_t cmd_sel);
+esp_err_t bmp390_hwl_exec_cmd(device_interface_t dev_iface, bmp390_cmd_t cmd_sel);
 
 /**
  * @brief Perform a burst read from press_xlsb to temp_msb (6 bytes in a row)
@@ -241,6 +241,6 @@ esp_err_t bmp390_ll_exec_cmd(device_interface_t dev_iface, bmp390_cmd_t cmd_sel)
  *      -   ESP_FAIL: If read operation fails or errors exist
  *      -   ESP_ERR_INVALID_ARG: Pointers are NULL
  */
-esp_err_t bmp390_ll_read_raw_data(device_interface_t dev_iface, uint32_t *adc_temp, uint32_t *adc_press);
+esp_err_t bmp390_hwl_read_raw_data(device_interface_t dev_iface, uint32_t *adc_temp, uint32_t *adc_press);
 
 #endif

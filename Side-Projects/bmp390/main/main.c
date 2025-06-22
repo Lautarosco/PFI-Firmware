@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <hal/bmp390_hal_api.h>
+#include <application_layer/bmp390_app_layer.h>
 
 #include <i2c/interface_i2c.h>      /* I2C custom driver */
 
@@ -14,19 +14,10 @@ void app_main(void)
     bmp390_t bmp;
     Bmp390(&bmp);
 
-    /* 2. Set I2C configs for master and device (BMP390) */
+    /* 2. Set I2C master configs */
     i2c_master_bus_handle_t i2c_master_handler = NULL;      /* I2C master bus handler */
-    i2c_master_dev_handle_t i2c_bmp_handler = NULL;         /* I2C BMP390 bus handler */
 
-    i2c_custom_t i2c_configs = {
-        .i2c_dev_handler = &i2c_bmp_handler,
-        .i2c_dev_configs = {
-            .device_address          = BMP390_ADDR,
-            .dev_addr_length         = I2C_ADDR_BIT_LEN_7,
-            .scl_speed_hz            = BMP390_I2C_SCL_F_HZ,
-            .flags.disable_ack_check = false,
-            .scl_wait_us             = BMP390_IF_CONF_I2C_WDT_SEL_1250US
-        },
+    i2c_master_custom_t i2c_master = {
         .i2c_master_handler = &i2c_master_handler,
         .i2c_master_configs = {
             .clk_source                   = I2C_CLK_SRC_APB,
@@ -38,8 +29,23 @@ void app_main(void)
         }
     };
 
+    /* 3. Set I2C device configs */
+    i2c_master_dev_handle_t i2c_bmp_handler = NULL;         /* I2C BMP390 bus handler */
+
+    i2c_dev_custom_t i2c_bmp = {
+        .i2c_dev_handler = &i2c_bmp_handler,
+        .i2c_dev_configs = {
+            .device_address          = BMP390_ADDR,
+            .dev_addr_length         = I2C_ADDR_BIT_LEN_7,
+            .scl_speed_hz            = BMP390_I2C_SCL_F_HZ,
+            .flags.disable_ack_check = false,
+            .scl_wait_us             = BMP390_IF_CONF_I2C_WDT_SEL_1250US
+        }
+    };
+
     device_interface_t bmp_iface = {
-        .iface_cfg   = &i2c_configs,
+        .dev_cfg     = &i2c_bmp,
+        .master_cfg  = &i2c_master,
         .iface_sel   = I2C,
         .read_bytes  = i2c_read_bytes,
         .write_bytes = i2c_write_byte
@@ -59,10 +65,11 @@ void app_main(void)
     };
 
     /* 3. Initialize I2C master bus */
-    i2c_init_master_bus(&(i2c_configs.i2c_master_configs), &i2c_master_handler);
+    i2c_init_master_bus(&(i2c_master.i2c_master_configs), &i2c_master_handler);
 
     /* 4. Add BMP390 to I2C bus */
-    i2c_add_new_device(i2c_master_handler, &(i2c_configs.i2c_dev_configs), &i2c_bmp_handler, bmp_iface.iface_sel);
+    i2c_add_new_device(i2c_master_handler, &(i2c_bmp.i2c_dev_configs), &i2c_bmp_handler, bmp_iface.iface_sel);
 
-    bmp.bmp390_hal_init(&bmp, &bmp_iface, bmp_configs);
+    /* 5. Initialize BMP390 sensor */
+    bmp.init(&bmp, &bmp_iface, bmp_configs);
 }

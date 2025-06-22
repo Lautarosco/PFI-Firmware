@@ -34,7 +34,8 @@ esp_err_t i2c_add_new_device(i2c_master_bus_handle_t i2c_master_handler, i2c_dev
 /**
  * @brief Read n bytes of <reg_addr> register and store its content in <read_data> buffer
  * 
- * @param i2c_configs: I2C configs
+ * @param i2c_master_configs: I2C master configs
+ * @param i2c_dev_configs: I2C device configs
  * @param reg_addr: Register address
  * @param read_data: Buffer to store read data
  * @param n_bytes: Total bytes to read
@@ -43,14 +44,15 @@ esp_err_t i2c_add_new_device(i2c_master_bus_handle_t i2c_master_handler, i2c_dev
  * @retval
  *      - ESP_OK: Success
  *      - ESP_ERR_INVALID_ARG: Device selected interface is not I2C
- *      - ESP_FAIL: Failed to add new device to I2C bus
+ *      - ESP_FAIL: Either master or device are NULL pointers, or read operation failed
  */
-esp_err_t i2c_read_bytes(void *i2c_configs, uint8_t reg_addr, uint8_t *read_data, size_t n_bytes, digital_interfaces_t iface_type);
+esp_err_t i2c_read_bytes(void *i2c_master_configs, void *i2c_dev_configs, uint8_t reg_addr, uint8_t *read_data, size_t n_bytes, digital_interfaces_t iface_type);
 
 /**
  * @brief Write 1 byte (<data>) to <reg_addr> register
  * 
- * @param i2c_configs: I2C configs
+ * @param i2c_master_configs: I2C master configs
+ * @param i2c_dev_configs: I2C device configs
  * @param reg_addr: Register address
  * @param data: Data to be written
  * @param iface_type: Device selected interface
@@ -58,8 +60,8 @@ esp_err_t i2c_read_bytes(void *i2c_configs, uint8_t reg_addr, uint8_t *read_data
  * @retval
  *      - ESP_OK: Success
  *      - ESP_ERR_INVALID_ARG: Device selected interface is not I2C
- *      - ESP_FAIL: Failed to add new device to I2C bus
+ *      - ESP_FAIL: Either master or device are NULL pointers, or write operation failed
  */
-esp_err_t i2c_write_byte(void *i2c_configs, uint8_t reg_addr, const uint8_t data, digital_interfaces_t iface_type);
+esp_err_t i2c_write_byte(void *i2c_master_configs, void *i2c_dev_configs, uint8_t reg_addr, const uint8_t data, digital_interfaces_t iface_type);
 
 #endif

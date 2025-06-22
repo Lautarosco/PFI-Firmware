@@ -1,4 +1,4 @@
-#include <ll/bmp390_modes_names.h>
+#include <hardware_layer/bmp390_modes_names.h>
 
 typedef struct bmp390_modes_names {
     const char *name;

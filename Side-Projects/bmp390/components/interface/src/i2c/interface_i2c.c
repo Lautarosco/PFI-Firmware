@@ -37,16 +37,27 @@ esp_err_t i2c_add_new_device(i2c_master_bus_handle_t i2c_master_handler, i2c_dev
 
 /* ================= Device functions ================= */
 
-esp_err_t i2c_read_bytes(void *i2c_configs, uint8_t reg_addr, uint8_t *read_data, size_t n_bytes, digital_interfaces_t iface_type) {
-    i2c_custom_t *_i2c_configs = (i2c_custom_t *) i2c_configs;
+esp_err_t i2c_read_bytes(void *i2c_master_configs, void *i2c_dev_configs, uint8_t reg_addr, uint8_t *read_data, size_t n_bytes, digital_interfaces_t iface_type) {
+    /* Check if I2C master and device configs are valid pointers */
+    if((i2c_master_configs == NULL) || (i2c_dev_configs == NULL)) {
+        ESP_LOGE(i2c_tag, "{%s in line %d}: Either master or device are NULL pointers", __func__, __LINE__);
+        return ESP_FAIL;
+    }
 
+    /* Cast I2C master and device configs from void* to appropiate type */
+    // i2c_master_custom_t * _i2c_master_configs = (i2c_master_custom_t *) i2c_master_configs;      /* Currently, read function does not need master settings. Uncomment this line if needed */
+    i2c_dev_custom_t *_i2c_dev_configs = (i2c_dev_custom_t *) i2c_dev_configs;
+
+    /* Check if selected interface is I2C */
     if(iface_type != I2C) {
         ESP_LOGE(i2c_tag, "{%s in line %d}: Device selected interface is not I2C", __func__, __LINE__);
         return ESP_ERR_INVALID_ARG;
     }
     
-    esp_err_t ret = i2c_master_transmit_receive(*(_i2c_configs->i2c_dev_handler), &reg_addr, 1, read_data, n_bytes, 1000 / portTICK_PERIOD_MS);
+    /* Read <n_nytes> from <reg_addr> register */
+    esp_err_t ret = i2c_master_transmit_receive(*(_i2c_dev_configs->i2c_dev_handler), &reg_addr, 1, read_data, n_bytes, 1000 / portTICK_PERIOD_MS);
 
+    /* Check for errors */
     switch (ret) {
         case ESP_ERR_INVALID_ARG:
             ESP_LOGE(i2c_tag, "{%s in line %d}: <i2c_master_transmit_receive> invalid parameter", __func__, __LINE__);
@@ -63,17 +74,28 @@ esp_err_t i2c_read_bytes(void *i2c_configs, uint8_t reg_addr, uint8_t *read_data
     return ret;
 }
 
-esp_err_t i2c_write_byte(void *i2c_configs, uint8_t reg_addr, const uint8_t data, digital_interfaces_t iface_type) {
-    i2c_custom_t *_i2c_configs = (i2c_custom_t *) i2c_configs;
+esp_err_t i2c_write_byte(void *i2c_master_configs, void *i2c_dev_configs, uint8_t reg_addr, const uint8_t data, digital_interfaces_t iface_type) {
+    /* Check if I2C master and device configs are valid pointers */
+    if((i2c_master_configs == NULL) || (i2c_dev_configs == NULL)) {
+        ESP_LOGE(i2c_tag, "{%s in line %d}: Either master or device are NULL pointers", __func__, __LINE__);
+        return ESP_FAIL;
+    }
 
+    /* Cast I2C master and device configs from void* to appropiate type */
+    // i2c_master_custom_t * _i2c_master_configs = (i2c_master_custom_t *) i2c_master_configs;     /* Currently, write function does not need master settings. Uncomment this line if needed */
+    i2c_dev_custom_t *_i2c_dev_configs = (i2c_dev_custom_t *) i2c_dev_configs;
+
+    /* Check if selected interface is I2C */
     if(iface_type != I2C) {
-        ESP_LOGE(i2c_tag, "%s in line %d: Device serial interface is not I2C", __func__, __LINE__);
+        ESP_LOGE(i2c_tag, "{%s in line %d}: Device serial interface is not I2C", __func__, __LINE__);
         return ESP_ERR_INVALID_ARG;
     }
     
+    /* Write 1 byte to <reg_addr> register */
     uint8_t write_data[2] = {reg_addr, data};
-    esp_err_t ret = i2c_master_transmit(*(_i2c_configs->i2c_dev_handler), write_data, sizeof(write_data), 1000 / portTICK_PERIOD_MS);
+    esp_err_t ret = i2c_master_transmit(*(_i2c_dev_configs->i2c_dev_handler), write_data, sizeof(write_data), 1000 / portTICK_PERIOD_MS);
 
+    /* Check for errors */
     switch (ret) {
         case ESP_ERR_INVALID_ARG:
             ESP_LOGE(i2c_tag, "{%s in line %d}: <i2c_master_transmit_receive> invalid parameter", __func__, __LINE__);

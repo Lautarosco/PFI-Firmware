@@ -1,7 +1,7 @@
 #ifndef BMP390_MODES_NAMES_H
 #define BMP390_MODES_NAMES_H
 
-#include <ll/bmp390_registers.h>
+#include <hardware_layer/bmp390_registers.h>
 
 /**
  * @brief Get IIR coefficient name

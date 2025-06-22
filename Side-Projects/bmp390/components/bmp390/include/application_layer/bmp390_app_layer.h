@@ -1,7 +1,7 @@
-#ifndef BMP390_H
-#define BMP390_H
+#ifndef BMP390_APP_LAYER_H
+#define BMP390_APP_LAYER_H
 
-#include <ll/bmp390_registers.h>
+#include <hardware_layer/bmp390_registers.h>
 #include <interface.h>
 #include <stdbool.h>
 
@@ -21,7 +21,7 @@ typedef struct bmp390_configs {
 typedef struct bmp390 bmp390_t;
 
 typedef struct bmp390 {
-    esp_err_t (*bmp390_hal_init)(bmp390_t *bmp, device_interface_t *dev_iface, bmp390_configs_t bmp_settings);
+    esp_err_t (*init)(bmp390_t *bmp, device_interface_t *dev_iface, bmp390_configs_t bmp_settings);
 
     device_interface_t iface;       /* Sensor interface */
 } bmp390_t;
