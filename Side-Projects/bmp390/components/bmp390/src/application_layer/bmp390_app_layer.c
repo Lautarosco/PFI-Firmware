@@ -57,6 +57,15 @@ static esp_err_t bmp390_init(bmp390_t *bmp, device_interface_t *dev_iface, bmp39
 
     ESP_LOGI(bmp390_hal_tag, "Initialize Bmp390 object --> OK");
 
+    // bmp390_hwl_get_mode_value(*dev_iface, "I2C_WDT", BMP390_IF_CONF_RW_REG, 1, BMP390_IF_CONF_I2C_WDT_SEL_BIT);
+    // bmp390_hwl_get_mode_value(*dev_iface, "POWER_MODE", BMP390_PWR_CTRL_RW_REG, 2, BMP390_PWR_CTRL_MODE_BITS);
+    // bmp390_hwl_get_mode_value(*dev_iface, "PRESS_EN", BMP390_PWR_CTRL_RW_REG, 1, BMP390_PWR_CTRL_PRESS_EN_BIT);
+    // bmp390_hwl_get_mode_value(*dev_iface, "PRESS_RES", BMP390_OSR_RW_REG, 3, BMP390_OSR_P_BITS);
+    // bmp390_hwl_get_mode_value(*dev_iface, "TEMP_EN", BMP390_PWR_CTRL_RW_REG, 1, BMP390_PWR_CTRL_TEMP_EN_BIT);
+    // bmp390_hwl_get_mode_value(*dev_iface, "TEMP_RES", BMP390_OSR_RW_REG, 3, BMP390_OSR_T_BITS);
+    // bmp390_hwl_get_mode_value(*dev_iface, "IIR", BMP390_CONFIG_RW_REG, 3, BMP390_CONFIG_IIR_BITS);
+    // bmp390_hwl_get_mode_value(*dev_iface, "ODR", BMP390_ODR_RW_REG, 5, BMP390_ODR_ODR_SEL_BITS);
+
     return ESP_OK;
 }
 

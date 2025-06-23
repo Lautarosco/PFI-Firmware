@@ -243,4 +243,22 @@ esp_err_t bmp390_hwl_exec_cmd(device_interface_t dev_iface, bmp390_cmd_t cmd_sel
  */
 esp_err_t bmp390_hwl_read_raw_data(device_interface_t dev_iface, uint32_t *adc_temp, uint32_t *adc_press);
 
+/**
+ * @brief Read any BMP390 register and check a specific mode value
+ * 
+ * @note This function is for debbuging purposes to check if registers contents are consistent with setted configurations
+ * 
+ * @param dev_iface: Generic device interface settings
+ * @param mode_name: Name of the register mode
+ * @param reg_addr: Register
+ * @param n_bits: Total bits used by the register mode
+ * @param bit_start_pos: Starting bit position of the register mode
+ * 
+ * @retval
+ *      -   ESP_OK: Check register mode value success
+ *      -   ESP_FAIL: If read operation fails or errors exist
+ *      -   ESP_ERR_INVALID_ARG: Bits count (<bit_start_pos> + <n_bits>) exceeds 8 bits length
+ */
+void bmp390_hwl_get_mode_val(device_interface_t dev_iface, uint8_t reg_addr, uint8_t starting_bit_pos);
+
 #endif

@@ -6,10 +6,56 @@
 #include <esp_err.h>
 #include <esp_log.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include <interface.h>
 
 const char *bmp390_hwl_tag = "[BMP390_HW_LAYER]";
+
+/* =========== TESTING =========== */
+
+typedef struct bmp390_reg_modes {
+    const char *mode_name;                                          /* Name of register mode */
+    uint8_t reg;                                                    /* Register address */
+    uint8_t total_bits;                                             /* Total bits used for this mode */
+    uint8_t starting_bit_pos;                                       /* Starting bit position */
+    const char* (*get_name_func)(unsigned int mode_value);          /* [bmp390_get_<register>_name] function */
+} bmp390_reg_modes_t;
+
+static const bmp390_reg_modes_t bmp390_reg_modes_arr[] = {
+    {.reg = BMP390_CONFIG_RW_REG,   .mode_name = "iir_filter",  .total_bits = 3, .starting_bit_pos = BMP390_CONFIG_IIR_BITS,         .get_name_func = bmp390_get_iir_coef_name},
+    {.reg = BMP390_ODR_RW_REG,      .mode_name = "odr_sel",     .total_bits = 5, .starting_bit_pos = BMP390_ODR_ODR_SEL_BITS,        .get_name_func = bmp390_get_odr_sel_name},
+    {.reg = BMP390_OSR_RW_REG,      .mode_name = "osr_p",       .total_bits = 3, .starting_bit_pos = BMP390_OSR_P_BITS,              .get_name_func = bmp390_get_osr_press_name},
+    {.reg = BMP390_OSR_RW_REG,      .mode_name = "osr_t",       .total_bits = 3, .starting_bit_pos = BMP390_OSR_T_BITS,              .get_name_func = bmp390_get_osr_temp_name},
+    {.reg = BMP390_PWR_CTRL_RW_REG, .mode_name = "mode",        .total_bits = 2, .starting_bit_pos = BMP390_PWR_CTRL_MODE_BITS,      .get_name_func = bmp390_get_pwr_mode_name},
+    {.reg = BMP390_PWR_CTRL_RW_REG, .mode_name = "press_en",    .total_bits = 1, .starting_bit_pos = BMP390_PWR_CTRL_PRESS_EN_BIT,   .get_name_func = bmp390_get_press_status},
+    {.reg = BMP390_PWR_CTRL_RW_REG, .mode_name = "temp_en",     .total_bits = 1, .starting_bit_pos = BMP390_PWR_CTRL_TEMP_EN_BIT,    .get_name_func = bmp390_get_temp_status},
+    {.reg = BMP390_IF_CONF_RW_REG,  .mode_name = "spi3",        .total_bits = 1, .starting_bit_pos = BMP390_IF_CONF_SPI3_BIT,        .get_name_func = bmp390_get_spi_mode_name},
+    {.reg = BMP390_IF_CONF_RW_REG,  .mode_name = "i2c_wdt_en",  .total_bits = 1, .starting_bit_pos = BMP390_IF_CONF_I2C_WDT_EN_BIT,  .get_name_func = bmp390_get_i2c_wdt_en_status},
+    {.reg = BMP390_IF_CONF_RW_REG,  .mode_name = "i2c_wdt_sel", .total_bits = 1, .starting_bit_pos = BMP390_IF_CONF_I2C_WDT_SEL_BIT, .get_name_func = bmp390_get_i2c_wdt_tout_name},
+};
+
+void bmp390_hwl_get_mode_val(device_interface_t dev_iface, uint8_t reg_addr, uint8_t starting_bit_pos) {
+    for(int i = 0; i < ((sizeof(bmp390_reg_modes_arr)) / (sizeof(bmp390_reg_modes_arr[0]))); i++) {
+        /* Match register and mode */
+        if((bmp390_reg_modes_arr[i].starting_bit_pos == starting_bit_pos) && (bmp390_reg_modes_arr[i].reg == reg_addr)) {
+            /* Read DATA register content and check for errors */
+            uint8_t reg_value = 0;
+
+            if((dev_iface.read_bytes(dev_iface.master_cfg, dev_iface.dev_cfg, reg_addr, &reg_value, 1, dev_iface.iface_sel) != ESP_OK) || (bmp390_hwl_err(dev_iface) != ESP_OK)) {
+                ESP_LOGE(bmp390_hwl_tag, "{Function <%s> in line %d}: Read bytes --> FAILED", __func__, __LINE__);
+            }
+
+            uint8_t mask = ((1U << bmp390_reg_modes_arr[i].total_bits) - 1) << bmp390_reg_modes_arr[i].starting_bit_pos;
+            uint8_t mode_value = (reg_value & mask) >> bmp390_reg_modes_arr[i].starting_bit_pos;
+
+            ESP_LOGI(bmp390_hwl_tag, "<%s> --> Value: <0x%X>, Status: <%s>", bmp390_reg_modes_arr[i].mode_name, mode_value, bmp390_reg_modes_arr[i].get_name_func(mode_value));
+            return;
+        }
+    }
+}
+
+/* ========== Public functions ========== */
 
 esp_err_t bmp390_hwl_get_chip_id(device_interface_t dev_iface, uint8_t *read_data) {
     /* Check if <read_data> is a valid pointer */
@@ -164,7 +210,7 @@ esp_err_t bmp390_hwl_spi_en(device_interface_t dev_iface, bmp390_if_conf_reg_spi
             return ESP_FAIL;
         }
 
-        ESP_LOGI(bmp390_hwl_tag, "Set SPI mode <%s> --> OK", bmp390_get_spi_mode_name(spi_mode));
+        bmp390_hwl_get_mode_val(dev_iface, BMP390_IF_CONF_RW_REG, BMP390_IF_CONF_SPI3_BIT);
         return ESP_OK;
     }
 
@@ -199,7 +245,8 @@ esp_err_t bmp390_hwl_i2c_en_wdt(device_interface_t dev_iface, bmp390_if_conf_reg
             return ESP_FAIL;
         }
 
-        ESP_LOGI(bmp390_hwl_tag, "Enable and configure I2C watchdog timeout <%s> --> OK", bmp390_get_i2c_wdt_tout_name(i2c_wdt_tout));
+        bmp390_hwl_get_mode_val(dev_iface, BMP390_IF_CONF_RW_REG, BMP390_IF_CONF_I2C_WDT_EN_BIT);
+        bmp390_hwl_get_mode_val(dev_iface, BMP390_IF_CONF_RW_REG, BMP390_IF_CONF_I2C_WDT_SEL_BIT);
         return ESP_OK;
     }
 
@@ -234,7 +281,7 @@ esp_err_t bmp390_hwl_i2c_dis_wdt(device_interface_t dev_iface) {
             return ESP_FAIL;
         }
 
-        ESP_LOGI(bmp390_hwl_tag, "Disable I2C watchdog timeout --> OK");
+        bmp390_hwl_get_mode_val(dev_iface, BMP390_IF_CONF_RW_REG, BMP390_IF_CONF_I2C_WDT_EN_BIT);
         return ESP_OK;
     }
     
@@ -260,7 +307,7 @@ esp_err_t bmp390_hwl_set_pwr_mode(device_interface_t dev_iface, bmp390_pwr_ctrl_
         return ESP_FAIL;
     }
 
-    ESP_LOGI(bmp390_hwl_tag, "Set power mode <%s> --> OK", bmp390_get_pwr_mode_name(pwr_mode));
+    bmp390_hwl_get_mode_val(dev_iface, BMP390_PWR_CTRL_RW_REG, BMP390_PWR_CTRL_MODE_BITS);
     return ESP_OK; 
 }
 
@@ -282,7 +329,7 @@ esp_err_t bmp390_hwl_press_en(device_interface_t dev_iface) {
         return ESP_FAIL;
     }
 
-    ESP_LOGI(bmp390_hwl_tag, "Enable pressure sensor --> OK");
+    bmp390_hwl_get_mode_val(dev_iface, BMP390_PWR_CTRL_RW_REG, BMP390_PWR_CTRL_PRESS_EN_BIT);
     return ESP_OK;
 }
 
@@ -304,7 +351,7 @@ esp_err_t bmp390_hwl_temp_en(device_interface_t dev_iface) {
         return ESP_FAIL;
     }
 
-    ESP_LOGI(bmp390_hwl_tag, "Enable temperature sensor --> OK");
+    bmp390_hwl_get_mode_val(dev_iface, BMP390_PWR_CTRL_RW_REG, BMP390_PWR_CTRL_TEMP_EN_BIT);
     return ESP_OK;
 }
 
@@ -330,7 +377,7 @@ esp_err_t bmp390_hwl_set_osr_press(device_interface_t dev_iface, bmp390_osr_pres
         return ESP_FAIL;
     }
 
-    ESP_LOGI(bmp390_hwl_tag, "Set pressure oversampling rate <%s> --> OK", bmp390_get_osr_press_name(osr_press));
+    bmp390_hwl_get_mode_val(dev_iface, BMP390_OSR_RW_REG, BMP390_OSR_P_BITS);
     return ESP_OK;
 }
 
@@ -356,7 +403,7 @@ esp_err_t bmp390_hwl_set_osr_temp(device_interface_t dev_iface, bmp390_osr_temp_
         return ESP_FAIL;
     }
 
-    ESP_LOGI(bmp390_hwl_tag, "Set temperature oversampling rate <%s> --> OK", bmp390_get_osr_temp_name(osr_temp));
+    bmp390_hwl_get_mode_val(dev_iface, BMP390_OSR_RW_REG, BMP390_OSR_T_BITS);
     return ESP_OK;
 }
 
@@ -382,7 +429,7 @@ esp_err_t bmp390_hwl_set_odr(device_interface_t dev_iface, bmp390_odr_sel_t odr_
         return ESP_FAIL;
     }
 
-    ESP_LOGI(bmp390_hwl_tag, "Set output data rate <%s> --> OK", bmp390_get_odr_sel_name(odr_sel));
+    bmp390_hwl_get_mode_val(dev_iface, BMP390_ODR_RW_REG, BMP390_ODR_ODR_SEL_BITS);
     return ESP_OK;
 }
 
@@ -408,7 +455,7 @@ esp_err_t bmp390_hwl_set_iir_coef(device_interface_t dev_iface, bmp390_config_co
         return ESP_FAIL;
     }
 
-    ESP_LOGI(bmp390_hwl_tag, "Set IIR filter coefficient <%s> --> OK", bmp390_get_iir_coef_name(iir_coef));
+    bmp390_hwl_get_mode_val(dev_iface, BMP390_CONFIG_RW_REG, BMP390_CONFIG_IIR_BITS);
     return ESP_OK;
 }
 
@@ -446,6 +493,7 @@ esp_err_t bmp390_hwl_read_raw_data(device_interface_t dev_iface, uint32_t *adc_t
 
     /* Read DATA register content and check for errors */
     if((dev_iface.read_bytes(dev_iface.master_cfg, dev_iface.dev_cfg, BMP390_DATA_0_RO_REG, data, 6, dev_iface.iface_sel) != ESP_OK) || (bmp390_hwl_err(dev_iface) != ESP_OK)) {
+        ESP_LOGE(bmp390_hwl_tag, "{Function <%s> in line %d}: Read bytes --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
     
