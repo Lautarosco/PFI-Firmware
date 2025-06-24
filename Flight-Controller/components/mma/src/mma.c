@@ -63,17 +63,17 @@ static float u2pwm(float u, float dc_min, float dc_max ) {
 
 /**
  * @brief Compute MMA algorithm and update object outputs
- * @param obj: Address of Mma object
+ * @param mma: Address of Mma object
  * @param dc_min: Minimum duty cycle accepted by the ESC
  * @param dc_max: Maximum duty cycle accepted by the ESC
  * @retval none
  */
-static void compute_obj( mma_t * obj, float dc_min, float dc_max ) {
+static void compute_obj( mma_t * mma, float dc_min, float dc_max ) {
     
-    obj->output[ U1 ] = u2pwm( obj->input[ C_Z ] + ( ( 0.5f ) * (   obj->input[ C_ROLL ] + obj->input[ C_PITCH ] + obj->input[ C_YAW ] ) ), dc_min, dc_max );
-    obj->output[ U2 ] = u2pwm( obj->input[ C_Z ] + ( ( 0.5f ) * ( - obj->input[ C_ROLL ] + obj->input[ C_PITCH ] - obj->input[ C_YAW ] ) ), dc_min, dc_max );
-    obj->output[ U3 ] = u2pwm( obj->input[ C_Z ] + ( ( 0.5f ) * ( - obj->input[ C_ROLL ] - obj->input[ C_PITCH ] + obj->input[ C_YAW ] ) ), dc_min, dc_max );
-    obj->output[ U4 ] = u2pwm( obj->input[ C_Z ] + ( ( 0.5f ) * (   obj->input[ C_ROLL ] - obj->input[ C_PITCH ] - obj->input[ C_YAW ] ) ), dc_min, dc_max );
+    mma->output[ U1 ] = u2pwm( mma->input[ C_Z ] + ( ( 0.5f ) * (   mma->input[ C_ROLL ] + mma->input[ C_PITCH ] + mma->input[ C_YAW ] ) ), dc_min, dc_max );
+    mma->output[ U2 ] = u2pwm( mma->input[ C_Z ] + ( ( 0.5f ) * ( - mma->input[ C_ROLL ] + mma->input[ C_PITCH ] - mma->input[ C_YAW ] ) ), dc_min, dc_max );
+    mma->output[ U3 ] = u2pwm( mma->input[ C_Z ] + ( ( 0.5f ) * ( - mma->input[ C_ROLL ] - mma->input[ C_PITCH ] + mma->input[ C_YAW ] ) ), dc_min, dc_max );
+    mma->output[ U4 ] = u2pwm( mma->input[ C_Z ] + ( ( 0.5f ) * (   mma->input[ C_ROLL ] - mma->input[ C_PITCH ] - mma->input[ C_YAW ] ) ), dc_min, dc_max );
 }
 
 
@@ -82,12 +82,12 @@ static void compute_obj( mma_t * obj, float dc_min, float dc_max ) {
 
 /**
  * @brief Initialize object of Mma Class
- * @param obj: Mma object
+ * @param mma: Mma object
  * @param upper_limit: Upper limit of mma output
  * @param lower_limit: Lower limit of mma output
  * @retval none
  */
-static void mma_init( mma_t * obj, float upper_limit, float lower_limit ) {
+static void mma_init( mma_t * mma, float upper_limit, float lower_limit ) {
 
     ESP_LOGI( MMA_TAG, "Initializing object of Mma Class..." );
 

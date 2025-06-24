@@ -82,11 +82,11 @@ typedef struct mma {
     /* Upper and lower limit of mma output */
     limits_t limit;
 
-    /** @brief Initialize object of Mma Class @param obj: Mma object @param upper_limit: Upper limit of mma output @param lower_limit: Lower limit of mma output @retval none */
-    void ( * init )( mma_t * obj, float upper_limit, float lower_limit );
+    /** @brief Initialize object of Mma Class @param drone: Mma object @param upper_limit: Upper limit of mma output @param lower_limit: Lower limit of mma output @retval none */
+    void ( * init )( mma_t * drone, float upper_limit, float lower_limit );
 
-    /** @brief [ M ] Compute MMA algorithm and update object outputs @param obj: Address of Mma Object @param dc_min: Minimum duty cycle @param dc_max: Maximum duty cycle @retval none */
-    void ( * compute )( mma_t * obj, float dc_min, float dc_max );
+    /** @brief [ M ] Compute MMA algorithm and update object outputs @param drone: Address of Mma Object @param dc_min: Minimum duty cycle @param dc_max: Maximum duty cycle @retval none */
+    void ( * compute )( mma_t * drone, float dc_min, float dc_max );
 
 } mma_t;
 

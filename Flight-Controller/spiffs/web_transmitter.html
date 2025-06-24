@@ -2,7 +2,12 @@
 <html>
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <style>
+    html, body {
+      overscroll-behavior: none;
+      touch-action: manipulation;
+    }
     body {
       font-family: Arial, sans-serif;
       display: flex;
@@ -13,15 +18,92 @@
       margin: 0;
       background-color: #f0f0f0;
     }
-
+    .main-wrapper {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
     .joystick-container {
       display: grid;
       grid-template-areas:
-        "l2 . r2"
-        "l1 . r1"
-        "dpad center actions";
-      grid-template-columns: 1fr auto 1fr;
-      grid-gap: 20px;
+        "shoulder-left center shoulder-right"
+        "dpad         empty  actions"
+        "analog-left  empty  analog-right";
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: min-content min-content 1fr;
+      align-items: center;
+      justify-items: center;
+      flex: 8 1 0%;
+      min-height: 0;
+      width: 100vw;
+      height: 100%;
+      gap: 10px;
+    }
+    .shoulder-right {
+      grid-area: shoulder-right;
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      gap: 8px; /* space between buttons */
+    }
+    .shoulder-left {
+      grid-area: shoulder-left;
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      gap: 8px; /* space between buttons */
+    }
+    .dpad {
+      grid-area: dpad;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+    }
+    .actions {
+      grid-area: actions;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+    }
+    .analog-left {
+      grid-area: analog-left;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+    .analog-right {
+      grid-area: analog-right;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+    .joystick-zone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+    .joystick-canvas {
+      width: 120px;
+      height: 120px;
+      max-width: 30vw;
+      max-height: 30vw;
+      touch-action: none;
+      background: #e0e0e0;
+      border-radius: 50%;
+      box-shadow: 0 2px 8px #0002;
+      margin: 0 auto;
+      display: block;
     }
 
     button {
@@ -34,57 +116,15 @@
       background-color: #007bff;
       color: white;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-
     button:active {
       background-color: #0056b3;
     }
+    .l2, .r2, .l1, .r1 { width: 120px; }
 
-    /* Shoulder Buttons */
-    .l2, .r2, .l1, .r1 {
-      width: 120px;
-    }
-
-    .l2 { grid-area: l2; }
-    .r2 { grid-area: r2; }
-    .l1 { grid-area: l1; }
-    .r1 { grid-area: r1; }
-
-    /* D-Pad */
-    .dpad {
-      grid-area: dpad;
-      display: grid;
-      grid-template-areas:
-        ". up ."
-        "left . right"
-        ". down .";
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 10px;
-    }
-
-    .up { grid-area: up; }
-    .down { grid-area: down; }
-    .left { grid-area: left; }
-    .right { grid-area: right; }
-
-    /* Action Buttons */
-    .actions {
-      grid-area: actions;
-      display: grid;
-      grid-template-areas:
-        ". triangle ."
-        "square . circle"
-        ". x .";
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 10px;
-    }
-
-    .triangle { grid-area: triangle; }
-    .square { grid-area: square; }
-    .circle { grid-area: circle; }
-    .x { grid-area: x; }
-
-    /* Center Buttons */
     .center {
       grid-area: center;
       display: flex;
@@ -92,14 +132,33 @@
       justify-content: center;
       gap: 10px;
     }
-
-    .control-container {
-      margin-top: 20px;
+    .buttons {
+      grid-area: buttons;
       display: flex;
-      gap: 10px;
+      flex-direction: row;
+      justify-content: center;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      width: 100%;
+      height: 100%;
     }
 
+    .up, .down, .left, .right, .triangle, .square, .circle, .x {
+      width: 50px;
+      height: 50px;
+      font-size: 16px;
+      margin: 2px;
+    }
+
+    .control-container {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      align-items: center;
+      flex: 2 1 0%;
+      min-height: 0;
+    }
     select {
       padding: 10px;
       border-radius: 5px;
@@ -107,7 +166,6 @@
       height: 40px;
       min-width: 150px;
     }
-
     .text-input {
       padding: 10px;
       border-radius: 5px;
@@ -116,13 +174,11 @@
       min-width: 200px;
       box-sizing: border-box;
     }
-
     .ok-button-container {
       margin-top: 20px;
       display: flex;
       justify-content: center;
     }
-
     #confirmBtn {
       padding: 0 20px; 
       height: 40px; 
@@ -136,34 +192,33 @@
       align-items: center;
       justify-content: center;
     }
-
     #confirmBtn:active {
       background-color: #0056b3;
     }
-
     .nested-selects {
       display: flex;
       gap: 10px;
       align-items: center;
     }
-    .sub-select {
+    #subMenu {
       display: none;
     }
-    .sub-select.visible {
+    #subMenu.visible {
       display: block;
     }
   </style>
+  <script src="joy.js"></script>
   <script>
-    // Dictionary to map button symbols/names to correct values
+    // Button mapping using data attributes
     const buttonMap = {
-      "x": "cross",
-      "■": "square",     // Square symbol
-      "▲": "triangle",   // Triangle symbol
-      "●": "circle",     // Circle symbol
-      "↑": "up",         // Up arrow
-      "↓": "down",       // Down arrow
-      "←": "left",       // Left arrow
-      "→": "right",      // Right arrow
+      "cross": "cross",
+      "square": "square",
+      "triangle": "triangle",
+      "circle": "circle",
+      "up": "up",
+      "down": "down",
+      "left": "left",
+      "right": "right",
       "r1": "r1",
       "l1": "l1",
       "r2": "r2",
@@ -175,109 +230,107 @@
     // Button state tracker
     const buttonStates = {};
 
+    // Event queue for button actions
+    const eventQueue = [];
+    let processing = false;
+
+    async function processEventQueueSequential() {
+      if (processing) return;
+      processing = true;
+      while (eventQueue.length > 0) {
+        const event = eventQueue.shift();
+        await sendButtonAction(event.button, event.action);
+        await new Promise(resolve => setTimeout(resolve, 10)); // 10ms delay between events
+      }
+      processing = false;
+    }
+
+    function queueButtonEvent(button, action) {
+      eventQueue.push({ button, action });
+      processEventQueueSequential();
+    }
+
     function sendButtonAction(button, action) {
-      const mappedButton = buttonMap[button]; // Use only mapped names, no fallback
+      const mappedButton = buttonMap[button];
       if (!mappedButton) {
         console.error(`Unmapped button: ${button}`);
-        return; // Prevent sending unintended values
+        return Promise.resolve();
       }
-      fetch(`/button`, {
+      return fetch(`/button`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ button: mappedButton, action }),
-      }).catch((err) => console.error("Error:", err));
+      }).catch((err) => {
+        console.error("Error:", err);
+      });
     }
 
     function handlePress(button) {
       if (!buttonStates[button]) {
         buttonStates[button] = true;
-        sendButtonAction(button, "press");
+        queueButtonEvent(button, "press");
       }
     }
 
     function handleRelease(button) {
       if (buttonStates[button]) {
         buttonStates[button] = false;
-        sendButtonAction(button, "release");
+        queueButtonEvent(button, "release");
       }
     }
 
-    function attachButtonEvents(buttonElement, buttonText) {
-      buttonElement.addEventListener("mousedown", () => handlePress(buttonText));
-      buttonElement.addEventListener("mouseup", () => handleRelease(buttonText));
-      buttonElement.addEventListener("mouseleave", () => handleRelease(buttonText));
+    function attachButtonEvents(buttonElement) {
+      const buttonKey = buttonElement.dataset.button;
+      buttonElement.addEventListener("mousedown", () => handlePress(buttonKey));
+      buttonElement.addEventListener("mouseup", () => handleRelease(buttonKey));
+      buttonElement.addEventListener("mouseleave", () => handleRelease(buttonKey));
       buttonElement.addEventListener("touchstart", (e) => {
-        e.preventDefault(); // Prevent duplicate events on touch devices
-        handlePress(buttonText);
+        e.preventDefault();
+        handlePress(buttonKey);
       });
-      buttonElement.addEventListener("touchend", () => handleRelease(buttonText));
-      buttonElement.addEventListener("touchcancel", () => handleRelease(buttonText));
+      buttonElement.addEventListener("touchend", () => handleRelease(buttonKey));
+      buttonElement.addEventListener("touchcancel", () => handleRelease(buttonKey));
     }
+
+    // Submenu options for each main menu value
+    const submenuOptions = {
+      roll: ["Kp", "Ki", "Kd"],
+      roll_d: ["Kp", "Ki", "Kd"],
+      pitch: ["Kp", "Ki", "Kd"],
+      pitch_d: ["Kp", "Ki", "Kd"],
+      yaw: ["Kp", "Ki", "Kd"],
+      yaw_d: ["Kp", "Ki", "Kd"]
+    };
 
     document.addEventListener("DOMContentLoaded", () => {
       // Attach events to joystick buttons
-      const buttons = document.querySelectorAll(".joystick-container button");
-      buttons.forEach((button) => {
-        const buttonText = button.textContent.trim();
-        attachButtonEvents(button, buttonText);
-      });
+      document.querySelectorAll(".joystick-container button").forEach(attachButtonEvents);
 
-      // Configuración de selects anidados
+      // Submenu logic
       const mainSelect = document.getElementById('mainMenu');
-      const subSelect1 = document.getElementById('subMenu1');
-      const subSelect2 = document.getElementById('subMenu2');
-      const subSelect3 = document.getElementById('subMenu3');
-      const subSelect4 = document.getElementById('subMenu4');
-      const subSelect5 = document.getElementById('subMenu5');
-      const subSelect6 = document.getElementById('subMenu6');
-      
-      // Manejador de cambio para el select principal
+      const subMenu = document.getElementById('subMenu');
+
       mainSelect.addEventListener('change', function() {
-        // Oculta todos los submenús primero
-        document.querySelectorAll('.sub-select').forEach(el => {
-          el.classList.remove('visible');
-        });
-        
-        // Muestra el submenú correspondiente
-        if (this.value === 'roll') {
-          subSelect1.classList.add('visible');
-        } else if (this.value === 'roll_d') {
-          subSelect2.classList.add('visible');
-        } else if (this.value === 'pitch') {
-          subSelect3.classList.add('visible');
-        } else if (this.value === 'pitch_d') {
-          subSelect4.classList.add('visible');
-        } else if (this.value === 'yaw') {
-          subSelect5.classList.add('visible');
-        } else if (this.value === 'yaw_d') {
-          subSelect6.classList.add('visible');
+        const options = submenuOptions[this.value];
+        if (options) {
+          subMenu.innerHTML = options.map(opt => `<option value="${opt.toLowerCase()}">${opt}</option>`).join('');
+          subMenu.classList.add('visible');
+        } else {
+          subMenu.classList.remove('visible');
+          subMenu.innerHTML = '';
         }
       });
 
-      // OK Button functionality modificada
+      // OK Button functionality
       document.getElementById('confirmBtn').addEventListener('click', function() {
         const mainOption = mainSelect.value;
         let selectedOption = mainOption;
         let selectedText = document.getElementById('textInput').value;
-        
-        // Determina qué submenú está visible y obtiene su valor
-        if (mainOption === 'roll' && subSelect1.classList.contains('visible')) {
-          selectedOption = `roll_${subSelect1.value}`;
-        } else if (mainOption === 'roll_d' && subSelect2.classList.contains('visible')) {
-          selectedOption = `roll_d_${subSelect2.value}`;
-        } else if (mainOption === 'pitch' && subSelect3.classList.contains('visible')) {
-          selectedOption = `pitch_${subSelect3.value}`;
-        } else if (mainOption === 'pitch_d' && subSelect4.classList.contains('visible')) {
-          selectedOption = `pitch_d_${subSelect4.value}`;
-        } else if (mainOption === 'yaw' && subSelect5.classList.contains('visible')) {
-          selectedOption = `yaw_${subSelect5.value}`;
-        } else if (mainOption === 'yaw_d' && subSelect6.classList.contains('visible')) {
-          selectedOption = `yaw_d_${subSelect6.value}`;
+
+        if (submenuOptions[mainOption] && subMenu.classList.contains('visible')) {
+          selectedOption = `${mainOption}_${subMenu.value}`;
         }
-        
-        console.log("Selected option:", selectedOption);
-        console.log("User text:", selectedText);
-        
+
         fetch('/test_button', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -291,94 +344,155 @@
         .then(data => console.log('Response:', data))
         .catch(error => console.error('Error:', error));
       });
+
+      // Add joysticks
+      const leftZone = document.getElementById('left-joystick-zone');
+      const rightZone = document.getElementById('right-joystick-zone');
+      leftZone.style.height = rightZone.style.height = '100%';
+      leftZone.style.width = rightZone.style.width = '100%';
+
+      // Throttle sending joystick data
+      function createJoystickSender(side) {
+        let lastSent = { x: null, y: null };
+        let lastSendTime = 0;
+        let pending = null;
+        let isPressed = false;
+        const interval = 50; // ms, adjust as needed
+        // Track pointer events for each joystick zone
+        const zoneId = side === 'left' ? 'left-joystick-zone' : 'right-joystick-zone';
+        const zone = document.getElementById(zoneId);
+        zone.addEventListener('pointerdown', () => { isPressed = true; });
+        zone.addEventListener('pointerup', () => { isPressed = false; });
+        zone.addEventListener('pointercancel', () => { isPressed = false; });
+        function send(data) {
+          fetch('/joystick', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ side, hor: Math.round(data.x), ver: Math.round(data.y) })
+          }).catch(err => console.error(`${side} joystick error:`, err));
+          lastSent = { x: data.x, y: data.y };
+          lastSendTime = Date.now();
+        }
+        return function(stickData) {
+          // Only send if this stick is being interacted with, or if returning to zero
+          const now = Date.now();
+          const isZero = stickData.x == 0 && stickData.y == 0;
+          // Always send return-to-zero if the last sent was not zero
+          if (isZero && (lastSent.x != 0 || lastSent.y != 0)) {
+            send(stickData);
+            if (pending) { clearTimeout(pending); pending = null; }
+            return;
+          }
+          if (!isPressed) return;
+          // Throttle other updates
+          if (now - lastSendTime > interval) {
+            send(stickData);
+            if (pending) { clearTimeout(pending); pending = null; }
+          } else {
+            if (pending) clearTimeout(pending);
+            pending = setTimeout(() => {
+              send(stickData);
+              pending = null;
+            }, interval - (now - lastSendTime));
+          }
+        };
+      }
+      // Left joystick
+      const leftJoy = new JoyStick('left-joystick-zone', {
+        title: 'left-joystick',
+        width: 120,
+        height: 120,
+        internalFillColor: '#007bff',
+        internalStrokeColor: '#003366',
+        externalStrokeColor: '#007bff',
+        autoReturnToCenter: true
+      }, createJoystickSender('left'));
+      // Right joystick
+      const rightJoy = new JoyStick('right-joystick-zone', {
+        title: 'right-joystick',
+        width: 120,
+        height: 120,
+        internalFillColor: '#28a745',
+        internalStrokeColor: '#155724',
+        externalStrokeColor: '#28a745',
+        autoReturnToCenter: true
+      }, createJoystickSender('right'));
     });
+
+    // Prevent double-tap zoom and two-finger pinch zoom
+    document.addEventListener('touchstart', function (event) {
+      if (event.touches.length > 1) {
+        event.preventDefault();
+      }
+    }, { passive: false });
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function (event) {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 350) {
+        event.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, false);
   </script>
 </head>
+
 <body>
-  <div class="joystick-container">
-    <!-- Shoulder Buttons -->
-    <button class="l2">l2</button>
-    <button class="r2">r2</button>
-    <button class="l1">l1</button>
-    <button class="r1">r1</button>
-
-    <!-- D-Pad -->
-    <div class="dpad">
-      <button class="up">↑</button>
-      <button class="down">↓</button>
-      <button class="left">←</button>
-      <button class="right">→</button>
+    <div class="main-wrapper">
+      <div class="joystick-container">
+        <!-- Shoulder Buttons Row: L2, L1, center, R1, R2 -->
+        <div class="shoulder-left">
+          <button class="l2" data-button="l2">L2</button>
+          <button class="l1" data-button="l1">L1</button>
+        </div>
+        <div class="center">
+          <button data-button="start">START</button>
+          <button data-button="reset">RESET</button>
+        </div>
+        <div class="shoulder-right">
+          <button class="r2" data-button="r2">R2</button>
+          <button class="r1" data-button="r1">R1</button>
+        </div>
+        <div class="dpad">
+          <button class="up" data-button="up">↑</button>
+          <button class="down" data-button="down">↓</button>
+          <button class="left" data-button="left">←</button>
+          <button class="right" data-button="right">→</button>
+        </div>
+        <div class="actions">
+          <button class="triangle" data-button="triangle">▲</button>
+          <button class="square" data-button="square">■</button>
+          <button class="circle" data-button="circle">●</button>
+          <button class="x" data-button="cross">x</button>
+        </div>
+        <div class="analog-left">
+          <div class="joystick-zone" id="left-joystick-zone">
+            <!-- Left joystick will be rendered here -->
+          </div>
+        </div>
+        <div class="analog-right">
+          <div class="joystick-zone" id="right-joystick-zone">
+            <!-- Right joystick will be rendered here -->
+          </div>
+        </div>
+      </div>
+      <div class="control-container">
+        <div class="nested-selects">
+          <select id="mainMenu">
+            <option value=""></option>
+            <option value="z">z</option>
+            <option value="roll">Roll</option>
+            <option value="roll_d">Roll_d</option>
+            <option value="pitch">Pitch</option>
+            <option value="pitch_d">Pitch_d</option>
+            <option value="yaw">Yaw</option>
+            <option value="yaw_d">Yaw_d</option>
+            <option value="simpleOption">Opción simple</option>
+          </select>
+          <select id="subMenu"></select>
+        </div>
+        <input type="text" id="textInput" class="text-input" placeholder="Ingrese texto aquí">
+        <button id="confirmBtn">OK</button>
+      </div>
     </div>
-
-    <!-- Center Buttons -->
-    <div class="center">
-      <button>start</button>
-      <button>reset</button>
-    </div>
-
-    <!-- Action Buttons -->
-    <div class="actions">
-      <button class="triangle">▲</button>
-      <button class="square">■</button>
-      <button class="circle">●</button>
-      <button class="x">x</button>
-    </div>
-  </div>
-  
-  <div class="control-container">
-    <div class="nested-selects">
-      <select id="mainMenu">
-        <option value=""></option>
-        <option value="z">z</option>
-        <option value="roll">Roll</option>
-        <option value="roll_d">Roll_d</option>
-        <option value="pitch">Pitch</option>
-        <option value="pitch_d">Pitch_d</option>
-        <option value="yaw">Yaw</option>
-        <option value="yaw_d">Yaw_d</option>
-        <option value="simpleOption">Opción simple</option>
-      </select>
-      
-      <select id="subMenu1" class="sub-select">
-        <option value="kp">Kp</option>
-        <option value="ki">Ki</option>
-        <option value="kd">Kd</option>
-      </select>
-      
-      <select id="subMenu2" class="sub-select">
-        <option value="kp">Kp</option>
-        <option value="ki">Ki</option>
-        <option value="kd">Kd</option>
-      </select>
-
-      <select id="subMenu3" class="sub-select">
-        <option value="kp">Kp</option>
-        <option value="ki">Ki</option>
-        <option value="kd">Kd</option>
-      </select>
-
-      <select id="subMenu4" class="sub-select">
-        <option value="kp">Kp</option>
-        <option value="ki">Ki</option>
-        <option value="kd">Kd</option>
-      </select>
-      
-      <select id="subMenu5" class="sub-select">
-        <option value="kp">Kp</option>
-        <option value="ki">Ki</option>
-        <option value="kd">Kd</option>
-      </select>
-
-      <select id="subMenu6" class="sub-select">
-        <option value="kp">Kp</option>
-        <option value="ki">Ki</option>
-        <option value="kd">Kd</option>
-      </select>
-    </div>
-    
-    <input type="text" id="textInput" class="text-input" placeholder="Ingrese texto aquí">
-    <button id="confirmBtn">OK</button>
-  </div>
-
-</body>
+  </body>
 </html>

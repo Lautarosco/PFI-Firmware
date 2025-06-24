@@ -142,9 +142,11 @@ void VarsUpdateCmdFunc(drone_t * drone, char * arr[4]) {
 
     bool found = false;
     for(int i = 0; general_vars[i].name != NULL; i++) {
+        
         if(!strcmp(arr[VAR_INDEX], general_vars[i].name)) {
             *( float * ) general_vars[i].addr = (float) atof(arr[VALUE_INDEX]);
             found = true;
+            return;
         }
     }
 

@@ -24,8 +24,9 @@ typedef struct state_function {
     /* Name of state function */
     const char * name;
 
-    /** @brief Compute the function of a given state @param obj: Address of Drone object */
-    void ( * func )( drone_t * obj );
+    /** @brief Compute the function of a given state
+    *   @param drone: Address of Drone object */
+    void ( * func )( drone_t * drone );
     
 } state_func_row_t;
 
@@ -37,18 +38,18 @@ typedef struct state_function {
  * @details Private functions definitions
  */
 
-static void StIdleFunc( drone_t * obj ) {
+static void StIdleFunc( drone_t * drone ) {
 
     // printf( "IDLE\r\n" );
 }
 
-static void StInitFunc( drone_t * obj ) {
+static void StInitFunc( drone_t * drone ) {
 
-    ESP_ERROR_CHECK( obj->methods.init( obj ) );
+    ESP_ERROR_CHECK( drone->methods.init( drone ) );
 
     #if WEBSV_TX
         /* Reset button */
-        obj->attributes.global_variables.tx_buttons.cross = false;
+        drone->attributes.global_variables.tx_buttons.cross = false;
     #endif
 
     // tomar ACC_AVG_NUM mediciones de acelerómetro y promediarlas
@@ -56,16 +57,16 @@ static void StInitFunc( drone_t * obj ) {
     #define ACC_AVG_NUM 20.0
     for (int i = 0; i < ACC_AVG_NUM; i++) {
         // leer acelerómetro y calcular roll_acc
-        float roll_acc = atan2( obj->attributes.components.bmi.Acc.y, obj->attributes.components.bmi.Acc.z ) * ( 180.0f / M_PI );
+        float roll_acc = atan2( drone->attributes.components.bmi.Acc.y, drone->attributes.components.bmi.Acc.z ) * ( 180.0f / M_PI );
         printf("Roll ACC: %.2f\n", roll_acc);
         sum += roll_acc;
         vTaskDelay(pdMS_TO_TICKS(10)); // espera entre muestras
     }
     printf("Sum: %.2f\n", sum);
-    obj->attributes.states.roll = sum / ACC_AVG_NUM;
+    drone->attributes.states.roll = sum / ACC_AVG_NUM;
 }
 
-static void StWaitingFunc( drone_t * obj ) {
+static void StWaitingFunc( drone_t * drone ) {
 
     // printf( "WAITING\r\n" );
 }
@@ -171,62 +172,70 @@ static void StVibrationCheck(drone_t* drone) {
 
 }
 
-static void StControlFunc( drone_t * obj ) {
+
+float getYawError(float current_yaw, float target_yaw) {
+    float error = target_yaw - current_yaw;
+    if (error > 180.0f) return error - 360.0f;
+    if (error < -180.0f) return error + 360.0f;
+    return error;
+}
+
+static void StControlFunc( drone_t * drone ) {
 
 
     /* Compute PID algorithm for all states */
 
     /* ROLL - Cascaded PID*/
 
-    // float alpha_ema = 2/(obj->attributes.global_variables.ema_filter_roll+1);
-    // filtered_roll = alpha_ema*obj->attributes.states.roll + (1-alpha_ema)*filtered_roll;
+    // float alpha_ema = 2/(drone->attributes.global_variables.ema_filter_roll+1);
+    // filtered_roll = alpha_ema*drone->attributes.states.roll + (1-alpha_ema)*filtered_roll;
 
-    float CRoll = obj->attributes.components.controllers[ ROLL ].pidUpdate(
-        &obj->attributes.components.controllers[ ROLL ],
-        obj->attributes.states.roll,
-        obj->attributes.sp.roll
+    float CRoll = drone->attributes.components.controllers[ ROLL ].pidUpdate(
+        &drone->attributes.components.controllers[ ROLL ],
+        drone->attributes.states.roll,
+        drone->attributes.sp.roll
     );
     
     // float sine = __sin( 80.0f, 2*M_PI*(1 / 1.0f), 10 );
 
-    obj->attributes.sp.roll_dot = CRoll;
+    drone->attributes.sp.roll_dot = CRoll;
 
-    float CRolld = obj->attributes.components.controllers[ ROLL_D ].pidUpdate(
-        &obj->attributes.components.controllers[ ROLL_D ],
-        obj->attributes.states.roll_dot,
-        obj->attributes.sp.roll_dot
+    float CRolld = drone->attributes.components.controllers[ ROLL_D ].pidUpdate(
+        &drone->attributes.components.controllers[ ROLL_D ],
+        drone->attributes.states.roll_dot,
+        drone->attributes.sp.roll_dot
     );
     
     /* Update MMA inputs with PID outputs */
-    obj->attributes.components.mma.input[ C_ROLL ] = CRolld;
+    drone->attributes.components.mma.input[ C_ROLL ] = CRolld;
 
     /* Compute MMA algorithm */
-    obj->attributes.components.mma.compute(
-        &obj->attributes.components.mma,
-        obj->attributes.components.pwm[ 0 ].dc_min * obj->attributes.config.mma_out_limits.lower,
-        obj->attributes.components.pwm[ 0 ].dc_max * obj->attributes.config.mma_out_limits.upper
+    drone->attributes.components.mma.compute(
+        &drone->attributes.components.mma,
+        drone->attributes.components.pwm[ 0 ].dc_min * drone->attributes.config.mma_out_limits.lower,
+        drone->attributes.components.pwm[ 0 ].dc_max * drone->attributes.config.mma_out_limits.upper
     );
 
     /* Update all pwm duty cycle */
-    for(int i = 0; i < ( ( sizeof( obj->attributes.components.mma.output ) ) / ( sizeof( obj->attributes.components.mma.output[ 0 ] ) ) ); i++) {
+    for(int i = 0; i < ( ( sizeof( drone->attributes.components.mma.output ) ) / ( sizeof( drone->attributes.components.mma.output[ 0 ] ) ) ); i++) {
         
-        obj->attributes.components.pwm[ i ].set_pwm_dc(
-            &obj->attributes.components.pwm[ i ],
-            obj->attributes.components.mma.output[ i ]
+        drone->attributes.components.pwm[ i ].set_pwm_dc(
+            &drone->attributes.components.pwm[ i ],
+            drone->attributes.components.mma.output[ i ]
         );
     }
 }
 
-static void StCalibrationFunc( drone_t * obj ) {
+static void StCalibrationFunc( drone_t * drone ) {
     
     /* Calibration routine for Hobbywing Skywalker ESC's */
     ESP_LOGW( STATE_MACHINE_TAG, "Starting calibration routine..."  );
 
     /* 1. Move throttle to maximum position */
 
-    for( int i = 0; i < ( sizeof( obj->attributes.components.pwm ) ) / ( sizeof( obj->attributes.components.pwm[ 0 ] ) ); i++ ) {
+    for( int i = 0; i < ( sizeof( drone->attributes.components.pwm ) ) / ( sizeof( drone->attributes.components.pwm[ 0 ] ) ); i++ ) {
 
-        obj->attributes.components.pwm[ i ].set_pwm_dc( &obj->attributes.components.pwm[ i ], obj->attributes.components.pwm[ i ].dc_max );
+        drone->attributes.components.pwm[ i ].set_pwm_dc( &drone->attributes.components.pwm[ i ], drone->attributes.components.pwm[ i ].dc_max );
     }
 
     /* 2. Wait until ESC's are connected ( user pressed X button )  */
@@ -234,11 +243,11 @@ static void StCalibrationFunc( drone_t * obj ) {
     ESP_LOGW( STATE_MACHINE_TAG, "Press X button when all ESC are connected"  );
     while( 1 ) {
 
-        if( obj->attributes.global_variables.tx_buttons.cross ) {
+        if( drone->attributes.global_variables.tx_buttons.cross ) {
 
             #if WEBSV_TX
                 /* Reset button */
-                obj->attributes.global_variables.tx_buttons.cross = false;
+                drone->attributes.global_variables.tx_buttons.cross = false;
             #endif
 
             vTaskDelay( pdMS_TO_TICKS( 1000 ) );
@@ -253,11 +262,11 @@ static void StCalibrationFunc( drone_t * obj ) {
     ESP_LOGW( STATE_MACHINE_TAG, "Press X button when all ESC have latched maximum value"  );
     while( 1 ) {
 
-        if( obj->attributes.global_variables.tx_buttons.cross ) {
+        if( drone->attributes.global_variables.tx_buttons.cross ) {
 
             #if WEBSV_TX
                 /* Reset button */
-                obj->attributes.global_variables.tx_buttons.cross = false;
+                drone->attributes.global_variables.tx_buttons.cross = false;
             #endif
 
             vTaskDelay( pdMS_TO_TICKS( 1000 ) );
@@ -269,9 +278,9 @@ static void StCalibrationFunc( drone_t * obj ) {
 
     /* 4. Move throttle to minimum position */
 
-    for( int i = 0; i < ( sizeof( obj->attributes.components.pwm ) ) / ( sizeof( obj->attributes.components.pwm[ 0 ] ) ); i++ ) {
+    for( int i = 0; i < ( sizeof( drone->attributes.components.pwm ) ) / ( sizeof( drone->attributes.components.pwm[ 0 ] ) ); i++ ) {
 
-        obj->attributes.components.pwm[ i ].set_pwm_dc( &obj->attributes.components.pwm[ i ], obj->attributes.components.pwm[ i ].dc_min );
+        drone->attributes.components.pwm[ i ].set_pwm_dc( &drone->attributes.components.pwm[ i ], drone->attributes.components.pwm[ i ].dc_min );
     }
 
     /* 5. Wait until ESC's have latched minimum value ( user pressed X button ) */
@@ -279,11 +288,11 @@ static void StCalibrationFunc( drone_t * obj ) {
     ESP_LOGW( STATE_MACHINE_TAG, "Press X button when all ESC have latched minimum value"  );
     while( 1 ) {
 
-        if( obj->attributes.global_variables.tx_buttons.cross ) {
+        if( drone->attributes.global_variables.tx_buttons.cross ) {
         
             #if WEBSV_TX
                 /* Reset button */
-                obj->attributes.global_variables.tx_buttons.cross = false;
+                drone->attributes.global_variables.tx_buttons.cross = false;
             #endif
 
             break;
@@ -297,7 +306,7 @@ static void StCalibrationFunc( drone_t * obj ) {
 
     #if WEBSV_TX
         /* Reset button */
-        obj->attributes.global_variables.tx_buttons.triangle = false;  /* TESTING */
+        drone->attributes.global_variables.tx_buttons.triangle = false;  /* TESTING */
     #endif
 }
 

@@ -14,42 +14,42 @@ static const char * PWM_TAG = "PWM";
 
 /**
  * @brief Initialize pwm signal of Brushless DC motor
- * @param obj: Address of Pwm object
+ * @param pwm: Address of Pwm object
  * @param PwmConfigs: Pwm configs
  * @retval ESP_OK if success - ESP_FAIL
  */
-static esp_err_t Pwm_Init( pwm_t * obj, pwm_cfg_t PwmConfigs ) {
+static esp_err_t Pwm_Init( pwm_t * pwm, pwm_cfg_t PwmConfigs ) {
 
-    ESP_LOGI( PWM_TAG, "Initializing Pwm %d object...", obj->tag + 1 );
+    ESP_LOGI( PWM_TAG, "Initializing Pwm %d object...", pwm->tag + 1 );
     
-    obj->init_ok = true;
-    obj->pwm_cfg = PwmConfigs;
+    pwm->init_ok = true;
+    pwm->pwm_cfg = PwmConfigs;
 
     /* Set timer configs */
-    if( ledc_timer_config( &( obj->pwm_cfg.timer_cfg ) ) != ESP_OK ) {
+    if( ledc_timer_config( &( pwm->pwm_cfg.timer_cfg ) ) != ESP_OK ) {
         
-        ESP_LOGE( PWM_TAG, "[ pwm %d ] Wrong timer settings!", obj->tag );
+        ESP_LOGE( PWM_TAG, "[ pwm %d ] Wrong timer settings!", pwm->tag );
         return ESP_FAIL;
     }
 
     /* Set channel configs */
-    if( ledc_channel_config( &( obj->pwm_cfg.channel_cfg ) ) != ESP_OK ) {
+    if( ledc_channel_config( &( pwm->pwm_cfg.channel_cfg ) ) != ESP_OK ) {
 
-        ESP_LOGE( PWM_TAG, "[ pwm %d ] Wrong channel settings!", obj->tag );
+        ESP_LOGE( PWM_TAG, "[ pwm %d ] Wrong channel settings!", pwm->tag );
         return ESP_FAIL;
     }
 
-    obj->n          = pow( 2, obj->pwm_cfg.timer_cfg.duty_resolution );
-    obj->resolution = 1 / obj->n;
-    obj->dc_min     = ( ( obj->pwm_cfg.Ton_min / 1000.0f ) * obj->pwm_cfg.timer_cfg.freq_hz );
-    obj->dc_max     = ( ( obj->pwm_cfg.Ton_max / 1000.0f ) * obj->pwm_cfg.timer_cfg.freq_hz );
-    obj->min_count  = obj->dc_min * obj->n;
-    obj->max_count  = obj->dc_max * obj->n;
+    pwm->n          = pow( 2, pwm->pwm_cfg.timer_cfg.duty_resolution );
+    pwm->resolution = 1 / pwm->n;
+    pwm->dc_min     = ( ( pwm->pwm_cfg.Ton_min / 1000.0f ) * pwm->pwm_cfg.timer_cfg.freq_hz );
+    pwm->dc_max     = ( ( pwm->pwm_cfg.Ton_max / 1000.0f ) * pwm->pwm_cfg.timer_cfg.freq_hz );
+    pwm->min_count  = pwm->dc_min * pwm->n;
+    pwm->max_count  = pwm->dc_max * pwm->n;
 
     /* Set pwm duty cycle to it's minimum value */
-    obj->set_pwm_dc( obj, obj->dc_min );
+    pwm->set_pwm_dc( pwm, pwm->dc_min );
 
-    ESP_LOGI( PWM_TAG, "Pwm %d object initialized", obj->tag + 1 );
+    ESP_LOGI( PWM_TAG, "Pwm %d object initialized", pwm->tag + 1 );
 
     return ESP_OK;
 }
@@ -60,46 +60,46 @@ static esp_err_t Pwm_Init( pwm_t * obj, pwm_cfg_t PwmConfigs ) {
 
 /**
  * @brief Set pwm Duty Cycle
- * @param obj: Address of Pwm object
+ * @param pwm: Address of Pwm object
  * @param duty: Duty Cycle from 0 to 1
  * @retval ESP_OK if success - ESP_FAIL
  */
-static esp_err_t Pwm_SetDc( pwm_t * obj, float duty ) {
+static esp_err_t Pwm_SetDc( pwm_t * pwm, float duty ) {
 
     /* Check if object is initialized */
-    if( !obj->init_ok ) {
+    if( !pwm->init_ok ) {
 
-        ESP_LOGE( PWM_TAG, "[ pwm %d ] Object is not initialized!", obj->tag + 1 );
+        ESP_LOGE( PWM_TAG, "[ pwm %d ] Object is not initialized!", pwm->tag + 1 );
         esp_restart();
     }
 
     /* Check range of duty cycle */
     if( ( duty < 0 ) || ( duty > 1 ) ) {
 
-        ESP_LOGE( PWM_TAG, "[ pwm %d ] Wrong Duty Cycle '%f'. Select values from 0 to 1 only", obj->tag, duty );
+        ESP_LOGE( PWM_TAG, "[ pwm %d ] Wrong Duty Cycle '%f'. Select values from 0 to 1 only", pwm->tag, duty );
         return ESP_FAIL;
     }
 
     else {
 
-        if( ( duty >= obj->dc_min ) && ( duty <= obj->dc_max ) ) {
+        if( ( duty >= pwm->dc_min ) && ( duty <= pwm->dc_max ) ) {
 
             /* Set duty cycle */
-            if( ledc_set_duty( obj->pwm_cfg.timer_cfg.speed_mode, obj->pwm_cfg.channel_cfg.channel, duty * obj->n ) != ESP_OK ) {
+            if( ledc_set_duty( pwm->pwm_cfg.timer_cfg.speed_mode, pwm->pwm_cfg.channel_cfg.channel, duty * pwm->n ) != ESP_OK ) {
 
-                ESP_LOGE( PWM_TAG, "[ pwm %d ] Failed to set duty dycle", obj->tag + 1 );
+                ESP_LOGE( PWM_TAG, "[ pwm %d ] Failed to set duty dycle", pwm->tag + 1 );
                 return ESP_FAIL;
             }
 
             /* Update duty cycle */
-            if( ledc_update_duty( obj->pwm_cfg.timer_cfg.speed_mode, obj->pwm_cfg.channel_cfg.channel ) != ESP_OK ) {
+            if( ledc_update_duty( pwm->pwm_cfg.timer_cfg.speed_mode, pwm->pwm_cfg.channel_cfg.channel ) != ESP_OK ) {
 
-                ESP_LOGE( PWM_TAG, "[ pwm %d ] Failed to update duty dycle", obj->tag + 1 );
+                ESP_LOGE( PWM_TAG, "[ pwm %d ] Failed to update duty dycle", pwm->tag + 1 );
                 return ESP_FAIL;
             }
         } else {
 
-            ESP_LOGE( PWM_TAG, "[ pwm %d ] Duty Cycle '%f' is out of range. Select values from %f to %f", obj->tag + 1, duty, obj->dc_min, obj->dc_max );
+            ESP_LOGE( PWM_TAG, "[ pwm %d ] Duty Cycle '%f' is out of range. Select values from %f to %f", pwm->tag + 1, duty, pwm->dc_min, pwm->dc_max );
             return ESP_FAIL;
         }
 
@@ -114,20 +114,20 @@ static esp_err_t Pwm_SetDc( pwm_t * obj, float duty ) {
 
 /**
  * @brief Get pwm Duty Cycle
- * @param obj: Address of Pwm object
+ * @param pwm: Address of Pwm object
  * @retval pwm duty cycle from 0 to 1
  */
-static double Pwm_GetDc( pwm_t * obj ) {
+static double Pwm_GetDc( pwm_t * pwm ) {
 
     /* Check object is initialized */
-    if( !obj->init_ok ) {
+    if( !pwm->init_ok ) {
 
         ESP_LOGE( PWM_TAG, "Object is not initialized!" );
         esp_restart();
     }
     
     /* Return pwm duty cycle */
-    return ledc_get_duty( obj->pwm_cfg.timer_cfg.speed_mode, obj->pwm_cfg.channel_cfg.channel ) / obj->n;
+    return ledc_get_duty( pwm->pwm_cfg.timer_cfg.speed_mode, pwm->pwm_cfg.channel_cfg.channel ) / pwm->n;
 }
 
 

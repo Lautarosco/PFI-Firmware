@@ -129,7 +129,7 @@ static float FirstOrderIIR( float in, float out, float ts_s, float tau_s ) {
  * @param ts_ms: Sampling time in milliseconds
  * @retval none
  */
-static void Kalman( drone_t * obj, float ts_ms ) {
+static void Kalman( drone_t * drone, float ts_ms ) {
     /* -------------------------------------------------------------------------------- */
 
 
@@ -139,10 +139,10 @@ static void Kalman( drone_t * obj, float ts_ms ) {
     float ts_s = ts_ms / 1000.0f;
 
     /* Use Gyroscope as mathematical model of IMU sensor */
-    float estimated_roll = obj->attributes.states.roll + ( ts_s * obj->attributes.components.bmi.Gyro.x );
+    float estimated_roll = drone->attributes.states.roll + ( ts_s * drone->attributes.components.bmi.Gyro.x );
 
     /* Predict uncertainty of estimation */
-    float estimated_P = obj->attributes.config.roll.P + obj->attributes.config.roll.Q;
+    float estimated_P = drone->attributes.config.roll.P + drone->attributes.config.roll.Q;
 
 
     /* -------------------------------------------------------------------------------- */
@@ -151,16 +151,16 @@ static void Kalman( drone_t * obj, float ts_ms ) {
     /* Update step */
 
     /* Update Kalman gain */
-    float roll_K = estimated_P / ( estimated_P + obj->attributes.config.roll.R );
+    float roll_K = estimated_P / ( estimated_P + drone->attributes.config.roll.R );
 
     /* Use Accelerometer as sensor readings of IMU */
-    float roll_sensor = atan2( obj->attributes.components.bmi.Acc.y, obj->attributes.components.bmi.Acc.z ) * ( 180.0f / M_PI );
+    float roll_sensor = atan2( drone->attributes.components.bmi.Acc.y, drone->attributes.components.bmi.Acc.z ) * ( 180.0f / M_PI );
 
     /* Update states */
-    obj->attributes.states.roll = estimated_roll + ( roll_K * ( roll_sensor - estimated_roll ) );
+    drone->attributes.states.roll = estimated_roll + ( roll_K * ( roll_sensor - estimated_roll ) );
 
     /* Update P uncertainty */
-    obj->attributes.config.roll.P = ( ( 1 - roll_K ) * estimated_P + obj->attributes.config.roll.Q );
+    drone->attributes.config.roll.P = ( ( 1 - roll_K ) * estimated_P + drone->attributes.config.roll.Q );
 }
 
 
@@ -344,16 +344,16 @@ static csv_row_t get_csv_row( csv_row_t * csv_rows, int n_rows, const char * nam
 
 /**
  * @brief Save Drone parameters to flash memory
- * @param obj: Direction of Drone object
+ * @param drone: Direction of Drone object
  * @retval none
  */
-static void save_to_nvs( drone_t * obj ) {
+static void save_to_nvs( drone_t * drone ) {
 
     /* Loop through all flash parameters */
     for( int i = 0; i < FLASH_PARAMS; i++ ) {
 
         /* If parameter direction if NULL, then all parameters have been saved */
-        if( obj->attributes.flash_params_arr[ i ] == NULL ) {
+        if( drone->attributes.flash_params_arr[ i ] == NULL ) {
 
             break;
         }
@@ -362,24 +362,24 @@ static void save_to_nvs( drone_t * obj ) {
         else {
 
             /* Store "i" parameter to NVS, according to drone_flash_params_t enum */
-            __write_to_flash( NVS_NAMESPACE, i, obj->attributes.flash_params_arr[ i ], sizeof( obj->attributes.flash_params_arr[ i ] ) );
+            __write_to_flash( NVS_NAMESPACE, i, drone->attributes.flash_params_arr[ i ], sizeof( drone->attributes.flash_params_arr[ i ] ) );
         }
     }
 }
 
 /**
  * @brief Read Drone parameters stored in flash memory and update the running parameters
- * @param obj: Direction of Drone object
+ * @param drone: Direction of Drone object
  * @retval none
  */
-static void read_from_nvs( drone_t * obj ) {
+static void read_from_nvs( drone_t * drone ) {
 
     float read_var = 0.0f;
 
     for( int i = 0; i < FLASH_PARAMS; i++ ) {
 
         /* If parameter direction if NULL, then all parameters have been read */
-        if( obj->attributes.flash_params_arr[ i ] == NULL ) {
+        if( drone->attributes.flash_params_arr[ i ] == NULL ) {
 
             break;
         }
@@ -387,7 +387,7 @@ static void read_from_nvs( drone_t * obj ) {
         /* Continue reading NVS */
         else {
             __read_from_flash( NVS_NAMESPACE, i, &read_var, sizeof( read_var ) );
-            *(float*) (obj->attributes.flash_params_arr[i]) = read_var;
+            *(float*) (drone->attributes.flash_params_arr[i]) = read_var;
             ESP_LOGI( DRONE_TAG, "Updated %s: %.2f", GetKeyName( i ), read_var );
         }
     }
@@ -399,72 +399,72 @@ static void read_from_nvs( drone_t * obj ) {
 
 /**
  * @brief Initialize an object of Drone Class
- * @param obj: Address of Drone object
+ * @param drone: Address of Drone object
  * @retval ESP_OK if success - ESP_FAIL
  */
-static esp_err_t drone_init( drone_t * obj ) {
+static esp_err_t drone_init( drone_t * drone ) {
 
     ESP_LOGI( DRONE_TAG, "Initializing Drone object..." );
 
     #ifndef IGNORE_BMI
     /* Initialize Bmi160 object */
-    ESP_ERROR_CHECK( obj->attributes.components.bmi.init(
-            &( obj->attributes.components.bmi ),
+    ESP_ERROR_CHECK( drone->attributes.components.bmi.init(
+            &( drone->attributes.components.bmi ),
             BMI160_ADDR,
-            obj->attributes.config.imu_cfg.acc_mode,
-            obj->attributes.config.imu_cfg.acc_freq,
-            obj->attributes.config.imu_cfg.acc_range,
-            obj->attributes.config.imu_cfg.gyro_mode,
-            obj->attributes.config.imu_cfg.gyro_freq,
-            obj->attributes.config.imu_cfg.gyro_range,
+            drone->attributes.config.imu_cfg.acc_mode,
+            drone->attributes.config.imu_cfg.acc_freq,
+            drone->attributes.config.imu_cfg.acc_range,
+            drone->attributes.config.imu_cfg.gyro_mode,
+            drone->attributes.config.imu_cfg.gyro_freq,
+            drone->attributes.config.imu_cfg.gyro_range,
             0.0f,
             0.0f,
             0.0f
         )
     );
     // Initialize sensor values to 0
-    obj->attributes.components.bmi.Temp.temperature = 0.0f;
-    obj->attributes.components.bmi.Gyro.x = 0.0f;
-    obj->attributes.components.bmi.Gyro.y = 0.0f;
-    obj->attributes.components.bmi.Gyro.z = 0.0f;
-    obj->attributes.components.bmi.Acc.x = 0.0f;
-    obj->attributes.components.bmi.Acc.y = 0.0f;
-    obj->attributes.components.bmi.Acc.z = 0.0f;
+    drone->attributes.components.bmi.Temp.temperature = 0.0f;
+    drone->attributes.components.bmi.Gyro.x = 0.0f;
+    drone->attributes.components.bmi.Gyro.y = 0.0f;
+    drone->attributes.components.bmi.Gyro.z = 0.0f;
+    drone->attributes.components.bmi.Acc.x = 0.0f;
+    drone->attributes.components.bmi.Acc.y = 0.0f;
+    drone->attributes.components.bmi.Acc.z = 0.0f;
 
-    //obj->attributes.components.bmi.Gyro.offset.x = obj->attributes.config.imu_cfg.gyro_offset.x;
-    //obj->attributes.components.bmi.Gyro.offset.y = obj->attributes.config.imu_cfg.gyro_offset.y;
-    //obj->attributes.components.bmi.Gyro.offset.z = obj->attributes.config.imu_cfg.gyro_offset.z;
+    //drone->attributes.components.bmi.Gyro.offset.x = drone->attributes.config.imu_cfg.gyro_offset.x;
+    //drone->attributes.components.bmi.Gyro.offset.y = drone->attributes.config.imu_cfg.gyro_offset.y;
+    //drone->attributes.components.bmi.Gyro.offset.z = drone->attributes.config.imu_cfg.gyro_offset.z;
 
     /* Fast offset compensation for bmi sensor */
-    obj->attributes.components.bmi.foc( &( obj->attributes.components.bmi ) );
+    drone->attributes.components.bmi.foc( &( drone->attributes.components.bmi ) );
     #endif
-    //obj->attributes.components.bmi.Gyro.calibrate( &( obj->attributes.components.bmi.Gyro ), 2000 );
+    //drone->attributes.components.bmi.Gyro.calibrate( &( drone->attributes.components.bmi.Gyro ), 2000 );
 
     /* Initialize all Pwm objects */
-    for( int i = 0; i < ( ( sizeof( obj->attributes.components.pwm ) ) / ( sizeof( obj->attributes.components.pwm[ 0 ] ) ) ); i++ ) {
+    for( int i = 0; i < ( ( sizeof( drone->attributes.components.pwm ) ) / ( sizeof( drone->attributes.components.pwm[ 0 ] ) ) ); i++ ) {
 
-        obj->attributes.components.pwm[ i ].init( &obj->attributes.components.pwm[ i ], obj->attributes.config.pwm_cfg[ i ] );
+        drone->attributes.components.pwm[ i ].init( &drone->attributes.components.pwm[ i ], drone->attributes.config.pwm_cfg[ i ] );
     }
 
     /* Initialize all Pid objects */
-    for( int i = 0; i < ( ( sizeof( obj->attributes.components.controllers ) ) / ( sizeof( obj->attributes.components.controllers[ 0 ] ) ) ); i++ ) {
+    for( int i = 0; i < ( ( sizeof( drone->attributes.components.controllers ) ) / ( sizeof( drone->attributes.components.controllers[ 0 ] ) ) ); i++ ) {
 
-        obj->attributes.components.controllers[ i ].init(
-            &obj->attributes.components.controllers[ i ],
+        drone->attributes.components.controllers[ i ].init(
+            &drone->attributes.components.controllers[ i ],
             i,
             10.0f,
             1.0f,
-            obj->attributes.config.pid_cfgs[ i ].pid_gains,
-            obj->attributes.config.pid_cfgs[ i ].integral_limits,
-            obj->attributes.config.pid_cfgs[ i ].pid_output_limits
+            drone->attributes.config.pid_cfgs[ i ].pid_gains,
+            drone->attributes.config.pid_cfgs[ i ].integral_limits,
+            drone->attributes.config.pid_cfgs[ i ].pid_output_limits
         );
     }
 
     /* Initialize Mma object */
-    obj->attributes.components.mma.init(
-        &obj->attributes.components.mma,
-        obj->attributes.config.mma_out_limits.upper,
-        obj->attributes.config.mma_out_limits.lower
+    drone->attributes.components.mma.init(
+        &drone->attributes.components.mma,
+        drone->attributes.config.mma_out_limits.upper,
+        drone->attributes.config.mma_out_limits.lower
     );
 
     /* Blink MCU internal LED to indicate Drone object was successfully initialized */
@@ -474,26 +474,33 @@ static esp_err_t drone_init( drone_t * obj ) {
 
     ESP_LOGI( DRONE_TAG, "Drone object initialized" );
 
-    obj->methods.read_from_flash(obj);
+    drone->methods.read_from_flash(drone);
 
     /* Drone object is initialized */
-    obj->attributes.init_ok = true;
+    drone->attributes.init_ok = true;
     
     return ESP_OK;
 }
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
+// Función para mantener el ángulo en [0, 2pi)
+float wrapAngle360(float angle) {
+    #define MAX 360.0f
+    angle = fmodf(angle, MAX);
+    if (angle < 0) angle += MAX;
+    return angle;
+}
 
 /**
  * @brief Update Drone object states
- * @param obj: Address of Drone object
+ * @param drone: Address of Drone object
  * @param ts: Sampling time in milliseconds
  * @retval none
  */
-static void UpdateStates( drone_t * obj, float ts ) {
+static void UpdateStates( drone_t * drone, float ts ) {
 
-    if( !obj->attributes.init_ok ) {
+    if( !drone->attributes.init_ok ) {
 
         /* If Drone object isn't initialized */
         ESP_LOGE( DRONE_TAG, "Drone object must be initialized before calling it's methods!. See %s in line %d", __func__, __LINE__ );
@@ -501,31 +508,31 @@ static void UpdateStates( drone_t * obj, float ts ) {
 
     else {
 
-        float acc_x = obj->attributes.components.bmi.Acc.x;
-        float acc_y = obj->attributes.components.bmi.Acc.y;
-        float acc_z = obj->attributes.components.bmi.Acc.z;
+        float acc_x = drone->attributes.components.bmi.Acc.x;
+        float acc_y = drone->attributes.components.bmi.Acc.y;
+        float acc_z = drone->attributes.components.bmi.Acc.z;
 
-        float gyro_x = FirstOrderIIR( obj->attributes.components.bmi.Gyro.x, obj->attributes.states.roll_dot, ts / 1000.0f, obj->attributes.config.IIR_coeff_roll_dot );
-        float gyro_y = FirstOrderIIR( obj->attributes.components.bmi.Gyro.y, obj->attributes.states.pitch_dot, ts / 1000.0f, obj->attributes.config.IIR_coeff_pitch_dot );
-        float gyro_z = FirstOrderIIR( obj->attributes.components.bmi.Gyro.z, obj->attributes.states.yaw_dot, ts / 1000.0f, obj->attributes.config.IIR_coeff_yaw_dot );
+        float gyro_x = FirstOrderIIR( drone->attributes.components.bmi.Gyro.x, drone->attributes.states.roll_dot, ts / 1000.0f, drone->attributes.config.IIR_coeff_roll_dot );
+        float gyro_y = FirstOrderIIR( drone->attributes.components.bmi.Gyro.y, drone->attributes.states.pitch_dot, ts / 1000.0f, drone->attributes.config.IIR_coeff_pitch_dot );
+        float gyro_z = FirstOrderIIR( drone->attributes.components.bmi.Gyro.z*2, drone->attributes.states.yaw_dot, ts / 1000.0f, drone->attributes.config.IIR_coeff_yaw_dot );
 
         /* Apply first order IIR filter to gyroscope data */
-        obj->attributes.states.roll_dot = gyro_x;
-        obj->attributes.states.pitch_dot = gyro_y;
-        obj->attributes.states.yaw_dot = gyro_z;
+        drone->attributes.states.roll_dot = gyro_x;
+        drone->attributes.states.pitch_dot = gyro_y;
+        drone->attributes.states.yaw_dot = gyro_z;
         
         /* Update state's position */
         float ALPHA = 0.95f;  // TODO: make this a parameter 
 
         float roll_acc = atan2( acc_y, acc_z ) * ( 180.0f / M_PI );
-        float roll_gyro = obj->attributes.states.roll + ( gyro_x * ( ts / 1000.0f ) );        
-        obj->attributes.states.roll = (1-ALPHA)*roll_acc + ALPHA*roll_gyro;
+        float roll_gyro = drone->attributes.states.roll + ( gyro_x * ( ts / 1000.0f ) );        
+        drone->attributes.states.roll = (1-ALPHA)*roll_acc + ALPHA*roll_gyro;
 
         float pitch_acc = atan2(acc_x, sqrt(acc_y*acc_y + acc_z*acc_z)) * (180.0f / M_PI);
-        float pitch_gyro = obj->attributes.states.pitch + (gyro_y * ( ts / 1000.0f) );
-        obj->attributes.states.pitch = (1-ALPHA)*pitch_acc + ALPHA*pitch_gyro;
+        float pitch_gyro = drone->attributes.states.pitch + (gyro_y * ( ts / 1000.0f) );
+        drone->attributes.states.pitch = (1-ALPHA)*pitch_acc + ALPHA*pitch_gyro;
 
-        obj->attributes.states.yaw = obj->attributes.states.yaw + (gyro_z * (ts / 1000.0f) );
+        drone->attributes.states.yaw = wrapAngle360(drone->attributes.states.yaw + (gyro_z * (ts / 1000.0f) ));
     }
 }
 
@@ -565,7 +572,6 @@ void Drone( drone_t * drone ) {
     
     /* Set Drone Class generic configs */
     drone->attributes.config = GetDroneConfigs();  // este GetDroneConfig está bien porque es el único que se tiene que usar
-
 
     /* Pointer to Drone functions ( methods ) */
     drone->methods.update_states    = UpdateStates;

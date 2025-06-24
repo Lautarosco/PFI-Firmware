@@ -71,13 +71,13 @@ typedef struct pwm {
     bool init_ok;
 
     /** @brief [ M ] Get pwm Duty Cycle @param pwm: Address of Pwm object @retval Duty cycle of Pwm object */
-    double ( * get_pwm_dc )( pwm_t * obj );
+    double ( * get_pwm_dc )( pwm_t * pwm );
 
     /** @brief [ M ] Set pwm Duty Cycle @param pwm: Address of Pwm object @param duty: Duty Cycle from 0 to 1 @retval ESP_OK Success - ESP_ERR_INVALID_ARG Parameter error */
-    esp_err_t ( * set_pwm_dc )( pwm_t * obj, float duty );
+    esp_err_t ( * set_pwm_dc )( pwm_t * pwm, float duty );
 
     /** @brief Initialize pwm signal of Brushless DC motor @param pwm: Address of Pwm object @param PwmConfigs: Pwm configs @retval ESP_OK Success - ESP_FAIL */
-    esp_err_t ( *init )( pwm_t * obj, pwm_cfg_t PwmConfigs );
+    esp_err_t ( *init )( pwm_t * pwm, pwm_cfg_t PwmConfigs );
 
 } pwm_t;
 
