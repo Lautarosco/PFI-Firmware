@@ -19,11 +19,6 @@ typedef struct drone_globals {
     /* Serial data */
     SerialData_t serial_data;
 
-    /* IIR filter coefficient */
-    float ema_filter_roll;
-    float ema_filter_pitch;
-    float ema_filter_yaw;
-
 } drone_globals_t;
 
 #endif

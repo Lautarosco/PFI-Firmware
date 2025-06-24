@@ -180,16 +180,16 @@ typedef struct drone_components {
     bmi160_t bmi;
 
     /* Transmitter component */
-    transmitter_t * Tx;
+    transmitter_t Tx;
 
     /* Pwm component */
-    pwm_t * pwm[ 4 ];
+    pwm_t pwm[ 4 ];
 
     /* Mma component */
-    mma_t * mma;
+    mma_t mma;
 
     /* Controller component */
-    pid_controller_t * controllers[ 7 ];
+    pid_controller_t controllers[ 7 ];
     
 } drone_components_t;
 

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <pwm.h>
+#include "pwm.h"
 #include <esp_log.h>
 #include <esp_system.h>
 #include <math.h>
@@ -135,12 +136,9 @@ static double Pwm_GetDc( pwm_t * obj ) {
 
 /** @details Public functions implementation */
 
-pwm_t * Pwm( int tag ) {
+void Pwm( pwm_t* pwm, int tag ) {
 
     ESP_LOGI( PWM_TAG, "Making an instance of Pwm %d Class...", tag + 1 );
-
-    /* Assign memory for a pwm object */
-    pwm_t * pwm = ( pwm_t * ) malloc( sizeof( pwm_t ) );
 
     pwm->dc_min     = 0;              /* Initialize attributes */
     pwm->dc_max     = 0;
@@ -157,5 +155,4 @@ pwm_t * Pwm( int tag ) {
 
     ESP_LOGI( PWM_TAG, "Instance successfully made" );
 
-    return pwm;
 }

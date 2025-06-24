@@ -177,12 +177,9 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
         return ESP_OK;
     }
 
-    transmitter_t * Transmitter( drone_globals_t * global_variables ) {
+    void Transmitter( transmitter_t * Tx, drone_globals_t * global_variables ) {
 
         ESP_LOGI( "TRANSMITTER", "Making an instance of Transmitter Class..." );
-
-        /* Assign memory for a Transmitter object */
-        transmitter_t * Tx = ( transmitter_t * ) malloc( sizeof( transmitter_t ) );
 
         /* Initialize Transmitter mac address in 0 */
         for (int i = 0; i < MAC_ADDR_SIZE; i++) { Tx->mac_addr[ i ] = 0; }
@@ -195,7 +192,6 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
 
         ESP_LOGI( "TRANSMITTER", "Instance succesfully made" );
 
-        return Tx;
     }
 
 #elif WEBSV_TX
@@ -690,24 +686,36 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
         ESP_LOGI( TRANSMITTER_TAG, "Initializing Transmitter object..." );
 
         /* Initialize No Volatile System partition */
+        ESP_LOGI( TRANSMITTER_TAG, "nvs_flash_init\n" );
         ESP_ERROR_CHECK( nvs_flash_init() );
 
         /* Initialize network interface */
+        ESP_LOGI( TRANSMITTER_TAG, "esp_netif_init\n" );
         ESP_ERROR_CHECK( esp_netif_init() );
 
         /* Initialize event loop to catch HTTP related events */
+        ESP_LOGI( TRANSMITTER_TAG, "esp_event_loop_create_default\n" );
         ESP_ERROR_CHECK( esp_event_loop_create_default() );
 
         /* Create default WiFi AP network interface */
+        ESP_LOGI( TRANSMITTER_TAG, "esp_netif_create_default_wifi_ap\n" );
         esp_netif_create_default_wifi_ap();
 
         /* Set up the SoftAP */
+        ESP_LOGI( TRANSMITTER_TAG, "wifi_init_softap\n" );
+
+        ESP_LOGI("MEM", "Free heap: %lu", esp_get_free_heap_size());
+        ESP_LOGI("MEM", "Minimum free heap: %lu", esp_get_minimum_free_heap_size());
+
+
         wifi_init_softap();
 
         /* Start HTTP server */
+        ESP_LOGI( TRANSMITTER_TAG, "start_webserver\n" );
         start_webserver();
 
         /* Initialize Bluetooth interface */
+        ESP_LOGI( TRANSMITTER_TAG, "bluetooth_init\n" );
         bluetooth_init();
 
         ESP_LOGI( TRANSMITTER_TAG, "Transmitter object initialized" );
@@ -715,11 +723,9 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
         return ESP_OK;
     }
 
-    transmitter_t * Transmitter( drone_globals_t * global_variables ) {
+    void Transmitter( transmitter_t* Tx, drone_globals_t * global_variables ) {
 
         ESP_LOGI( "TRANSMITTER", "Making an instance of Transmitter Class..." );
-
-        transmitter_t * Tx = ( transmitter_t * ) malloc( sizeof( transmitter_t ) );
 
         /* Assign Drone object global variables to Transmitter object global variables  */
         Tx->global_variables = global_variables;
@@ -728,8 +734,6 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
         Tx->init = transmitter_init;
 
         ESP_LOGI( "TRANSMITTER", "Instance succesfully made" );
-
-        return Tx;
     }
 
 #endif

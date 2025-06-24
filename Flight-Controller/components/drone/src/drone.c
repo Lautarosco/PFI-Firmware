@@ -175,6 +175,7 @@ static void Kalman( drone_t * obj, float ts_ms ) {
 static bool i2c_scan( void ) {
 
     bool found = false;
+    printf("Entered i2c_scan function\n");
     for( uint8_t address = 1; address < 127; address++ ) {
 
         i2c_cmd_handle_t cmd = i2c_cmd_link_create();
@@ -421,7 +422,15 @@ static esp_err_t drone_init( drone_t * obj ) {
             0.0f
         )
     );
-    
+    // Initialize sensor values to 0
+    obj->attributes.components.bmi.Temp.temperature = 0.0f;
+    obj->attributes.components.bmi.Gyro.x = 0.0f;
+    obj->attributes.components.bmi.Gyro.y = 0.0f;
+    obj->attributes.components.bmi.Gyro.z = 0.0f;
+    obj->attributes.components.bmi.Acc.x = 0.0f;
+    obj->attributes.components.bmi.Acc.y = 0.0f;
+    obj->attributes.components.bmi.Acc.z = 0.0f;
+
     //obj->attributes.components.bmi.Gyro.offset.x = obj->attributes.config.imu_cfg.gyro_offset.x;
     //obj->attributes.components.bmi.Gyro.offset.y = obj->attributes.config.imu_cfg.gyro_offset.y;
     //obj->attributes.components.bmi.Gyro.offset.z = obj->attributes.config.imu_cfg.gyro_offset.z;
@@ -434,14 +443,14 @@ static esp_err_t drone_init( drone_t * obj ) {
     /* Initialize all Pwm objects */
     for( int i = 0; i < ( ( sizeof( obj->attributes.components.pwm ) ) / ( sizeof( obj->attributes.components.pwm[ 0 ] ) ) ); i++ ) {
 
-        obj->attributes.components.pwm[ i ]->init( obj->attributes.components.pwm[ i ], obj->attributes.config.pwm_cfg[ i ] );
+        obj->attributes.components.pwm[ i ].init( &obj->attributes.components.pwm[ i ], obj->attributes.config.pwm_cfg[ i ] );
     }
 
     /* Initialize all Pid objects */
     for( int i = 0; i < ( ( sizeof( obj->attributes.components.controllers ) ) / ( sizeof( obj->attributes.components.controllers[ 0 ] ) ) ); i++ ) {
 
-        obj->attributes.components.controllers[ i ]->init(
-            obj->attributes.components.controllers[ i ],
+        obj->attributes.components.controllers[ i ].init(
+            &obj->attributes.components.controllers[ i ],
             i,
             10.0f,
             1.0f,
@@ -452,8 +461,8 @@ static esp_err_t drone_init( drone_t * obj ) {
     }
 
     /* Initialize Mma object */
-    obj->attributes.components.mma->init(
-        obj->attributes.components.mma,
+    obj->attributes.components.mma.init(
+        &obj->attributes.components.mma,
         obj->attributes.config.mma_out_limits.upper,
         obj->attributes.config.mma_out_limits.lower
     );
@@ -496,14 +505,14 @@ static void UpdateStates( drone_t * obj, float ts ) {
         float acc_y = obj->attributes.components.bmi.Acc.y;
         float acc_z = obj->attributes.components.bmi.Acc.z;
 
-        float gyro_x = obj->attributes.components.bmi.Gyro.x;
-        float gyro_y = obj->attributes.components.bmi.Gyro.y;
-        float gyro_z = obj->attributes.components.bmi.Gyro.z;
+        float gyro_x = FirstOrderIIR( obj->attributes.components.bmi.Gyro.x, obj->attributes.states.roll_dot, ts / 1000.0f, obj->attributes.config.IIR_coeff_roll_dot );
+        float gyro_y = FirstOrderIIR( obj->attributes.components.bmi.Gyro.y, obj->attributes.states.pitch_dot, ts / 1000.0f, obj->attributes.config.IIR_coeff_pitch_dot );
+        float gyro_z = FirstOrderIIR( obj->attributes.components.bmi.Gyro.z, obj->attributes.states.yaw_dot, ts / 1000.0f, obj->attributes.config.IIR_coeff_yaw_dot );
 
-        /* Update state's velocity */
-        obj->attributes.states.roll_dot  = gyro_x;
+        /* Apply first order IIR filter to gyroscope data */
+        obj->attributes.states.roll_dot = gyro_x;
         obj->attributes.states.pitch_dot = gyro_y;
-        obj->attributes.states.yaw_dot   = gyro_z;
+        obj->attributes.states.yaw_dot = gyro_z;
         
         /* Update state's position */
         float ALPHA = 0.95f;  // TODO: make this a parameter 
@@ -547,21 +556,13 @@ static void UpdateSetPoint(drone_t * drone) {
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
-drone_t * Drone( void ) {
+void Drone( drone_t * drone ) {
 
     ESP_LOGI( DRONE_TAG, "Making an instance of Drone Class..." );
 
-    /* Assign memory to Drone object */
-    drone_t * drone = ( drone_t * ) malloc( sizeof( drone_t ) );
-
-    /* Check if memory assign was succesfull */
-    if( drone == NULL ){
-
-        return NULL;
-    }
-
     memset( drone, 0, sizeof( drone_t ) );
-
+    drone->attributes.init_ok = false;
+    
     /* Set Drone Class generic configs */
     drone->attributes.config = GetDroneConfigs();  // este GetDroneConfig está bien porque es el único que se tiene que usar
 
@@ -592,19 +593,19 @@ drone_t * Drone( void ) {
         if( ret == ESP_ERR_NOT_FOUND ) {
 
             ESP_LOGE( DRONE_TAG, "Failed to find spiffs partition" );
-            return NULL;
+            return;
         }
 
         else if( ret == ESP_FAIL ) {
 
             ESP_LOGE( DRONE_TAG, "Failed to mount spiffs partition" );
-            return NULL;
+            return;
         }
 
         else {
 
             ESP_LOGE( DRONE_TAG, "Failed to initialize spiffs ( %s )", esp_err_to_name( ret ) );
-            return NULL;
+            return;
         }
     }
 
@@ -630,7 +631,7 @@ drone_t * Drone( void ) {
     // printf( "Upper limit ( after ): %.2f\r\n", drone->attributes.config.mma_out_limits.upper );
     // drone->attributes.config.mma_out_limits.lower = get_csv_row( csv_rows, n_rows, "lower_limit" ).var_value;
 
-
+    
 
     /* Make an instance of Bmi160 Class */
     #ifndef IGNORE_BMI
@@ -640,6 +641,7 @@ drone_t * Drone( void ) {
         drone->attributes.config.imu_cfg.imu_i2c_cfg.scl
     );
 
+    ESP_LOGI( DRONE_TAG, "BMI160 Init successful\n");
 
     /* Check if all devices are connected to i2c bus */
     if( !drone->methods.i2c_scan() ) {
@@ -648,6 +650,7 @@ drone_t * Drone( void ) {
         while( !found )
         {
             if( drone->methods.i2c_scan() ) {
+                ESP_LOGI( DRONE_TAG, "BMI160 found\n");
                 found = true;
                 break;
             }
@@ -658,21 +661,23 @@ drone_t * Drone( void ) {
     #endif
 
     /* Make an instance of Mma Class */
-    drone->attributes.components.mma = Mma();
+
+    Mma(&drone->attributes.components.mma);
+    ESP_LOGI( DRONE_TAG, "MMA Init successful\n");
 
     /* Make an instance of Pid Class for all controllers */
     for(int i = 0; i < ( ( sizeof( drone->attributes.components.controllers ) ) / ( sizeof( drone->attributes.components.controllers[ 0 ] ) ) ); i++) {
-        drone->attributes.components.controllers[ i ] = Pid( P_Basic, I_BackCalc, D_Basic );
+        Pid( &drone->attributes.components.controllers[ i ], P_Basic, I_BackCalc, D_Basic );
     }
-
+    ESP_LOGI( DRONE_TAG, "PID controllers Init successful\n");
     /* Make an instance of Pwm Class for all pwm signals */
     for(int i = 0; i < ( sizeof( drone->attributes.components.pwm ) / sizeof( drone->attributes.components.pwm[ 0 ] ) ); i++) {
-        drone->attributes.components.pwm[ i ] = Pwm( i );
+        Pwm(&drone->attributes.components.pwm[ i ], i);
     }
-    
+    ESP_LOGI( DRONE_TAG, "PWM signals Init successful\n");
     /* Make an instance of Transmitter Class */
-    drone->attributes.components.Tx = Transmitter( &( drone->attributes.global_variables ) );
-    ESP_LOGI( DRONE_TAG, "Instance succesfully made" );
+    Transmitter( &drone->attributes.components.Tx, &( drone->attributes.global_variables ) );
+
 
     #if PLAYSTATION_TX & WEBSV_TX
         ESP_LOGE( DRONE_TAG, "Multiple transmitters can't be used simmultaneously. See transmitter_structs.h header file" );
@@ -681,12 +686,12 @@ drone_t * Drone( void ) {
     /* Check if playstation joystick is used as transmitter */
     #elif PLAYSTATION_TX
         /* Initialize Transmitter object */
-        drone->attributes.components.Tx->init( drone->attributes.components.Tx, drone->attributes.config.esp_mac_addr );
+        drone->attributes.components.Tx.init( drone->attributes.components.Tx, drone->attributes.config.esp_mac_addr );
         
     /* Check if HTTP server is used as transmitter */
     #elif WEBSV_TX
         /* Initialize Transmitter object */
-        drone->attributes.components.Tx->init( drone->attributes.components.Tx );
+        drone->attributes.components.Tx.init( &(drone->attributes.components.Tx) );
 
     #else
         /* No transmitter selected */
@@ -694,7 +699,7 @@ drone_t * Drone( void ) {
         esp_restart();
 
     #endif
-
+    ESP_LOGI( DRONE_TAG, "Transmitter object initialized\n" );
 
     /* =============== START Global variables assignment =============== */
 
@@ -705,22 +710,22 @@ drone_t * Drone( void ) {
     GlobalSerialData = &drone->attributes.global_variables.serial_data;
 
     /* Point 'GlobalRollGains' global variable to roll controller */
-    GlobalRollGains = &(drone->attributes.components.controllers[ROLL]->gain);
+    GlobalRollGains = &(drone->attributes.components.controllers[ROLL].gain);
 
     /* Point 'GlobalRollGains' global variable to roll_d controller */
-    GlobalRoll_dGains = &(drone->attributes.components.controllers[ROLL_D]->gain);
+    GlobalRoll_dGains = &(drone->attributes.components.controllers[ROLL_D].gain);
 
     /* Point 'GlobalRollGains' global variable to pitch controller */
-    GlobalPitchGains = &(drone->attributes.components.controllers[PITCH]->gain);
+    GlobalPitchGains = &(drone->attributes.components.controllers[PITCH].gain);
 
     /* Point 'GlobalRollGains' global variable to pitch_d controller */
-    GlobalPitch_dGains = &(drone->attributes.components.controllers[PITCH_D]->gain);
+    GlobalPitch_dGains = &(drone->attributes.components.controllers[PITCH_D].gain);
 
     /* Point 'GlobalRollGains' global variable to yaw controller */
-    GlobalYawGains = &(drone->attributes.components.controllers[YAW]->gain);
+    GlobalYawGains = &(drone->attributes.components.controllers[YAW].gain);
 
     /* Point 'GlobalRollGains' global variable to yaw_d controller */
-    GlobalYaw_dGains = &(drone->attributes.components.controllers[YAW_D]->gain);
+    GlobalYaw_dGains = &(drone->attributes.components.controllers[YAW_D].gain);
 
     /* =============== END Global variables assignment =============== */
 
@@ -743,22 +748,22 @@ drone_t * Drone( void ) {
     drone->attributes.flash_params_arr[ GYRO_OFFSET_X ] = &( drone->attributes.components.bmi.Gyro.offset.x );
     drone->attributes.flash_params_arr[ GYRO_OFFSET_Y ] = &( drone->attributes.components.bmi.Gyro.offset.y );
     drone->attributes.flash_params_arr[ GYRO_OFFSET_Z ] = &( drone->attributes.components.bmi.Gyro.offset.z );
-    drone->attributes.flash_params_arr[ PID_ROLL_KP ]   = &( drone->attributes.components.controllers[ ROLL ]->gain.kp );
-    drone->attributes.flash_params_arr[ PID_ROLL_KI ]   = &( drone->attributes.components.controllers[ ROLL ]->gain.ki );
-    drone->attributes.flash_params_arr[ PID_ROLL_KD ]   = &( drone->attributes.components.controllers[ ROLL ]->gain.kd );
-    drone->attributes.flash_params_arr[ PID_ROLL_D_KB ] = &( drone->attributes.components.controllers[ ROLL ]->gain.kb );
-    drone->attributes.flash_params_arr[ PID_ROLL_D_KP ] = &( drone->attributes.components.controllers[ ROLL_D ]->gain.kp );
-    drone->attributes.flash_params_arr[ PID_ROLL_D_KI ] = &( drone->attributes.components.controllers[ ROLL_D ]->gain.ki );
-    drone->attributes.flash_params_arr[ PID_ROLL_D_KD ] = &( drone->attributes.components.controllers[ ROLL_D ]->gain.kd );
-    drone->attributes.flash_params_arr[ PID_ROLL_D_KB ] = &( drone->attributes.components.controllers[ ROLL_D ]->gain.kb );
+    drone->attributes.flash_params_arr[ PID_ROLL_KP ]   = &( drone->attributes.components.controllers[ ROLL ].gain.kp );
+    drone->attributes.flash_params_arr[ PID_ROLL_KI ]   = &( drone->attributes.components.controllers[ ROLL ].gain.ki );
+    drone->attributes.flash_params_arr[ PID_ROLL_KD ]   = &( drone->attributes.components.controllers[ ROLL ].gain.kd );
+    drone->attributes.flash_params_arr[ PID_ROLL_D_KB ] = &( drone->attributes.components.controllers[ ROLL ].gain.kb );
+    drone->attributes.flash_params_arr[ PID_ROLL_D_KP ] = &( drone->attributes.components.controllers[ ROLL_D ].gain.kp );
+    drone->attributes.flash_params_arr[ PID_ROLL_D_KI ] = &( drone->attributes.components.controllers[ ROLL_D ].gain.ki );
+    drone->attributes.flash_params_arr[ PID_ROLL_D_KD ] = &( drone->attributes.components.controllers[ ROLL_D ].gain.kd );
+    drone->attributes.flash_params_arr[ PID_ROLL_D_KB ] = &( drone->attributes.components.controllers[ ROLL_D ].gain.kb );
 
     /* Blink MCU internal LED to indicate Transmitter object is ready to receive commands */
     gpio_set_level( GPIO_NUM_2, false );
     vTaskDelay( pdMS_TO_TICKS( 1000 ) );
     gpio_set_level( GPIO_NUM_2, true );
 
-    /* Return instance of Drone Class */
-    return drone;
+    ESP_LOGI( DRONE_TAG, "Instance succesfully made" );
+
 }
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */

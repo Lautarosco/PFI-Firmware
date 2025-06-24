@@ -11,7 +11,7 @@
  * @param none
  * @retval Pointer to Drone object
  */
-drone_t * Drone( void );
+void Drone( drone_t * drone );
 
 /**
  * @brief Sine wave for tunning PID controllers in radians

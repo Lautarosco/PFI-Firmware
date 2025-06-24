@@ -8,6 +8,6 @@
  * @param tag: Pwm ID
  * @retval Pointer to Pwm object
  */
-pwm_t * Pwm( int tag );
+void Pwm( pwm_t* pwm, int tag );
 
 #endif

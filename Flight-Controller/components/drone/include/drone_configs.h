@@ -23,9 +23,9 @@ static drone_cfg_t DroneConfigs = {
         .Q = 0.0f,
         .R = 0.0f,
     },
-    .IIR_coeff_roll_dot  = 0.0f,
-    .IIR_coeff_pitch_dot = 0.0f,
-    .IIR_coeff_yaw_dot   = 0.0f,
+    .IIR_coeff_roll_dot  = 0.6f,
+    .IIR_coeff_pitch_dot = 0.6f,
+    .IIR_coeff_yaw_dot   = 0.6f,
     .imu_cfg = {
         .imu_i2c_cfg = {
             .address = BMI160_ADDR,

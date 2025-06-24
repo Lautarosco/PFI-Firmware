@@ -147,27 +147,32 @@ void vTaskStateMachine_Run( void * pvParameters ) {
 
 void vTaskDroneMeasure( void * pvParameters ) {
 
+    printf("Entering vTaskDroneMeasure\n");
     /* Cast parameter into Drone object */
-    drone_t * obj = ( drone_t * ) pvParameters;
+    drone_t * drone = ( drone_t * ) pvParameters;
+    printf("Casted drone object\n");
+    printf("init_ok: ");
+    printf("%d\n", drone->attributes.init_ok);
     
     while( 1 ) {
 
-        /* Measure attitude and update bmi sensor internal registers with respective values */
-        obj->attributes.components.bmi.measure( &( obj->attributes.components.bmi ) );
+        if (drone->attributes.init_ok) {
+            /* Measure attitude and update bmi sensor internal registers with respective values */
+            drone->attributes.components.bmi.measure( &( drone->attributes.components.bmi ) );
 
-        if (obj->attributes.init_ok) {
             /* Update drone states */
-            obj->methods.update_states( obj, 10 );
+            drone->methods.update_states( drone, 10 );
 
             /* Update sp */
-            obj->attributes.sp.roll = 0;
-            obj->attributes.sp.pitch = 0;
-            obj->attributes.sp.yaw = 0;
-            obj->attributes.sp.z = 0;
+            drone->attributes.sp.roll = 0;
+            drone->attributes.sp.pitch = 0;
+            drone->attributes.sp.yaw = 0;
+            drone->attributes.sp.z = 0;
         }
-
         vTaskDelay( pdMS_TO_TICKS( 10 ) );
     }
+    
+
 }
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
@@ -221,34 +226,34 @@ void vTaskprint( void * drone_ ) {
                 drone->attributes.sp.yaw_dot,
                 drone->attributes.states.z,
                 drone->attributes.sp.z,
-                drone->attributes.components.pwm[0]->get_pwm_dc(drone->attributes.components.pwm[0])*1000,
-                drone->attributes.components.pwm[1]->get_pwm_dc(drone->attributes.components.pwm[1])*1000,
-                drone->attributes.components.pwm[2]->get_pwm_dc(drone->attributes.components.pwm[2])*1000,
-                drone->attributes.components.pwm[3]->get_pwm_dc(drone->attributes.components.pwm[3])*1000,
+                drone->attributes.components.pwm[0].get_pwm_dc(&drone->attributes.components.pwm[0])*1000,
+                drone->attributes.components.pwm[1].get_pwm_dc(&drone->attributes.components.pwm[1])*1000,
+                drone->attributes.components.pwm[2].get_pwm_dc(&drone->attributes.components.pwm[2])*1000,
+                drone->attributes.components.pwm[3].get_pwm_dc(&drone->attributes.components.pwm[3])*1000,
 
                 // roll gains
-                drone->attributes.components.controllers[ROLL]->gain.kp,
-                drone->attributes.components.controllers[ROLL]->gain.ki,
-                drone->attributes.components.controllers[ROLL]->gain.kd,
-                drone->attributes.components.controllers[ROLL_D]->gain.kp,
-                drone->attributes.components.controllers[ROLL_D]->gain.ki,
-                drone->attributes.components.controllers[ROLL_D]->gain.kd,
+                drone->attributes.components.controllers[ROLL].gain.kp,
+                drone->attributes.components.controllers[ROLL].gain.ki,
+                drone->attributes.components.controllers[ROLL].gain.kd,
+                drone->attributes.components.controllers[ROLL_D].gain.kp,
+                drone->attributes.components.controllers[ROLL_D].gain.ki,
+                drone->attributes.components.controllers[ROLL_D].gain.kd,
 
                 // pitch gains
-                drone->attributes.components.controllers[PITCH]->gain.kp,
-                drone->attributes.components.controllers[PITCH]->gain.ki,
-                drone->attributes.components.controllers[PITCH]->gain.kd,
-                drone->attributes.components.controllers[PITCH_D]->gain.kp,
-                drone->attributes.components.controllers[PITCH_D]->gain.ki,
-                drone->attributes.components.controllers[PITCH_D]->gain.kd,
+                drone->attributes.components.controllers[PITCH].gain.kp,
+                drone->attributes.components.controllers[PITCH].gain.ki,
+                drone->attributes.components.controllers[PITCH].gain.kd,
+                drone->attributes.components.controllers[PITCH_D].gain.kp,
+                drone->attributes.components.controllers[PITCH_D].gain.ki,
+                drone->attributes.components.controllers[PITCH_D].gain.kd,
 
                 // yaw gains
-                drone->attributes.components.controllers[YAW]->gain.kp,
-                drone->attributes.components.controllers[YAW]->gain.ki,
-                drone->attributes.components.controllers[YAW]->gain.kd,
-                drone->attributes.components.controllers[YAW_D]->gain.kp,
-                drone->attributes.components.controllers[YAW_D]->gain.ki,
-                drone->attributes.components.controllers[YAW_D]->gain.kd,
+                drone->attributes.components.controllers[YAW].gain.kp,
+                drone->attributes.components.controllers[YAW].gain.ki,
+                drone->attributes.components.controllers[YAW].gain.kd,
+                drone->attributes.components.controllers[YAW_D].gain.kp,
+                drone->attributes.components.controllers[YAW_D].gain.ki,
+                drone->attributes.components.controllers[YAW_D].gain.kd,
             
                 // state machine current state
                 StateMachine_GetStateName(drone->attributes.state_machine.curr_state)

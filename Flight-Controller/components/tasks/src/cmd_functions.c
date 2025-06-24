@@ -134,9 +134,9 @@ typedef struct vars_update {
 
 void VarsUpdateCmdFunc(drone_t * drone, char * arr[4]) {
     vars_update_t general_vars[] = {
-        {.name = "ema_roll",  .addr = &(drone->attributes.global_variables.ema_filter_roll)},
-        {.name = "ema_pitch", .addr = &(drone->attributes.global_variables.ema_filter_pitch)},
-        {.name = "ema_yaw",   .addr = &(drone->attributes.global_variables.ema_filter_yaw)},
+        {.name = "ema_roll",  .addr = &(drone->attributes.config.IIR_coeff_roll_dot)},
+        {.name = "ema_pitch", .addr = &(drone->attributes.config.IIR_coeff_pitch_dot)},
+        {.name = "ema_yaw",   .addr = &(drone->attributes.config.IIR_coeff_yaw_dot)},
         {.name = NULL,        .addr = NULL}
     };
 
@@ -155,13 +155,13 @@ void VarsUpdateCmdFunc(drone_t * drone, char * arr[4]) {
 }
 
 
-void SpUpdateCmdFunc( drone_t * obj, char * arr[ 4 ] ) {
+void SpUpdateCmdFunc( drone_t * drone, char * arr[ 4 ] ) {
 
     /* Get index ( states enum ) of received state */
     int index = GetStateIndex( arr[ STATE_INDEX ] );
 
     /* Check if received state is valid */
-    if( PID_INDEX_CHECK( index, sizeof( obj->attributes.components.controllers ) / ( sizeof( obj->attributes.components.controllers[ 0 ] ) ), __func__, __LINE__ ) ) {
+    if( PID_INDEX_CHECK( index, sizeof( drone->attributes.components.controllers ) / ( sizeof( drone->attributes.components.controllers[ 0 ] ) ), __func__, __LINE__ ) ) {
 
         typedef struct sp_index {
             int state_index;
@@ -169,13 +169,13 @@ void SpUpdateCmdFunc( drone_t * obj, char * arr[ 4 ] ) {
         } sp_index_t;
 
         sp_index_t sp_arr[] = {
-            {.state_index = Z,       .ptr = &(obj->attributes.sp.z)},
-            {.state_index = ROLL,    .ptr = &(obj->attributes.sp.roll)},
-            {.state_index = ROLL_D,  .ptr = &(obj->attributes.sp.roll_dot)},
-            {.state_index = PITCH,   .ptr = &(obj->attributes.sp.pitch)},
-            {.state_index = PITCH_D, .ptr = &(obj->attributes.sp.pitch_dot)},
-            {.state_index = YAW,     .ptr = &(obj->attributes.sp.yaw)},
-            {.state_index = YAW_D,   .ptr = &(obj->attributes.sp.yaw_dot)},
+            {.state_index = Z,       .ptr = &(drone->attributes.sp.z)},
+            {.state_index = ROLL,    .ptr = &(drone->attributes.sp.roll)},
+            {.state_index = ROLL_D,  .ptr = &(drone->attributes.sp.roll_dot)},
+            {.state_index = PITCH,   .ptr = &(drone->attributes.sp.pitch)},
+            {.state_index = PITCH_D, .ptr = &(drone->attributes.sp.pitch_dot)},
+            {.state_index = YAW,     .ptr = &(drone->attributes.sp.yaw)},
+            {.state_index = YAW_D,   .ptr = &(drone->attributes.sp.yaw_dot)},
             {.state_index = 0,       .ptr = NULL},
         };
 
@@ -205,21 +205,21 @@ void SpUpdateCmdFunc( drone_t * obj, char * arr[ 4 ] ) {
 }
 
 
-void PidGainsCmdFunc( drone_t * obj, char * arr[ 4 ] ) {
+void PidGainsCmdFunc( drone_t * drone, char * arr[ 4 ] ) {
 
     /* Get index ( states enum ) of received state */
     int index = GetStateIndex( arr[ STATE_INDEX ] );
 
     /* Check if received state is valid */
-    if( PID_INDEX_CHECK( index, sizeof( obj->attributes.components.controllers ) / ( sizeof( obj->attributes.components.controllers[ 0 ] ) ), __func__, __LINE__ ) ) {
+    if( PID_INDEX_CHECK( index, sizeof( drone->attributes.components.controllers ) / ( sizeof( drone->attributes.components.controllers[ 0 ] ) ), __func__, __LINE__ ) ) {
 
         vars_update_t vars_arr[] = {
 
-            { .name = "p",   .addr = &( obj->attributes.components.controllers[ index ]->gain.kp ) },
-            { .name = "i",   .addr = &( obj->attributes.components.controllers[ index ]->gain.ki ) },
-            { .name = "d",   .addr = &( obj->attributes.components.controllers[ index ]->gain.kd ) },
-            { .name = "b",   .addr = &( obj->attributes.components.controllers[ index ]->gain.kb ) },
-            { .name = "tau", .addr = &( obj->attributes.components.controllers[ index ]->derivative_lpf.tau_s ) },
+            { .name = "p",   .addr = &( drone->attributes.components.controllers[ index ].gain.kp ) },
+            { .name = "i",   .addr = &( drone->attributes.components.controllers[ index ].gain.ki ) },
+            { .name = "d",   .addr = &( drone->attributes.components.controllers[ index ].gain.kd ) },
+            { .name = "b",   .addr = &( drone->attributes.components.controllers[ index ].gain.kb ) },
+            { .name = "tau", .addr = &( drone->attributes.components.controllers[ index ].derivative_lpf.tau_s ) },
             { .name = NULL,  .addr = NULL },
         
         };
@@ -242,8 +242,8 @@ void PidGainsCmdFunc( drone_t * obj, char * arr[ 4 ] ) {
     }
 }
 
-void NvsStoreCmdFunc( drone_t * obj, char * arr[ 4 ]) {
-    obj->methods.save_to_nvs(obj);
+void NvsStoreCmdFunc( drone_t * drone, char * arr[ 4 ]) {
+    drone->methods.save_to_nvs(drone);
 }
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
@@ -258,10 +258,10 @@ typedef struct pid_action_function {
     const char * action_name;
 
     /* Pointer to Pid Class set action method */
-    void ( * pid_setterFunc )( pid_controller_t * obj, ControllerFunction * actionFunc );
+    void ( * pid_setterFunc )( pid_controller_t * pid_controller, ControllerFunction * actionFunc );
 
     /* Pointer to controller action function */
-    float ( * actionFunc )( pid_controller_t * obj, float error );
+    float ( * actionFunc )( pid_controller_t * pid_controller, float error );
 
 } pid_action_function_t;
 
@@ -275,7 +275,7 @@ static pid_action_function_t pid_actions_array[] = {
     { .action_name = "D_LPF",      .pid_setterFunc = &PidSetActionD, .actionFunc = D_LPF },
 };
 
-void PidActionsCmdFunc( drone_t * obj, char * arr[ 4 ] ) {
+void PidActionsCmdFunc( drone_t * drone, char * arr[ 4 ] ) {
 
     /* Get index ( states enum ) of received state */
     int index = GetStateIndex( arr[ STATE_INDEX ] );
@@ -283,13 +283,13 @@ void PidActionsCmdFunc( drone_t * obj, char * arr[ 4 ] ) {
     bool found = false;
 
     /* Check if received state is valid */
-    if( PID_INDEX_CHECK( index, sizeof( obj->attributes.components.controllers ) / ( sizeof( obj->attributes.components.controllers[ 0 ] ) ), __func__, __LINE__ ) ) {
+    if( PID_INDEX_CHECK( index, sizeof( drone->attributes.components.controllers ) / ( sizeof( drone->attributes.components.controllers[ 0 ] ) ), __func__, __LINE__ ) ) {
 
         for( int i = 0; i < ( ( sizeof( pid_actions_array ) ) / ( sizeof( pid_actions_array[ 0 ] ) ) ); i++ ) {
 
             if( !strcmp( pid_actions_array[ i ].action_name, arr[ VALUE_INDEX ] ) ){
 
-                pid_actions_array[ i ].pid_setterFunc( obj->attributes.components.controllers[ index ], pid_actions_array[ i ].actionFunc );
+                pid_actions_array[ i ].pid_setterFunc( &(drone->attributes.components.controllers[ index ]), pid_actions_array[ i ].actionFunc );
                 found = true;
             }
         }

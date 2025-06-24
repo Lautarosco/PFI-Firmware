@@ -328,15 +328,12 @@ static void pid_init( pid_controller_t * obj, states_t tag, float ts_ms, float t
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
-pid_controller_t * Pid( ControllerFunction * pFunc, ControllerFunction * iFunc, ControllerFunction * dFunc ) {
+void Pid(pid_controller_t * controller ,ControllerFunction * pFunc, ControllerFunction * iFunc, ControllerFunction * dFunc ) {
 
     ESP_LOGI( CONTROLLER_TAG, "Making an instance of Pid Class..." );
 
-    /* Assign memmory to Pid object */
-    pid_controller_t * controller = malloc( sizeof( pid_controller_t ) );
-
     /* Set default attributes values in 0 */
-    memset( controller, 0, sizeof( * controller ) );
+    memset( controller, 0, sizeof( pid_controller_t ) );
 
     /* Pointer assignment to Pid Class functions ( methods ) */
     controller->init          = pid_init;
@@ -351,6 +348,4 @@ pid_controller_t * Pid( ControllerFunction * pFunc, ControllerFunction * iFunc, 
 
     ESP_LOGI( CONTROLLER_TAG, "Instance successfully made" );
 
-    /* Return instance of Pid Class */
-    return controller;
 }

@@ -8,7 +8,7 @@
  * @param none
  * @retval Pointer Pid object
  */
-pid_controller_t * Pid( ControllerFunction* pFunc, ControllerFunction* iFunc, ControllerFunction* dFunc );
+void Pid( pid_controller_t* controller, ControllerFunction* pFunc, ControllerFunction* iFunc, ControllerFunction* dFunc );
 
 
 /**
