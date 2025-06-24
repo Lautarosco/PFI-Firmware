@@ -73,36 +73,43 @@ static void StWaitingFunc( drone_t * obj ) {
 
 float filtered_roll = 0.0f;
 
-#define AVG (drone->attributes.components.pwm[ pwm_num ]->dc_max+drone->attributes.components.pwm[ pwm_num ]->dc_min)/2  // buscar una solucion mas prolija
-
 static void toggle_motor(drone_t* drone, int pwm_num);
 static void toggle_motor(drone_t* drone, int pwm_num) {
 
     float current_pwm_dc = drone->attributes.components.pwm[ pwm_num ]->get_pwm_dc(drone->attributes.components.pwm[ pwm_num ]);
     printf("Current PWM DC for motor %d: %.2f\n", pwm_num, current_pwm_dc);
 
-    if (current_pwm_dc > AVG) {
+    float dc_min = drone->attributes.components.pwm[pwm_num]->dc_min;
+    float dc_target = dc_min*drone->attributes.config.mma_out_limits.lower; 
+    float avg = (dc_min + dc_target) / 2.0;
+
+    if (current_pwm_dc > avg) {
 
         drone->attributes.components.pwm[ pwm_num ]->set_pwm_dc(
             drone->attributes.components.pwm[ pwm_num ],
-            drone->attributes.components.pwm[ pwm_num ]->dc_min
+            dc_min  // Apagado
         );
-        printf("Motor %d OFF\n", pwm_num);
+        printf("Motor %d OFF with duty cycle: %f \n", pwm_num, dc_min);
 
     } else {
-
+        // float dc_target = dc_min + ((dc_max - dc_min) / 2); 
+        printf("dc_min: %f\n", dc_min);
+        printf("dc_target: %f\n", dc_target);
+        printf("avg: %f\n", avg);
+        printf("lower_limit: %f\n", drone->attributes.components.mma->limit.lower);
+        
         drone->attributes.components.pwm[ pwm_num ]->set_pwm_dc(
             drone->attributes.components.pwm[ pwm_num ],
-            drone->attributes.components.pwm[ pwm_num ]->dc_max*0  // TODO: no hacerlo tan grande
+            dc_target  // Velocidad minima
         );
-        printf("Motor %d ON\n", pwm_num);
+        printf("Motor %d ON with duty cycle: %f \n", pwm_num, dc_target);
 
 
     }
 
 }
 
-static void StControlVibrationCheck(drone_t* drone) {
+static void StVibrationCheck(drone_t* drone) {
     float alpha = 0.1f; // Smoothing factor (0 < alpha < 1)
 
     static bool initialized = false;
@@ -315,7 +322,7 @@ static state_func_row_t state_function_array[] = {
     { .name = "ST_WAITING",               .func = &StWaitingFunc },
     { .name = "ST_CALIBRATION",           .func = &StCalibrationFunc },
     { .name = "ST_CONTROL",               .func = &StControlFunc },
-    { .name = "ST_PROPELLER_CALIBRATION", .func = &StControlVibrationCheck },
+    { .name = "ST_PROPELLER_CALIBRATION", .func = &StVibrationCheck },
     { .name = "ST_RESET",                 .func = &StResetFunc },
 
 };

@@ -51,7 +51,7 @@ typedef enum mma_outputs {
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
-/* @brief Upper and lower limit for mma output */
+/* @brief Upper and lower limit for mma output */  // TODO: hacerlo mas claro.
 typedef struct limits {
 
     /* Lower limit, from 0 to 1 */
