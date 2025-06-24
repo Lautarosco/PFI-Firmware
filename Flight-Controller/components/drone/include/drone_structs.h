@@ -353,23 +353,23 @@ typedef struct drone drone_t;
 
 /** @brief Drone's methods */
 typedef struct drone_methods {
-    /** @brief Update Drone object states @param obj: Address of Drone object @param ts: Sampling time in milliseconds @retval none */
-    void ( * update_states )( drone_t * obj, float ts );
+    /** @brief Update Drone object states @param drone: Address of Drone object @param ts: Sampling time in milliseconds @retval none */
+    void ( * update_states )( drone_t * drone, float ts );
 
     /** @brief Update Drone set points @param drone: Address of Drone object @retval none */
     void (*update_sp)(drone_t * drone);
 
-    /** @brief Initialize an object of Drone Class @param obj: Address of Drone object @param drone_cfg: Drone's configs @retval esp_err_t */
-    esp_err_t ( * init )( drone_t * obj );
+    /** @brief Initialize an object of Drone Class @param drone: Address of Drone object @param drone_cfg: Drone's configs @retval esp_err_t */
+    esp_err_t ( * init )( drone_t * drone );
 
     /** @brief Seek devices in I2C bus @param none @retval bool */
     bool ( * i2c_scan )( void );
 
-    /** @brief Save Drone parameters to flash memory @param obj: Direction of Drone object @retval none */
-    void ( * save_to_nvs )( drone_t * obj );
+    /** @brief Save Drone parameters to flash memory @param drone: Direction of Drone object @retval none */
+    void ( * save_to_nvs )( drone_t * drone );
 
-    /** @brief Read Drone parameters stored in flash memory @param obj: Direction of Drone object @retval none */
-    void ( * read_from_flash )( drone_t * obj );
+    /** @brief Read Drone parameters stored in flash memory @param drone: Direction of Drone object @retval none */
+    void ( * read_from_flash )( drone_t * drone );
 
 } drone_methods_t;
 

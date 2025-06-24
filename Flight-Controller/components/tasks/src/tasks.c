@@ -3,6 +3,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <drone.h>
+#include <math.h>
 // #include <state_machine.h>
 #include <string.h>
 
@@ -144,7 +145,6 @@ void vTaskStateMachine_Run( void * pvParameters ) {
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
-
 void vTaskDroneMeasure( void * pvParameters ) {
 
     printf("Entering vTaskDroneMeasure\n");
@@ -164,8 +164,27 @@ void vTaskDroneMeasure( void * pvParameters ) {
             drone->methods.update_states( drone, 10 );
 
             /* Update sp */
-            drone->attributes.sp.roll = 0;
-            drone->attributes.sp.pitch = 0;
+            /*printf("Analog stick values: LX\t LY\t RX\t RY\n%d\t, %d\t, %d\t, %d\n",
+                drone->attributes.global_variables.tx_buttons.left_stick.x,
+                drone->attributes.global_variables.tx_buttons.left_stick.y,
+                drone->attributes.global_variables.tx_buttons.right_stick.x,
+                drone->attributes.global_variables.tx_buttons.right_stick.y
+            );*/
+
+            // TODO: Make these parameters
+            float MAX_ROLL = 15.0f;  // Maximum roll angle in degrees
+            float MAX_PITCH = 15.0f; // Maximum pitch angle in degrees
+
+            int r_stick_x = drone->attributes.global_variables.tx_buttons.right_stick.x;
+            if (r_stick_x > 100) r_stick_x = 100;
+            if (r_stick_x < -100) r_stick_x = -100;
+            drone->attributes.sp.roll = (r_stick_x / 100.0f) * MAX_ROLL * (M_PI/180.0f);
+
+            int r_stick_y = drone->attributes.global_variables.tx_buttons.right_stick.y;
+            if (r_stick_y > 100) r_stick_y = 100;
+            if (r_stick_y < -100) r_stick_y = -100;
+            drone->attributes.sp.pitch = (r_stick_y / 100.0f) * MAX_PITCH * (M_PI/180.0f);
+
             drone->attributes.sp.yaw = 0;
             drone->attributes.sp.z = 0;
         }
@@ -182,20 +201,18 @@ void vTaskprint( void * drone_ ) {
     drone_t* drone = ( drone_t * ) drone_;
 
     /**
-     * @brief Variable format: <printer:var,%f\n>
+     * @brief Variable format: <printer:var,%.2f\n>
      * @details Used for sending variables such as drone states, pid values, etc.
      * @example i.e, <printer:roll,%f>  This will send roll values to plotter app
      * 
      * 
-     * @brief Static format: <static:var_name/var_attr,%f|\n>
+     * @brief Static format: <static:var_name/var_attr,%.2f|\n>
      * @details Used for sending static variables
      * @example i.e, <static:roll/P,%f>  This will send proportional action of roll pid to plotter app
      */
     static char buf[1024];
 
     while( 1 ) {
-
-        // printf( "Estado: %s\r\n", StateMachine_GetStateName( state_machine.curr_state ) );
 
         if( drone->attributes.init_ok) {
 
@@ -205,7 +222,9 @@ void vTaskprint( void * drone_ ) {
                 "pitch,%.2f|pitch_d,%.2f|pitch_sp,%.2f|pitch_d_sp,%.2f|"
                 "yaw,%.2f|yaw_d,%.2f|yaw_sp,%.2f|yaw_d_sp,%.2f|"
                 "height,%.2f|height_sp,%.2f|"
-                "dc1,%.2f|dc2,%.2f|dc3,%.2f|dc4,%.2f\n"  // end of dynamic values
+                "dc1,%.2f|dc2,%.2f|dc3,%.2f|dc4,%.2f|"
+                "gyro_x,%.2f|gyro_y,%.2f|gyro_z,%.2f"
+                "\n"  // end of dynamic values
                 "static:roll/P,%.2f|roll/I,%.2f|roll/D,%.2f|roll_d/P,%.2f|roll_d/I,%.2f|roll_d/D,%.2f|"
                 "pitch/P,%.2f|pitch/I,%.2f|pitch/D,%.2f|pitch_d/P,%.2f|pitch_d/I,%.2f|pitch_d/D,%.2f|"
                 "yaw/P,%.2f|yaw/I,%.2f|yaw/D,%.2f|yaw_d/P,%.2f|yaw_d/I,%.2f|yaw_d/D,%.2f|"
@@ -230,6 +249,9 @@ void vTaskprint( void * drone_ ) {
                 drone->attributes.components.pwm[1].get_pwm_dc(&drone->attributes.components.pwm[1])*1000,
                 drone->attributes.components.pwm[2].get_pwm_dc(&drone->attributes.components.pwm[2])*1000,
                 drone->attributes.components.pwm[3].get_pwm_dc(&drone->attributes.components.pwm[3])*1000,
+                drone->attributes.components.bmi.Gyro.x,
+                drone->attributes.components.bmi.Gyro.y,
+                drone->attributes.components.bmi.Gyro.z,
 
                 // roll gains
                 drone->attributes.components.controllers[ROLL].gain.kp,
@@ -358,20 +380,20 @@ static void vLocalUartTxCmd(void *pvParameters) {
         } tx_btns_t;
 
         tx_btns_t tx_btns_arr[] = {
-            {.btn_name = "cross",    .tx_btn_ptr = &(GlobalTxButtons->cross)},
-            {.btn_name = "triangle", .tx_btn_ptr = &(GlobalTxButtons->triangle)},
-            {.btn_name = "square",   .tx_btn_ptr = &(GlobalTxButtons->square)},
-            {.btn_name = "circle",   .tx_btn_ptr = &(GlobalTxButtons->circle)},
-            {.btn_name = "up",       .tx_btn_ptr = &(GlobalTxButtons->up)},
-            {.btn_name = "down",     .tx_btn_ptr = &(GlobalTxButtons->down)},
-            {.btn_name = "left",     .tx_btn_ptr = &(GlobalTxButtons->left)},
-            {.btn_name = "right",    .tx_btn_ptr = &(GlobalTxButtons->right)},
-            {.btn_name = "l1",       .tx_btn_ptr = &(GlobalTxButtons->l1)},
-            {.btn_name = "l2",       .tx_btn_ptr = &(GlobalTxButtons->l2)},
-            {.btn_name = "r1",       .tx_btn_ptr = &(GlobalTxButtons->r1)},
-            {.btn_name = "r2",       .tx_btn_ptr = &(GlobalTxButtons->r2)},
-            {.btn_name = "start",    .tx_btn_ptr = &(GlobalTxButtons->start)},
-            {.btn_name = "reset",    .tx_btn_ptr = &(GlobalTxButtons->ps)}
+            {.btn_name = "cross",    .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.cross)},
+            {.btn_name = "triangle", .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.triangle)},
+            {.btn_name = "square",   .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.square)},
+            {.btn_name = "circle",   .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.circle)},
+            {.btn_name = "up",       .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.up)},
+            {.btn_name = "down",     .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.down)},
+            {.btn_name = "left",     .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.left)},
+            {.btn_name = "right",    .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.right)},
+            {.btn_name = "l1",       .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.l1)},
+            {.btn_name = "l2",       .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.l2)},
+            {.btn_name = "r1",       .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.r1)},
+            {.btn_name = "r2",       .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.r2)},
+            {.btn_name = "start",    .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.start)},
+            {.btn_name = "reset",    .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.ps)}
         };
 
         bool found = false;
@@ -438,7 +460,7 @@ static void LocalParseUartCmd(drone_t *drone) {
 void vTaskUartEvent( void * pvParameters ) {
 
     /* Cast parameter into Drone object */
-    drone_t * obj = ( drone_t * ) pvParameters;
+    drone_t * drone = ( drone_t * ) pvParameters;
 
     /* UART port num */
     uart_port_t uart_num = UART_NUM_0;
@@ -460,20 +482,20 @@ void vTaskUartEvent( void * pvParameters ) {
                 case UART_DATA:
 
                     /* Avoid overlapping between UART and Bluetooth */
-                    if( !obj->attributes.global_variables.serial_data.state ) {
+                    if( !drone->attributes.global_variables.serial_data.state ) {
 
                         /* Data received flag HIGH */
-                        obj->attributes.global_variables.serial_data.state = true;
+                        drone->attributes.global_variables.serial_data.state = true;
 
                         /* Update data length */
-                        obj->attributes.global_variables.serial_data.len = uart_event.size;
+                        drone->attributes.global_variables.serial_data.len = uart_event.size;
 
                         /* Store received data into drone's global variable */
-                        uart_read_bytes( uart_num, obj->attributes.global_variables.serial_data.data, uart_event.size, 100 );
-                        LocalParseUartCmd(obj);
+                        uart_read_bytes( uart_num, drone->attributes.global_variables.serial_data.data, uart_event.size, 100 );
+                        LocalParseUartCmd(drone);
 
                         /* Echo received data */
-                        uart_write_bytes( uart_num, obj->attributes.global_variables.serial_data.data, uart_event.size );
+                        uart_write_bytes( uart_num, drone->attributes.global_variables.serial_data.data, uart_event.size );
 
                         /* Clear UART Rx buffer */
                         uart_flush( uart_num );
@@ -503,8 +525,8 @@ typedef struct cmd_function {
     /* Name of the command */
     const char * cmd_name;
 
-    /** @brief Compute the function of a given command @param obj: Address of Drone object @param arr: Array containing processed data from the original command */
-    void ( * func )( drone_t * obj, char * arr[ 4 ] );
+    /** @brief Compute the function of a given command @param drone: Address of Drone object @param arr: Array containing processed data from the original command */
+    void ( * func )( drone_t * drone, char * arr[ 4 ] );
 
 } cmd_function_t;
 
@@ -521,18 +543,18 @@ static cmd_function_t cmd_function_array[] = {
 void vTaskParseCommand( void * pvParameters ) {
 
     /* Cast parameter into Drone object */
-    drone_t * obj = ( drone_t * ) pvParameters;
+    drone_t * drone = ( drone_t * ) pvParameters;
 
     /* Start UART cmd detection task */
-    // xTaskCreatePinnedToCore( vTaskUartEvent, "Task4", 1024 * 3, ( void * ) ( obj ), 0, NULL, CORE_0 );
+    // xTaskCreatePinnedToCore( vTaskUartEvent, "Task4", 1024 * 3, ( void * ) ( drone ), 0, NULL, CORE_0 );
 
     while( 1 ) {
 
         /* If data received */
-        if( obj->attributes.global_variables.serial_data.state ) {
+        if( drone->attributes.global_variables.serial_data.state ) {
 
             /* Reset state to default value */
-            obj->attributes.global_variables.serial_data.state = false;
+            drone->attributes.global_variables.serial_data.state = false;
 
             /* Error detection flags */
             bool err = false;
@@ -551,7 +573,7 @@ void vTaskParseCommand( void * pvParameters ) {
             int ptrArrIndex = 0;
 
             /* Loop through data received */
-            for( int i = 0; i < obj->attributes.global_variables.serial_data.len; i++ ) {
+            for( int i = 0; i < drone->attributes.global_variables.serial_data.len; i++ ) {
 
                 /**
                  * Frame's format: <pid,state,@,value>
@@ -566,7 +588,7 @@ void vTaskParseCommand( void * pvParameters ) {
                  */
 
                 /* Get actual char */
-                char currChar = obj->attributes.global_variables.serial_data.data[ i ];
+                char currChar = drone->attributes.global_variables.serial_data.data[ i ];
 
                 /* Checek if start of frame is correct */
                 if( !i ) {
@@ -635,7 +657,7 @@ void vTaskParseCommand( void * pvParameters ) {
                 if( !strcmp( ptrArr[ CMD_INDEX ], cmd_function_array[ i ].cmd_name ) ) {
 
                     printf("%s\n", cmd_function_array[ i ].cmd_name);
-                    cmd_function_array[ i ].func( obj, ptrArr );
+                    cmd_function_array[ i ].func( drone, ptrArr );
                     found = true;
                 }
             }

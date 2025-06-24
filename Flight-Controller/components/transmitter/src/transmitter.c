@@ -128,11 +128,11 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
 
     /**
      * @brief Initialize Transmitter
-     * @param obj: Pointer to Transmitter object
+     * @param tx: Pointer to Transmitter object
      * @param mac_p: Mac address of transmitter
      * @retval esp_err_t
      */
-    static esp_err_t transmitter_init( transmitter_t * obj, const uint8_t mac_addr_p[ MAC_ADDR_SIZE ] ) {
+    static esp_err_t transmitter_init( transmitter_t * tx, const uint8_t mac_addr_p[ MAC_ADDR_SIZE ] ) {
 
         ESP_LOGI( TRANSMITTER_TAG, "Initializing Transmitter object..." );
 
@@ -140,19 +140,19 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
         nvs_init();
 
         /* Get MCU mac address */
-        get_mac_address( obj->mac_addr );
+        get_mac_address( tx->mac_addr );
 
         /* Set transmitter mac address to MCU */
         ESP_ERROR_CHECK( set_mac_address( mac_addr_p ) );
 
         /* Check if mac address was successfully changed */
-        get_mac_address( obj->mac_addr );
+        get_mac_address( tx->mac_addr );
 
         /* Initialize transmitter callback */
         ps3SetEventCallback( controller_event_cb );
 
         /* Initialize transmitter bluetooth */
-        ps3SetBluetoothMacAddress( obj->mac_addr );
+        ps3SetBluetoothMacAddress( tx->mac_addr );
         
         /* Initialize transmitter */
         ps3Init();
@@ -266,7 +266,7 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
 
             if (is_digit) {
                 float new_value = atof(text);
-                ESP_LOGE( "DEBUG", "Action: %s | Opción: %s | Número: %.2f", action, html_select, new_value);
+                ESP_LOGI( "DEBUG", "Action: %s | Opción: %s | Número: %.2f", action, html_select, new_value);
                 /* ========================= START Process incomming data ========================= */
 
                 /* Forward declaration to avoid header inclusion */
@@ -379,7 +379,7 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
         /* Store occurred action */
         const char * action = cJSON_GetObjectItem( json, "action" )->valuestring;
 
-        ESP_LOGE( "DEBUG", "Action: %s | Button: %s", action, button );
+        ESP_LOGI( "DEBUG", "Action: %s | Button: %s", action, button );
 
         /* ========================= START Process incomming data ========================= */
 
@@ -455,11 +455,102 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
         return ESP_OK;
     }
 
+    static esp_err_t joystick_handler( httpd_req_t * req) {
+        /* Create a buffer to store events related data */
+        char buff[ 100 ];
+
+        /* Read data from HTTP server */
+        int ret = httpd_req_recv( req, buff, sizeof( buff ) - 1 );
+
+        if( ret <= 0 ) {
+            if( ret == HTTPD_SOCK_ERR_TIMEOUT ) {
+                httpd_resp_send_408( req );
+            }
+
+            return ESP_FAIL;
+        }
+
+        /* Add NULL-terminate to end of buffer */
+        buff[ret] = '\0';
+
+        /* Parse JSON */
+        cJSON * json = cJSON_Parse(buff);
+
+        // ESP_LOGI( TRANSMITTER_TAG, "Received JSON: %s", buff );
+
+        /* Check if received JSON is valid */
+        if( !json ) {
+
+            ESP_LOGE( TRANSMITTER_TAG, "Invalid JSON received" );
+            return ESP_ERR_INVALID_RESPONSE;
+        }
+
+        // Get side (string)
+        cJSON *side_item = cJSON_GetObjectItem(json, "side");
+        if(!side_item || !cJSON_IsString(side_item)) {
+            ESP_LOGE(TRANSMITTER_TAG, "Missing/invalid 'side' field");
+            cJSON_Delete(json);
+            httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid 'side' field");
+            return ESP_FAIL;
+        }
+        const char *side = side_item->valuestring;
+
+        // Get hor (number)
+        cJSON *hor_item = cJSON_GetObjectItem(json, "hor");
+        if(!hor_item || !cJSON_IsNumber(hor_item)) {
+            ESP_LOGE(TRANSMITTER_TAG, "Missing/invalid 'hor' field");
+            cJSON_Delete(json);
+            httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid 'hor' field");
+            return ESP_FAIL;
+        }
+        int8_t x_axis = hor_item->valueint;
+
+        // Get ver (number)
+        cJSON *ver_item = cJSON_GetObjectItem(json, "ver");
+        if(!ver_item || !cJSON_IsNumber(ver_item)) {
+            ESP_LOGE(TRANSMITTER_TAG, "Missing/invalid 'ver' field");
+            cJSON_Delete(json);
+            httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid 'ver' field");
+            return ESP_FAIL;
+        }
+        int8_t y_axis = ver_item->valueint;
+
+        // ESP_LOGI( "DEBUG", "%s stick: X-axis: %d | Y-axis: %d", side, x_axis, y_axis );
+
+        /* ========================= START Process incomming data ========================= */
+
+        /* Declared in drone.c source file */
+        extern tx_buttons_t * GlobalTxButtons;
+        
+        if (strcmp(side, "left") == 0) {
+            GlobalTxButtons->left_stick.x = x_axis;
+            GlobalTxButtons->left_stick.y = y_axis;
+        } else if (strcmp(side, "right") == 0) {
+            GlobalTxButtons->right_stick.x = x_axis;
+            GlobalTxButtons->right_stick.y = y_axis;
+        } else {
+            ESP_LOGE( TRANSMITTER_TAG, "Side must be left/right. See function %s in line %d", __func__, __LINE__ );
+            cJSON_Delete( json );
+            return ESP_ERR_INVALID_RESPONSE;
+        }
+        /* ========================= END Process incomming data ========================= */
+
+        cJSON_Delete( json );
+        httpd_resp_set_type( req, "application/json" );
+        httpd_resp_sendstr( req, "{\"status\":\"ok\"}" );
+
+        return ESP_OK;
+    }
+
     static esp_err_t file_get_handler( httpd_req_t * req ) {
 
         /* Path to html file stored in flash memory */
-        const char * filepath = "/spiffs/web_transmitter.html";   /* '/base_path/filename.extension' */
-
+        const char *filepath;
+        if (strcmp(req->uri, "/joy.js") == 0) {
+            filepath = "/spiffs/joy.js";
+        } else {
+            filepath = "/spiffs/web_transmitter.html";
+        }
         /* Open html in read only mode */
         FILE * file = fopen( filepath, "r" );
 
@@ -507,6 +598,14 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
             };
             httpd_register_uri_handler( server, &file_get_uri );
 
+            httpd_uri_t joy_js_uri = {
+                .uri      = "/joy.js",
+                .method   = HTTP_GET,
+                .handler  = file_get_handler,
+                .user_ctx = NULL
+            };
+            httpd_register_uri_handler(server, &joy_js_uri);
+
             httpd_uri_t button_uri = {
 
                 .uri      = "/button",
@@ -523,6 +622,14 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
                 .user_ctx = NULL
             };
             httpd_register_uri_handler(server, &update_vars_uri);
+
+            httpd_uri_t joystick_vars_uri = {
+                .uri      = "/joystick",
+                .method   = HTTP_POST,
+                .handler  = joystick_handler,
+                .user_ctx = NULL
+            };
+            httpd_register_uri_handler(server, &joystick_vars_uri);
         }
 
         else {
@@ -678,10 +785,10 @@ const char * TRANSMITTER_TAG = "TRANSMITTER";
 
     /**
      * @brief Initialize Transmitter object
-     * @param obj: Pointer to Transmitter object
+     * @param tx: Pointer to Transmitter object
      * @retval esp_err_t
      */
-    static esp_err_t transmitter_init( transmitter_t * obj ) {
+    static esp_err_t transmitter_init( transmitter_t * tx ) {
 
         ESP_LOGI( TRANSMITTER_TAG, "Initializing Transmitter object..." );
 

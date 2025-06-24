@@ -15,6 +15,14 @@
 /**
  * @brief Transmitter buttons
  */
+
+typedef struct tx_analog_stick {
+   
+   int8_t x;  /* Analog stick X axis */
+   int8_t y;  /* Analog stick Y axis */
+
+} tx_analog_stick_t;
+
 typedef struct tx_buttons {
    
    bool cross;
@@ -32,6 +40,9 @@ typedef struct tx_buttons {
    bool start;
    bool select;
    bool ps;
+
+   tx_analog_stick_t left_stick;  /* Left analog stick */
+   tx_analog_stick_t right_stick; /* Right analog stick */
 
 } tx_buttons_t;
 
@@ -54,12 +65,12 @@ typedef struct transmitter {
       /* [ A ] Transmitter MAC Address */
       uint8_t mac_addr[ MAC_ADDR_SIZE ]; 
 
-      /** @brief [ M ] Initialize Joystick  @param obj: Address of Transmitter object @param mac_p: Mac address @retval esp_err_t */
-      esp_err_t ( * init )( transmitter_t * obj, const uint8_t mac_p[ MAC_ADDR_SIZE ] );
+      /** @brief [ M ] Initialize Joystick  @param tx: Address of Transmitter object @param mac_p: Mac address @retval esp_err_t */
+      esp_err_t ( * init )( transmitter_t * tx, const uint8_t mac_p[ MAC_ADDR_SIZE ] );
 
    #elif WEBSV_TX
-      /** @brief [ M ] Initialize Joystick  @param obj: Address of Transmitter object @retval esp_err_t */
-      esp_err_t ( * init )( transmitter_t * obj );
+      /** @brief [ M ] Initialize Joystick  @param tx: Address of Transmitter object @retval esp_err_t */
+      esp_err_t ( * init )( transmitter_t * tx );
 
    #endif
 
