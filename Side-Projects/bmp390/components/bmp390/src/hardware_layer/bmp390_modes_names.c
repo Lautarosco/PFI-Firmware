@@ -64,13 +64,13 @@ bmp390_modes_desc_t pwr_mode_arr[] = {
 };
 
 bmp390_modes_desc_t press_en_arr[] = {
-    {.name = "Pressure sensor enabled",     .mode_value = BMP390_PWR_CTRL_PRESS_EN},
-    {.name = "Pressure sensor disabled",    .mode_value = BMP390_PWR_CTRL_PRESS_DIS}
+    {.name = "Pressure sensor enabled",     .mode_value = BMP390_PWR_CTRL_PRESS_ON},
+    {.name = "Pressure sensor disabled",    .mode_value = BMP390_PWR_CTRL_PRESS_OFF}
 };
 
 bmp390_modes_desc_t temp_en_arr[] = {
-    {.name = "Temperature sensor enabled",  .mode_value = BMP390_PWR_CTRL_TEMP_EN},
-    {.name = "Temperature sensor disabled", .mode_value = BMP390_PWR_CTRL_TEMP_DIS}
+    {.name = "Temperature sensor enabled",  .mode_value = BMP390_PWR_CTRL_TEMP_ON},
+    {.name = "Temperature sensor disabled", .mode_value = BMP390_PWR_CTRL_TEMP_OFF}
 };
 
 bmp390_modes_desc_t spi_mode_arr[] = {
@@ -79,8 +79,8 @@ bmp390_modes_desc_t spi_mode_arr[] = {
 };
 
 bmp390_modes_desc_t i2c_wdt_en_arr[] = {
-    {.name ="I2C watchdog timeout enabled",  .mode_value = BMP390_IF_CONF_I2C_WDT_EN},
-    {.name ="I2C watchdog timeout disabled", .mode_value = BMP390_IF_CONF_I2C_WDT_DIS}
+    {.name ="I2C watchdog timeout enabled",  .mode_value = BMP390_IF_CONF_I2C_WDT_ON},
+    {.name ="I2C watchdog timeout disabled", .mode_value = BMP390_IF_CONF_I2C_WDT_OFF}
 };
 
 bmp390_modes_desc_t i2c_wdt_tout_arr[] = {

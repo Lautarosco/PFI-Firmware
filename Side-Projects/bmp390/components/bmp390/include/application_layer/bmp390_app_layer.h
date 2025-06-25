@@ -22,6 +22,8 @@ typedef struct bmp390 bmp390_t;
 
 typedef struct bmp390 {
     esp_err_t (*init)(bmp390_t *bmp, device_interface_t *dev_iface, bmp390_configs_t bmp_settings);
+    esp_err_t (*measure)(bmp390_t *bmp);
+    void (*check_reg_mode_value)(bmp390_t *bmp, uint8_t reg_addr, uint8_t mode);
 
     device_interface_t iface;       /* Sensor interface */
 } bmp390_t;

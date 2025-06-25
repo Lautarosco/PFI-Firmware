@@ -3,6 +3,9 @@
 
 #include <i2c/interface_i2c.h>      /* I2C custom driver */
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
 #define BMP390_ADDR             0x76        /* SDO = 0 --> Device address is 0b1110110 = 0x76 */
 #define BMP390_I2C_SCL_F_HZ     100000      /* I2C SCL (clock) line frequency in Hz */
 #define GPIO_SDA                21          /* I2C SDA data line */
@@ -75,4 +78,10 @@ void app_main(void)
 
     /* 7. Initialize BMP390 sensor */
     bmp.init(&bmp, &bmp_iface, bmp_modes);
+
+    while(1) {
+        bmp.measure(&bmp);
+
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
 }

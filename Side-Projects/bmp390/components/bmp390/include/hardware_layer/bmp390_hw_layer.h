@@ -5,7 +5,32 @@
 #include <esp_err.h>
 #include <hardware_layer/bmp390_registers.h>
 
+/* ========== Public defines ========== */
+
+#define CONCAT_BYTES(msb, lsb) (((uint16_t) msb << 8) | (uint16_t) lsb)
+
+/* ========== Public structs ========== */
+
 typedef struct device_interface device_interface_t;
+
+typedef struct bmp390_calib_data {
+    double par_t1;
+    double par_t2;
+    double par_t3;
+    double par_p1;
+    double par_p2;
+    double par_p3;
+    double par_p4;
+    double par_p5;
+    double par_p6;
+    double par_p7;
+    double par_p8;
+    double par_p9;
+    double par_p10;
+    double par_p11;
+} bmp390_calib_data_t;
+
+/* ========== Public functions ========== */
 
 /**
  * @brief Read chip ID and store it in <read_data> buffer
@@ -244,21 +269,30 @@ esp_err_t bmp390_hwl_exec_cmd(device_interface_t dev_iface, bmp390_cmd_t cmd_sel
 esp_err_t bmp390_hwl_read_raw_data(device_interface_t dev_iface, uint32_t *adc_temp, uint32_t *adc_press);
 
 /**
- * @brief Read any BMP390 register and check a specific mode value
+ * @brief Read any BMP390 register and print a specific mode value
  * 
  * @note This function is for debbuging purposes to check if registers contents are consistent with setted configurations
  * 
  * @param dev_iface: Generic device interface settings
- * @param mode_name: Name of the register mode
- * @param reg_addr: Register
- * @param n_bits: Total bits used by the register mode
- * @param bit_start_pos: Starting bit position of the register mode
+ * @param reg_addr: Register to be read
+ * @param mode: mode
  * 
  * @retval
- *      -   ESP_OK: Check register mode value success
- *      -   ESP_FAIL: If read operation fails or errors exist
- *      -   ESP_ERR_INVALID_ARG: Bits count (<bit_start_pos> + <n_bits>) exceeds 8 bits length
+ *      - Mode value
+ *      - (-1) If mode was not found
  */
-void bmp390_hwl_get_mode_val(device_interface_t dev_iface, uint8_t reg_addr, uint8_t starting_bit_pos);
+int bmp390_hwl_get_mode_val(device_interface_t dev_iface, uint8_t reg_addr, uint8_t mode);
+
+/**
+ * @brief Read BMP390 CALIBRATION_DATA registers (0x31 to 0x45) and convert each compensation coefficient into a floating point number
+ * 
+ * @param dev_iface: Generic device interface settings
+ * @param calib_data: Pointer to calibration data structure
+ * 
+ * @retval
+ *      - ESP_OK: success
+ *      - ESP_FAIL
+ */
+esp_err_t bmp390_hwl_get_comp_coefs(device_interface_t dev_iface, bmp390_calib_data_t *calib_data);
 
 #endif

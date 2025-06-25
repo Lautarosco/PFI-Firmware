@@ -47,7 +47,7 @@ typedef enum bmp390_cmd {
 #define BMP390_CONFIG_RW_REG        0x1F    /* IIR coefficients */
 
 typedef enum bmp390_config_bit {
-    BMP390_CONFIG_IIR_BITS = 1      /* Bits[3:1] Filter coefficient for IIR filter */
+    BMP390_CONFIG_IIR = 1           /* Bits[3:1] Filter coefficient for IIR filter */
 } bmp390_config_bit_t;
 
 typedef enum bmp390_config_coef {
@@ -66,7 +66,7 @@ typedef enum bmp390_config_coef {
 #define BMP390_ODR_RW_REG       0x1D    /* Set the configuration of the output data rates */
 
 typedef enum bmp390_odr_sel_bit {
-    BMP390_ODR_ODR_SEL_BITS     /* Bits[4:0], Subdivision factor for pressure and temperature measurements is 2^value */
+    BMP390_ODR_ODR_SEL          /* Bits[4:0], Subdivision factor for pressure and temperature measurements is 2^value */
 } bmp390_odr_sel_bit_t;
 
 typedef enum bmp390_odr_sel {
@@ -95,8 +95,8 @@ typedef enum bmp390_odr_sel {
 #define BMP390_OSR_RW_REG       0x1C    /* Controls the oversampling settings for pressure and temperature measurements */
 
 typedef enum bmp390_osr_bit {
-    BMP390_OSR_P_BITS,          /* Bits[2:0], Oversampling setting pressure measurement */
-    BMP390_OSR_T_BITS = 3       /* Bits[5:3], Oversampling setting temperature measurement */
+    BMP390_OSR_P,               /* Bits[2:0], Oversampling setting pressure measurement */
+    BMP390_OSR_T = 3            /* Bits[5:3], Oversampling setting temperature measurement */
 } bmp390_osr_bit_t;
 
 typedef enum bmp390_osr_press {
@@ -122,19 +122,19 @@ typedef enum bmp390_osr_temp {
 #define BMP390_PWR_CTRL_RW_REG      0x1B    /* Enables or disables pressure and temperature measurements and set power mode */
 
 typedef enum bmp390_pwr_ctrl_bit {
-BMP390_PWR_CTRL_PRESS_EN_BIT,           /* Bit 0, Enable or disable pressure sensor. 0: Disable pressure sensor, 1: Enable pressure sensor */
-BMP390_PWR_CTRL_TEMP_EN_BIT,            /* Bit 1, Enable or disable temperature sensor. 0: Disable temperature sensor, 1: Enable temperature sensor */
-BMP390_PWR_CTRL_MODE_BITS = 4           /* Bits[5:4], 00: Sleep mode, 01/10: Forced mode, 11: Normal mode */
+    BMP390_PWR_CTRL_PRESS_EN,           /* Bit 0, Enable or disable pressure sensor. 0: Disable pressure sensor, 1: Enable pressure sensor */
+    BMP390_PWR_CTRL_TEMP_EN,            /* Bit 1, Enable or disable temperature sensor. 0: Disable temperature sensor, 1: Enable temperature sensor */
+    BMP390_PWR_CTRL_MODE = 4            /* Bits[5:4], 00: Sleep mode, 01/10: Forced mode, 11: Normal mode */
 } bmp390_pwr_ctrl_bit_t;
 
 typedef enum bmp390_pwr_ctrl_press_en {
-    BMP390_PWR_CTRL_PRESS_DIS,      /* Disable pressure sensor */
-    BMP390_PWR_CTRL_PRESS_EN        /* Enable pressure sensor */
+    BMP390_PWR_CTRL_PRESS_OFF,      /* Disable pressure sensor */
+    BMP390_PWR_CTRL_PRESS_ON        /* Enable pressure sensor */
 } bmp390_pwr_ctrl_press_en_t;
 
 typedef enum bmp390_pwr_ctrl_temp_en {
-    BMP390_PWR_CTRL_TEMP_DIS,      /* Disable temperature sensor */
-    BMP390_PWR_CTRL_TEMP_EN        /* Enable temperature sensor */
+    BMP390_PWR_CTRL_TEMP_OFF,      /* Disable temperature sensor */
+    BMP390_PWR_CTRL_TEMP_ON        /* Enable temperature sensor */
 } bmp390_pwr_ctrl_temp_en_t;
 
 typedef enum bmp390_pwr_ctrl_mode {
@@ -148,9 +148,9 @@ typedef enum bmp390_pwr_ctrl_mode {
 #define BMP390_IF_CONF_RW_REG          0x1A    /* Controls the serial interface settings */
 
 typedef enum bmp390_if_conf_reg_bit {
-    BMP390_IF_CONF_SPI3_BIT,                /* Bit 0, Configure SPI interface mode for primary interface. 0: SPI 4-wire mode, 1: SPI 3-wire mode */
-    BMP390_IF_CONF_I2C_WDT_EN_BIT,          /* Bit 1, Enable for the I2C watchdog timer, backed by NVM. 0: Disable watchdog timer, 1: Enable watchdog timer */
-    BMP390_IF_CONF_I2C_WDT_SEL_BIT          /* Bit 2, Select timer period for I2C watchdog, backed by NVM. 0: I2C watchdog timeout after 1.25 ms, 1: I2C watchdog timeout after 40 ms  */
+    BMP390_IF_CONF_SPI3,                /* Bit 0, Configure SPI interface mode for primary interface. 0: SPI 4-wire mode, 1: SPI 3-wire mode */
+    BMP390_IF_CONF_I2C_WDT_EN,          /* Bit 1, Enable for the I2C watchdog timer, backed by NVM. 0: Disable watchdog timer, 1: Enable watchdog timer */
+    BMP390_IF_CONF_I2C_WDT_SEL          /* Bit 2, Select timer period for I2C watchdog, backed by NVM. 0: I2C watchdog timeout after 1.25 ms, 1: I2C watchdog timeout after 40 ms  */
 } bmp390_if_conf_reg_bit_t;
 
 typedef enum bmp390_if_conf_reg_spi {
@@ -159,8 +159,8 @@ typedef enum bmp390_if_conf_reg_spi {
 } bmp390_if_conf_reg_spi_t;
 
 typedef enum bmp390_if_conf_reg_i2c_wdt_en {
-    BMP390_IF_CONF_I2C_WDT_DIS,         /* Disable watchdog timer */
-    BMP390_IF_CONF_I2C_WDT_EN           /* Enable watchdog timer */
+    BMP390_IF_CONF_I2C_WDT_OFF,         /* Disable watchdog timer */
+    BMP390_IF_CONF_I2C_WDT_ON           /* Enable watchdog timer */
 } bmp390_if_conf_reg_i2c_wdt_en_t;
 
 typedef enum bmp390_if_conf_reg_i2c_wdt_tout {
@@ -199,8 +199,8 @@ typedef enum bmp390_if_conf_reg_i2c_wdt_tout {
 #define BMP390_EVENT_RO_REG                 0x10    /* Event status flags */
 
 typedef enum bmp390_event_reg_bit {
-    BMP390_EVENT_POR_DETECTED_BIT,      /* Bit 0, 1 after device power up or soft reset. Cleared on read */
-    BMP390_EVENT_ITF_ACT_PT_BIT         /* Bit 1, 1 when a serial interface transaction occurs during a pressure or temperature conversion. Cleared on read */
+    BMP390_EVENT_POR_DETECTED,          /* Bit 0, 1 after device power up or soft reset. Cleared on read */
+    BMP390_EVENT_ITF_ACT_PT             /* Bit 1, 1 when a serial interface transaction occurs during a pressure or temperature conversion. Cleared on read */
 } bmp390_event_reg_bit_t;
 
 /* =========== SENSORTIME =========== */
@@ -226,9 +226,9 @@ typedef enum bmp390_event_reg_bit {
 #define BMP390_STATUS_RO_REG                0x03    /* Sensor status flags */
 
 typedef enum bmp390_status_reg_bit {
-    BMP390_STATUS_CMD_RDY_BIT = 4,      /* Bit 4, cmd_rdy: CMD decoder status. 0: Command in progress, 1: Command decoder is ready to accept a new command */
-    BMP390_STATUS_DRDY_PRESS_BIT,       /* Data ready for pressure. It gets reset, when one pressure DATA register is read out */
-    BMP390_STATUS_DRDY_TEMP_BIT         /* Data ready for temperature. It gets reset, when one temperature DATA register is read out */
+    BMP390_STATUS_CMD_RDY = 4,          /* Bit 4, cmd_rdy: CMD decoder status. 0: Command in progress, 1: Command decoder is ready to accept a new command */
+    BMP390_STATUS_DRDY_PRESS,           /* Data ready for pressure. It gets reset, when one pressure DATA register is read out */
+    BMP390_STATUS_DRDY_TEMP             /* Data ready for temperature. It gets reset, when one temperature DATA register is read out */
 } bmp390_status_reg_bit_t;
 
 /* =========== ERR_REG =========== */
@@ -236,9 +236,9 @@ typedef enum bmp390_status_reg_bit {
 #define BMP390_ERR_REG_RO_REG               0x02    /* Sensor error conditions */
 
 typedef enum bmp390_err_reg_bit {
-    BMP390_ERR_REG_FATAL_ERR_BIT,       /* Bit 0, fatal_err. 0: No errors exist, 1: Fatal error */
-    BMP390_ERR_REG_CMD_ERR_BIT,         /* Bit 1, cmd_err. 0: No errors exist, 1: Command execution failed. Cleared on read */
-    BMP390_ERR_REG_CONF_ERR_BIT         /* Bit 2, conf_err. 0: No errors exist, 1: Sensor configuration error detected (only in normal mode). Cleared on read */
+    BMP390_ERR_REG_FATAL_ERR,           /* Bit 0, fatal_err. 0: No errors exist, 1: Fatal error */
+    BMP390_ERR_REG_CMD_ERR,             /* Bit 1, cmd_err. 0: No errors exist, 1: Command execution failed. Cleared on read */
+    BMP390_ERR_REG_CONF_ERR             /* Bit 2, conf_err. 0: No errors exist, 1: Sensor configuration error detected (only in normal mode). Cleared on read */
 } bmp390_err_reg_bit_t;
 
 /* =========== REV_ID =========== */
@@ -251,26 +251,6 @@ typedef enum bmp390_err_reg_bit {
 
 /* =========== CALIBRATION_DATA =========== */
 
-#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P11_SIGN                 0x45    /* signed */
-#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P10_SIGN                 0x44    /* signed */
-#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P9_MSB_SIGN              0x43    /* signed */
-#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P9_LSB_SIGN              0x42    /* signed */
-#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P8_SIGN                  0x41    /* signed */
-#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P7_SIGN                  0x40    /* signed */
-#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P6_MSB_UNSIGN            0x3F    /* unsigned */
-#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P6_LSB_UNSIGN            0x3E    /* unsigned */
-#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P5_MSB_UNSIGN            0x3D    /* unsigned */
-#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P5_LSB_UNSIGN            0x3C    /* unsigned */
-#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P4_SIGN                  0x3B    /* signed */
-#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P3_SIGN                  0x3A    /* signed */
-#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P2_MSB_SIGN              0x39    /* signed */
-#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P2_LSB_SIGN              0x38    /* signed */
-#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P1_MSB_SIGN              0x37    /* signed */
-#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_P1_LSB_SIGN              0x36    /* signed */
-#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_T3_SIGN                  0x35    /* signed */
-#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_T2_MSB_UNSIGN            0x34    /* unsigned */
-#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_T2_LSB_UNSIGN            0x33    /* unsigned */
-#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_T1_MSB_UNSIGN            0x32    /* unsigned */
-#define BMP390_CALIBRATION_DATA_RO_NVM_PAR_T1_LSB_UNSIGN            0x31    /* unsigned */
+#define BMP390_CALIBRATION_DATA_INITIAL_ADDR        0x31        /* Calibration data starts at address 0x31 */
 
 #endif
