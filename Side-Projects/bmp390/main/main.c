@@ -17,13 +17,19 @@
 #define BMP390_TEMP_UNIT                    C               /* Unit of measured temperature */
 #define BMP390_PRESS_UNIT                   HPA             /* Unit of measured pressure */
 #define BMP390_REL_PRESS_SAMPLES            100             /* Total samples to compute relative pressure */
+#define VIRTUAL_TEMP_K                      293.87          /* Virtual temperature See (https://www.weather.gov/epz/wxcalc_virtualtemperature) */
+#define GAS_CONSTANT_R                      287.05          /* Gas constant for dry air in J/(kg·K) */
+#define GRAVITY_ACCELERATION_G              9.80665         /* Standard gravity in m/s² */
 
 /* =========== Functions prototypes =========== */
 
 static esp_err_t estimate_altitude(double press0, double press, double *z);
+static esp_err_t hypsometric_eqn(double press0, double press, double *z);
 void vTaskPrintAltitude(void *any);
 
 /* =========== Main app =========== */
+
+double delta_z = 0.0;
 
 void app_main(void)
 {
@@ -78,7 +84,7 @@ void app_main(void)
         .iir_coef     = BMP390_CONFIG_COEF_3,
         .odr_sel      = BMP390_ODR_SEL_12P5_HZ,
         .osr_press    = BMP390_OSR_P_X32,
-        .osr_temp     = BMP390_OSR_T_X1,
+        .osr_temp     = BMP390_OSR_T_X4,
         .press_en     = true,
         .temp_en      = true,
         .pwr_mode     = BMP390_PWR_CTRL_NORMAL_MODE
@@ -98,19 +104,16 @@ void app_main(void)
     /* Altitude */
     double z = 0.0;
     double z0 = 0.0;
-    double delta_z = 0.0;
 
-    // estimate_altitude(bmp.press0, bmp.press, &z0);
+    hypsometric_eqn(bmp.press0, bmp.press, &z0);
+    printf("z0: %lf cm\n", z0 * 100.0);
 
     xTaskCreatePinnedToCore(vTaskPrintAltitude, "Task1", 1024 * 4, (void *) &bmp, 0, NULL, 0);
 
     while(1) {
         bmp.measure(&bmp);
-        // estimate_altitude(bmp.press0, bmp.press, &z);
-        // delta_z = z - z0;
-        // printf("T: %lf °C\t P: %lf hPa\t Z: %lf cm\n", bmp.temp, bmp.press, z * 100.0);
-
-        //printf("Altitude (Relative to z0): %lf cm\n", z * 100.0);
+        hypsometric_eqn(bmp.press0, bmp.press, &z);
+        delta_z = z - z0;
 
         vTaskDelay(pdMS_TO_TICKS(80));
     }
@@ -141,13 +144,33 @@ static esp_err_t estimate_altitude(double press0, double press, double *z) {
     return ESP_OK;
 }
 
+/**
+ * @brief Calculate altitude (meters) using the hypsometric equation
+ * 
+ * @param press0: Reference pressure (hPa)
+ * @param press: Current pressure (hPa)
+ * @param z: Pointer altitude variable to store result
+ * 
+ * @retval
+ *      - ESP_ERR_INVALID_ARG: press0 is less or equal to 0
+ *      - ESP_OK: Success
+ */
+static esp_err_t hypsometric_eqn(double press0, double press, double *z) {
+    if(press0 <= 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    /* Calculate altitude in meters */
+    *z = ((GAS_CONSTANT_R * VIRTUAL_TEMP_K) / GRAVITY_ACCELERATION_G) * log(press0 / press);
+
+    return ESP_OK;
+}
+
 void vTaskPrintAltitude(void *any) {
     bmp390_t *bmp = (bmp390_t *) any;
 
     while(1) {
-        // printf("Altitude (relative to z0): %lf cm\n", (*_z) * 100.0);
-
-        printf("P: %lf hPa\n", bmp->press);
+        printf("T: %lf °C, P: %lf hPa, Altitude: %lf cm\n", bmp->temp, bmp->press, delta_z * 100.0);
 
         vTaskDelay(pdMS_TO_TICKS(1000));
     }

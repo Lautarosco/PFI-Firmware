@@ -188,6 +188,14 @@ static esp_err_t bmp390_get_relative_press(bmp390_t *bmp, unsigned int n_samples
         return ESP_ERR_INVALID_ARG;
     }
 
+    for(int i = 0; i < 3; i++) {
+        /* Update measurements */
+        bmp->measure(bmp);
+        printf("P%d: %lf hPa\n", i, bmp->press);
+
+        vTaskDelay(pdMS_TO_TICKS(t_ms * 5));
+    }
+
     double sum = 0.0;
     for(int i = 0; i < n_samples; i++) {
         /* Update measurements */
