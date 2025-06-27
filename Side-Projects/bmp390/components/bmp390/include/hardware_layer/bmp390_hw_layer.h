@@ -7,7 +7,15 @@
 
 /* ========== Public defines ========== */
 
-#define CONCAT_BYTES(msb, lsb) (((uint16_t) msb << 8) | (uint16_t) lsb)
+/**
+ * @brief Concats 2 bytes and return a new 16-bit value
+ * 
+ * @param msb: Most significant byte
+ * @param lsb: Less significant byte
+ * 
+ * @retval unsigned 16-bit new value
+ */
+inline uint16_t CONCAT_BYTES(uint8_t msb, uint8_t lsb) {return (((uint16_t) msb << 8) | (uint16_t) lsb);}
 
 /* ========== Public structs ========== */
 
@@ -269,19 +277,21 @@ esp_err_t bmp390_hwl_exec_cmd(device_interface_t dev_iface, bmp390_cmd_t cmd_sel
 esp_err_t bmp390_hwl_read_raw_data(device_interface_t dev_iface, uint32_t *adc_temp, uint32_t *adc_press);
 
 /**
- * @brief Read any BMP390 register and print a specific mode value
+ * @brief Read any operation mode of a given register and return its actual value
  * 
- * @note This function is for debbuging purposes to check if registers contents are consistent with setted configurations
+ * @note Given buffer is cleared before its used
  * 
  * @param dev_iface: Generic device interface settings
  * @param reg_addr: Register to be read
  * @param mode: mode
+ * @param msg: Buffer to store answer
+ * @param msg_length: Length of buffer
  * 
  * @retval
  *      - Mode value
  *      - (-1) If mode was not found
  */
-int bmp390_hwl_get_mode_val(device_interface_t dev_iface, uint8_t reg_addr, uint8_t mode);
+int bmp390_hwl_get_mode_val(device_interface_t dev_iface, uint8_t reg_addr, uint8_t mode, char *msg, size_t msg_length);
 
 /**
  * @brief Read BMP390 CALIBRATION_DATA registers (0x31 to 0x45) and convert each compensation coefficient into a floating point number

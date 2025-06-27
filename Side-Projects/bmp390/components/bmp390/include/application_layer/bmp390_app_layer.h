@@ -5,6 +5,18 @@
 #include <interface.h>
 #include <stdbool.h>
 
+/* =========== Public structs =========== */
+
+typedef enum bmp390_press_units {
+    PA,         /* Compensate raw pressure measurements and return new value in Pa */
+    HPA         /* Compensate raw pressure measurements and return new value in hPa */
+} bmp390_press_units_t;
+
+typedef enum bmp390_temp_units {
+    C,          /* Compensate raw temperature measurements and return new value in °C (Celsius) */
+    K           /* Compensate raw temperature measurements and return new value in K (Kelvin) */
+} bmp390_temp_units_t;
+
 typedef struct bmp390_configs {
     bmp390_if_conf_reg_spi_t spi_mode;                      /* SPI mode (cannot select other interface) */
     bmp390_if_conf_reg_i2c_wdt_en_t i2c_wdt_en;             /* Enable I2C watchdog timeout (cannot select other interface) */
@@ -20,12 +32,71 @@ typedef struct bmp390_configs {
 
 typedef struct bmp390 bmp390_t;
 
-typedef struct bmp390 {
-    esp_err_t (*init)(bmp390_t *bmp, device_interface_t *dev_iface, bmp390_configs_t bmp_settings);
-    esp_err_t (*measure)(bmp390_t *bmp);
-    void (*check_reg_mode_value)(bmp390_t *bmp, uint8_t reg_addr, uint8_t mode);
+/* =========== Public functions =========== */
 
-    device_interface_t iface;       /* Sensor interface */
+typedef struct bmp390 {
+    /**
+     * @brief Initialize Bmp390 object with given operation modes and selected interface
+     * 
+     * @param bmp: Pointer to bmp390_t struct
+     * @param dev_iface: Selected interface for serial communication
+     * @param bmp_settings: Registers operation modes
+     * @param temp_unit: Temperature measurements unit
+     * @param press_unit: Pressure measurements unit
+     * @param press0_samples: Total samples to compute relative pressure
+     * 
+     * @retval
+     *      - ESP_OK: success
+     *      - ESP_FAIL
+     */
+    esp_err_t (*init)(bmp390_t *bmp, device_interface_t *dev_iface, bmp390_configs_t bmp_settings, bmp390_temp_units_t temp_unit, bmp390_press_units_t press_unit, unsigned int press0_samples);
+
+    /**
+     * @brief Read raw pressure and temperature data and compensate them to obtain actual values
+     * 
+     * @param bmp: Pointer to bmp390_t struct
+     * 
+     * @retval
+     *      - ESP_OK
+     */
+    esp_err_t (*measure)(bmp390_t *bmp);
+
+    /**
+     * @brief Read any mode of a given register and return its actual value
+     * 
+     * @note Buffer is cleared before its used
+     * 
+     * @param bmp: Pointer to bmp390_t struct
+     * @param reg_addr: Register address
+     * @param mode: Operation mode
+     * @param msg: Buffer to store answer
+     * @param msg_length: Length of buffer
+     * 
+     * @retval
+     *      - Mode value
+     *      - (-1) If mode was not found
+     */
+    void (*check_reg_mode_value)(bmp390_t *bmp, uint8_t reg_addr, uint8_t mode, char *msg, size_t msg_length);
+
+    /**
+     * @brief Measure pressure and temperature <n_samples> time and compute relative pressure
+     * 
+     * @param bmp: Pointer to bmp390_t struct
+     * @param n_samples: Total samples to be taken
+     * @param t_ms: Delay between samples in milliseconds (ms)
+     * 
+     * @retval
+     *      - ESP_OK
+     *      - ESP_ERR_INVALID_ARG
+     */
+    esp_err_t (*get_relative_press)(bmp390_t *bmp, unsigned int n_samples, unsigned int t_ms);
+
+    device_interface_t iface;                   /* Sensor interface */
+    double press;                               /* Last pressure measurement */
+    double press0;                              /* Relative pressure */
+    double temp;                                /* Last temperature measurement */
+    bmp390_temp_units_t temp_unit;              /* Temperature measurements unit */
+    bmp390_press_units_t press_unit;            /* Pressure measurements unit */
 } bmp390_t;
 
 /**

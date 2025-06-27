@@ -6,10 +6,24 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
-#define BMP390_ADDR             0x76        /* SDO = 0 --> Device address is 0b1110110 = 0x76 */
-#define BMP390_I2C_SCL_F_HZ     100000      /* I2C SCL (clock) line frequency in Hz */
-#define GPIO_SDA                21          /* I2C SDA data line */
-#define GPIO_SCL                22          /* I2C SCL clock line */
+#include <math.h>
+
+/* =========== Defines =========== */
+
+#define BMP390_ADDR                         0x76            /* SDO = 0 --> Device address is 0b1110110 = 0x76 */
+#define BMP390_I2C_SCL_F_HZ                 100000          /* I2C SCL (clock) line frequency in Hz */
+#define GPIO_SDA                            21              /* I2C SDA data line */
+#define GPIO_SCL                            22              /* I2C SCL clock line */
+#define BMP390_TEMP_UNIT                    C               /* Unit of measured temperature */
+#define BMP390_PRESS_UNIT                   HPA             /* Unit of measured pressure */
+#define BMP390_REL_PRESS_SAMPLES            10000           /* Total samples to compute relative pressure */
+
+/* =========== Functions prototypes =========== */
+
+static esp_err_t estimate_altitude(double press0, double press, double *z);
+void vTaskPrintAltitude(void *z);
+
+/* =========== Main app =========== */
 
 void app_main(void)
 {
@@ -62,8 +76,8 @@ void app_main(void)
         .i2c_wdt_en   = BMP390_IF_CONF_I2C_WDT_EN,
         .i2c_wdt_tout = BMP390_IF_CONF_I2C_WDT_SEL_1250US,
         .iir_coef     = BMP390_CONFIG_COEF_3,
-        .odr_sel      = BMP390_ODR_SEL_50_HZ,
-        .osr_press    = BMP390_OSR_P_X8,
+        .odr_sel      = BMP390_ODR_SEL_12P5_HZ,
+        .osr_press    = BMP390_OSR_P_X32,
         .osr_temp     = BMP390_OSR_T_X1,
         .press_en     = true,
         .temp_en      = true,
@@ -77,10 +91,61 @@ void app_main(void)
     i2c_add_new_device(i2c_master_handler, &(i2c_bmp.i2c_dev_configs), &i2c_bmp_handler, bmp_iface.iface_sel);
 
     /* 7. Initialize BMP390 sensor */
-    bmp.init(&bmp, &bmp_iface, bmp_modes);
+    if(bmp.init(&bmp, &bmp_iface, bmp_modes, BMP390_TEMP_UNIT, BMP390_PRESS_UNIT, BMP390_REL_PRESS_SAMPLES) != ESP_OK) {
+        return;
+    }
+
+    /* Altitude */
+    double z = 0.0;
+    double z0 = 0.0;
+    double delta_z = 0.0;
+
+    estimate_altitude(bmp.press0, bmp.press, &z0);
+
+    xTaskCreatePinnedToCore(vTaskPrintAltitude, "Task1", 1024 * 4, (void *) &delta_z, 0, NULL, 0);
 
     while(1) {
         bmp.measure(&bmp);
+        estimate_altitude(bmp.press0, bmp.press, &z);
+        delta_z = z - z0;
+        // printf("T: %lf °C\t P: %lf hPa\t Z: %lf cm\n", bmp.temp, bmp.press, z * 100.0);
+
+        //printf("Altitude (Relative to z0): %lf cm\n", z * 100.0);
+
+        vTaskDelay(pdMS_TO_TICKS(20));
+    }
+}
+
+/* =========== Functions implementations =========== */
+
+/**
+ * @brief Estimate altitude (meters) based on relative pressure (hPa) and last pressure measurement
+ * 
+ * @note Equation was taken from BOSCH BMP180 datasheet. See (https://cdn-shop.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf, p. 16, Sec. 3.6)
+ * 
+ * @param press0: Relative pressure
+ * @param press: Last pressure measurement
+ * @param z: Pointer altitude variable to store result
+ * 
+ * @retval
+ *      - ESP_ERR_INVALID_ARG: press0 is less or equal to 0
+ *      - ESP_OK: Success
+ */
+static esp_err_t estimate_altitude(double press0, double press, double *z) {
+    if(press0 <= 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    *z = 44330.0 * (1 - pow(press / press0, 1.0 / 2.255));
+
+    return ESP_OK;
+}
+
+void vTaskPrintAltitude(void *z) {
+    double *_z = (double *) z;
+
+    while(1) {
+        printf("Altitude (relative to z0): %lf cm\n", (*_z) * 100.0);
 
         vTaskDelay(pdMS_TO_TICKS(500));
     }

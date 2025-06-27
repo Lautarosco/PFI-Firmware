@@ -6,8 +6,8 @@
 #include <esp_err.h>
 #include <esp_log.h>
 #include <stdbool.h>
+
 #include <string.h>
-#include <math.h>
 
 #include <interface.h>
 
@@ -80,7 +80,7 @@ static const bmp390_reg_modes_t bmp390_reg_modes_arr[] = {
 
 /* ========== Public functions ========== */
 
-int bmp390_hwl_get_mode_val(device_interface_t dev_iface, uint8_t reg_addr, uint8_t mode) {
+int bmp390_hwl_get_mode_val(device_interface_t dev_iface, uint8_t reg_addr, uint8_t mode, char *msg, size_t msg_length) {
     for(int i = 0; i < ((sizeof(bmp390_reg_modes_arr)) / (sizeof(bmp390_reg_modes_arr[0]))); i++) {
         /* Match register and mode */
         if((bmp390_reg_modes_arr[i].mode == mode) && (bmp390_reg_modes_arr[i].reg == reg_addr)) {
@@ -94,7 +94,10 @@ int bmp390_hwl_get_mode_val(device_interface_t dev_iface, uint8_t reg_addr, uint
             uint8_t mask = ((1U << bmp390_reg_modes_arr[i].totals) - 1) << bmp390_reg_modes_arr[i].mode;
             uint8_t mode_value = (reg_value & mask) >> bmp390_reg_modes_arr[i].mode;
 
-            ESP_LOGI(bmp390_hwl_tag, "<%s> --> Value: <0x%X>, Status: <%s>", bmp390_reg_modes_arr[i].mode_name, mode_value, bmp390_reg_modes_arr[i].get_name_func(mode_value));
+            // ESP_LOGI(bmp390_hwl_tag, "<%s> --> Value: <0x%X>, Status: <%s>", bmp390_reg_modes_arr[i].mode_name, mode_value, bmp390_reg_modes_arr[i].get_name_func(mode_value));
+            memset(msg, 0, msg_length);
+            snprintf(msg, msg_length, "<%s> --> Value: <0x%X>, Status: <%s>", bmp390_reg_modes_arr[i].mode_name, mode_value, bmp390_reg_modes_arr[i].get_name_func(mode_value));
+
             return mode_value;
         }
     }
@@ -257,7 +260,8 @@ esp_err_t bmp390_hwl_spi_en(device_interface_t dev_iface, bmp390_if_conf_reg_spi
         }
 
         /* Check actual IF_CONF register <mode> mode value */
-        int mode_value = bmp390_hwl_get_mode_val(dev_iface, BMP390_IF_CONF_RW_REG, BMP390_IF_CONF_SPI3);
+        char msg[256];
+        int mode_value = bmp390_hwl_get_mode_val(dev_iface, BMP390_IF_CONF_RW_REG, BMP390_IF_CONF_SPI3, msg, sizeof(msg));
 
         if(mode_value == -1) {
             ESP_LOGE(bmp390_hwl_tag, "{Function <%s> in line %d}: Set SPI mode --> FAILED", __func__, __LINE__);
@@ -267,6 +271,7 @@ esp_err_t bmp390_hwl_spi_en(device_interface_t dev_iface, bmp390_if_conf_reg_spi
             return ESP_FAIL;
         }
 
+        ESP_LOGI(bmp390_hwl_tag, "%s", msg);
         return ESP_OK;
     }
 
@@ -302,10 +307,12 @@ esp_err_t bmp390_hwl_i2c_en_wdt(device_interface_t dev_iface, bmp390_if_conf_reg
         }
 
         /* Check if I2C watchdog timeout is enabled */
-        bmp390_hwl_get_mode_val(dev_iface, BMP390_IF_CONF_RW_REG, BMP390_IF_CONF_I2C_WDT_EN);
+        char msg[256];
+        bmp390_hwl_get_mode_val(dev_iface, BMP390_IF_CONF_RW_REG, BMP390_IF_CONF_I2C_WDT_EN, msg, sizeof(msg));
+        ESP_LOGI(bmp390_hwl_tag, "%s", msg);
 
         /* Check actual IF_CONF register <mode> mode value */
-        int mode_value = bmp390_hwl_get_mode_val(dev_iface, BMP390_IF_CONF_RW_REG, BMP390_IF_CONF_I2C_WDT_SEL);
+        int mode_value = bmp390_hwl_get_mode_val(dev_iface, BMP390_IF_CONF_RW_REG, BMP390_IF_CONF_I2C_WDT_SEL, msg, sizeof(msg));
 
         if(mode_value == -1) {
             ESP_LOGE(bmp390_hwl_tag, "{Function <%s> in line %d}: Enable and configure I2C watchdog timeout --> FAILED", __func__, __LINE__);
@@ -315,6 +322,7 @@ esp_err_t bmp390_hwl_i2c_en_wdt(device_interface_t dev_iface, bmp390_if_conf_reg
             return ESP_FAIL;
         }
 
+        ESP_LOGI(bmp390_hwl_tag, "%s", msg);
         return ESP_OK;
     }
 
@@ -349,7 +357,10 @@ esp_err_t bmp390_hwl_i2c_dis_wdt(device_interface_t dev_iface) {
             return ESP_FAIL;
         }
 
-        bmp390_hwl_get_mode_val(dev_iface, BMP390_IF_CONF_RW_REG, BMP390_IF_CONF_I2C_WDT_EN);
+        char msg[256];
+        bmp390_hwl_get_mode_val(dev_iface, BMP390_IF_CONF_RW_REG, BMP390_IF_CONF_I2C_WDT_EN, msg, sizeof(msg));
+
+        ESP_LOGI(bmp390_hwl_tag, "%s", msg);
         return ESP_OK;
     }
     
@@ -376,7 +387,8 @@ esp_err_t bmp390_hwl_set_pwr_mode(device_interface_t dev_iface, bmp390_pwr_ctrl_
     }
     
     /* Check actual PWR_CTRL register <mode> mode value */
-    int mode_value = bmp390_hwl_get_mode_val(dev_iface, BMP390_PWR_CTRL_RW_REG, BMP390_PWR_CTRL_MODE);
+    char msg[256];
+    int mode_value = bmp390_hwl_get_mode_val(dev_iface, BMP390_PWR_CTRL_RW_REG, BMP390_PWR_CTRL_MODE, msg, sizeof(msg));
 
     if(mode_value == -1) {
         ESP_LOGE(bmp390_hwl_tag, "{Function <%s> in line %d}: Set power mode --> FAILED", __func__, __LINE__);
@@ -386,6 +398,7 @@ esp_err_t bmp390_hwl_set_pwr_mode(device_interface_t dev_iface, bmp390_pwr_ctrl_
         return ESP_FAIL;
     }
 
+    ESP_LOGI(bmp390_hwl_tag, "%s", msg);
     return ESP_OK;
 }
 
@@ -408,7 +421,8 @@ esp_err_t bmp390_hwl_press_en(device_interface_t dev_iface) {
     }
 
     /* Check actual PWR_CTRL register <mode> mode value */
-    int mode_value = bmp390_hwl_get_mode_val(dev_iface, BMP390_PWR_CTRL_RW_REG, BMP390_PWR_CTRL_PRESS_EN);
+    char msg[256];
+    int mode_value = bmp390_hwl_get_mode_val(dev_iface, BMP390_PWR_CTRL_RW_REG, BMP390_PWR_CTRL_PRESS_EN, msg, sizeof(msg));
 
     if(mode_value == -1) {
         ESP_LOGE(bmp390_hwl_tag, "{Function <%s> in line %d}: Enable pressure sensor --> FAILED", __func__, __LINE__);
@@ -417,6 +431,8 @@ esp_err_t bmp390_hwl_press_en(device_interface_t dev_iface) {
         ESP_LOGE(bmp390_hwl_tag, "{Function <%s> in line %d}: Desired mode <0x%X> does not match actual mode <0x%X>. Enable pressure sensor --> FAILED", __func__, __LINE__, BMP390_PWR_CTRL_PRESS_ON, mode_value);
         return ESP_FAIL;
     }
+
+    ESP_LOGI(bmp390_hwl_tag, "%s", msg);
     return ESP_OK;
 }
 
@@ -439,7 +455,8 @@ esp_err_t bmp390_hwl_temp_en(device_interface_t dev_iface) {
     }
 
     /* Check actual PWR_CTRL register <mode> mode value */
-    int mode_value = bmp390_hwl_get_mode_val(dev_iface, BMP390_PWR_CTRL_RW_REG, BMP390_PWR_CTRL_TEMP_EN);
+    char msg[256];
+    int mode_value = bmp390_hwl_get_mode_val(dev_iface, BMP390_PWR_CTRL_RW_REG, BMP390_PWR_CTRL_TEMP_EN, msg, sizeof(msg));
 
     if(mode_value == -1) {
         ESP_LOGE(bmp390_hwl_tag, "{Function <%s> in line %d}: Enable and configure I2C watchdog timeout --> FAILED", __func__, __LINE__);
@@ -449,6 +466,7 @@ esp_err_t bmp390_hwl_temp_en(device_interface_t dev_iface) {
         return ESP_FAIL;
     }
 
+    ESP_LOGI(bmp390_hwl_tag, "%s", msg);
     return ESP_OK;
 }
 
@@ -475,7 +493,8 @@ esp_err_t bmp390_hwl_set_osr_press(device_interface_t dev_iface, bmp390_osr_pres
     }
 
     /* Check actual OSR register <mode> mode value */
-    int mode_value = bmp390_hwl_get_mode_val(dev_iface, BMP390_OSR_RW_REG, BMP390_OSR_P);
+    char msg[256];
+    int mode_value = bmp390_hwl_get_mode_val(dev_iface, BMP390_OSR_RW_REG, BMP390_OSR_P, msg, sizeof(msg));
 
     if(mode_value == -1) {
         ESP_LOGE(bmp390_hwl_tag, "{Function <%s> in line %d}: Set pressure oversampling rate --> FAILED", __func__, __LINE__);
@@ -485,6 +504,7 @@ esp_err_t bmp390_hwl_set_osr_press(device_interface_t dev_iface, bmp390_osr_pres
         return ESP_FAIL;
     }
 
+    ESP_LOGI(bmp390_hwl_tag, "%s", msg);
     return ESP_OK;
 }
 
@@ -511,7 +531,8 @@ esp_err_t bmp390_hwl_set_osr_temp(device_interface_t dev_iface, bmp390_osr_temp_
     }
 
     /* Check actual OSR register <mode> mode value */
-    int mode_value = bmp390_hwl_get_mode_val(dev_iface, BMP390_OSR_RW_REG, BMP390_OSR_T);
+    char msg[256];
+    int mode_value = bmp390_hwl_get_mode_val(dev_iface, BMP390_OSR_RW_REG, BMP390_OSR_T, msg, sizeof(msg));
 
     if(mode_value == -1) {
         ESP_LOGE(bmp390_hwl_tag, "{Function <%s> in line %d}: Set temperature oversampling rate --> FAILED", __func__, __LINE__);
@@ -520,6 +541,8 @@ esp_err_t bmp390_hwl_set_osr_temp(device_interface_t dev_iface, bmp390_osr_temp_
         ESP_LOGE(bmp390_hwl_tag, "{Function <%s> in line %d}: Desired mode <0x%X> does not match actual mode <0x%X>. Set temperature oversampling rate --> FAILED", __func__, __LINE__, osr_temp, mode_value);
         return ESP_FAIL;
     }
+
+    ESP_LOGI(bmp390_hwl_tag, "%s", msg);
     return ESP_OK;
 }
 
@@ -546,7 +569,8 @@ esp_err_t bmp390_hwl_set_odr(device_interface_t dev_iface, bmp390_odr_sel_t odr_
     }
 
     /* Check actual OSR register <mode> mode value */
-    int mode_value = bmp390_hwl_get_mode_val(dev_iface, BMP390_ODR_RW_REG, BMP390_ODR_ODR_SEL);
+    char msg[256];
+    int mode_value = bmp390_hwl_get_mode_val(dev_iface, BMP390_ODR_RW_REG, BMP390_ODR_ODR_SEL, msg, sizeof(msg));
 
     if(mode_value == -1) {
         ESP_LOGE(bmp390_hwl_tag, "{Function <%s> in line %d}: Set output data rate --> FAILED", __func__, __LINE__);
@@ -555,6 +579,8 @@ esp_err_t bmp390_hwl_set_odr(device_interface_t dev_iface, bmp390_odr_sel_t odr_
         ESP_LOGE(bmp390_hwl_tag, "{Function <%s> in line %d}: Desired mode <0x%X> does not match actual mode <0x%X>. Set output data rate --> FAILED", __func__, __LINE__, odr_sel, mode_value);
         return ESP_FAIL;
     }
+
+    ESP_LOGI(bmp390_hwl_tag, "%s", msg);
     return ESP_OK;
 }
 
@@ -581,7 +607,8 @@ esp_err_t bmp390_hwl_set_iir_coef(device_interface_t dev_iface, bmp390_config_co
     }
 
     /* Check actual OSR register <mode> mode value */
-    int mode_value = bmp390_hwl_get_mode_val(dev_iface, BMP390_CONFIG_RW_REG, BMP390_CONFIG_IIR);
+    char msg[256];
+    int mode_value = bmp390_hwl_get_mode_val(dev_iface, BMP390_CONFIG_RW_REG, BMP390_CONFIG_IIR, msg, sizeof(msg));
 
     if(mode_value == -1) {
         ESP_LOGE(bmp390_hwl_tag, "{Function <%s> in line %d}: Set IIR filter coefficient --> FAILED", __func__, __LINE__);
@@ -590,6 +617,8 @@ esp_err_t bmp390_hwl_set_iir_coef(device_interface_t dev_iface, bmp390_config_co
         ESP_LOGE(bmp390_hwl_tag, "{Function <%s> in line %d}: Desired mode <0x%X> does not match actual mode <0x%X>. Set IIR filter coefficient --> FAILED", __func__, __LINE__, iir_coef, mode_value);
         return ESP_FAIL;
     }
+
+    ESP_LOGI(bmp390_hwl_tag, "%s", msg);
     return ESP_OK;
 }
 
@@ -652,29 +681,22 @@ esp_err_t bmp390_hwl_get_comp_coefs(device_interface_t dev_iface, bmp390_calib_d
         return ESP_FAIL;
     }
 
-    for(int i = 0; i < sizeof(data); i++) {
-        printf("%d: 0x%02X\n", i, data[i]);
-    }
-    
-
     /* Note: Compensation formula is implemented in floating point. Thus, coefficients must be converted into floating point numbers */
 
     calib_data->par_t1  = (double) CONCAT_BYTES(data[NVM_PAR_T1_MSB], data[NVM_PAR_T1_LSB]) / POW_2_N8;
     calib_data->par_t2  = (double) CONCAT_BYTES(data[NVM_PAR_T2_MSB], data[NVM_PAR_T2_LSB]) / POW_2_P30;
-    calib_data->par_t3  = (double) (int8_t) data[NVM_PAR_T3] / POW_2_P48;
-    calib_data->par_p1  = (double) ((((int16_t) data[NVM_PAR_P1_MSB] << 8) | ((int16_t) data[NVM_PAR_P1_LSB])) - POW_2_P14) / POW_2_P20;
-    calib_data->par_p2  = (double) ((((int16_t) data[NVM_PAR_P2_MSB] << 8) | ((int16_t) data[NVM_PAR_P2_LSB])) - POW_2_P14) / POW_2_P29;
-    calib_data->par_p3  = (double) (int8_t) (data[NVM_PAR_P3]) / POW_2_P32;
-    calib_data->par_p4  = (double) (int8_t) (data[NVM_PAR_P4]) / POW_2_P37;
-    calib_data->par_p5  = (double) (((uint16_t) data[NVM_PAR_P5_MSB] << 8) | ((uint16_t) data[NVM_PAR_P5_LSB])) / POW_2_N3;
-    calib_data->par_p6  = (double) (((uint16_t) data[NVM_PAR_P6_MSB] << 8) | ((uint16_t) data[NVM_PAR_P6_LSB])) / POW_2_P6;
-    calib_data->par_p7  = (double) (int8_t) (data[NVM_PAR_P7]) / POW_2_P8;
-    calib_data->par_p8  = (double) (int8_t) (data[NVM_PAR_P8]) / POW_2_P15;
-    calib_data->par_p9  = (double) (((int16_t) data[NVM_PAR_P9_MSB] << 8) | ((int16_t) data[NVM_PAR_P9_LSB])) / POW_2_P48;
-    calib_data->par_p10 = (double) (int8_t) (data[NVM_PAR_P10]) / POW_2_P48;
-    calib_data->par_p11 = (double) (int8_t) (data[NVM_PAR_P11]) / POW_2_P65;
-
-    printf("T1: %lf, T2: %lf, T3: %lf\n", calib_data->par_t1, calib_data->par_t2, calib_data->par_t3);
+    calib_data->par_t3  = (double) ((int8_t) data[NVM_PAR_T3]) / POW_2_P48;
+    calib_data->par_p1  = (double) ((int16_t) CONCAT_BYTES(data[NVM_PAR_P1_MSB], data[NVM_PAR_P1_LSB]) - POW_2_P14) / POW_2_P20;
+    calib_data->par_p2  = (double) ((int16_t) CONCAT_BYTES(data[NVM_PAR_P2_MSB], data[NVM_PAR_P2_LSB]) - POW_2_P14) / POW_2_P29;
+    calib_data->par_p3  = (double) ((int8_t) (data[NVM_PAR_P3])) / POW_2_P32;
+    calib_data->par_p4  = (double) ((int8_t) (data[NVM_PAR_P4])) / POW_2_P37;
+    calib_data->par_p5  = (double) CONCAT_BYTES(data[NVM_PAR_P5_MSB], data[NVM_PAR_P5_LSB]) / POW_2_N3;
+    calib_data->par_p6  = (double) CONCAT_BYTES(data[NVM_PAR_P6_MSB], data[NVM_PAR_P6_LSB]) / POW_2_P6;
+    calib_data->par_p7  = (double) ((int8_t) (data[NVM_PAR_P7])) / POW_2_P8;
+    calib_data->par_p8  = (double) ((int8_t) (data[NVM_PAR_P8])) / POW_2_P15;
+    calib_data->par_p9  = (double) ((int16_t) CONCAT_BYTES(data[NVM_PAR_P9_MSB], data[NVM_PAR_P9_LSB])) / POW_2_P48;
+    calib_data->par_p10 = (double) ((int8_t) (data[NVM_PAR_P10])) / POW_2_P48;
+    calib_data->par_p11 = (double) ((int8_t) (data[NVM_PAR_P11])) / POW_2_P65;
 
     return ESP_OK;
 }
