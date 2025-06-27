@@ -16,12 +16,12 @@
 #define GPIO_SCL                            22              /* I2C SCL clock line */
 #define BMP390_TEMP_UNIT                    C               /* Unit of measured temperature */
 #define BMP390_PRESS_UNIT                   HPA             /* Unit of measured pressure */
-#define BMP390_REL_PRESS_SAMPLES            10000           /* Total samples to compute relative pressure */
+#define BMP390_REL_PRESS_SAMPLES            100             /* Total samples to compute relative pressure */
 
 /* =========== Functions prototypes =========== */
 
 static esp_err_t estimate_altitude(double press0, double press, double *z);
-void vTaskPrintAltitude(void *z);
+void vTaskPrintAltitude(void *any);
 
 /* =========== Main app =========== */
 
@@ -100,19 +100,19 @@ void app_main(void)
     double z0 = 0.0;
     double delta_z = 0.0;
 
-    estimate_altitude(bmp.press0, bmp.press, &z0);
+    // estimate_altitude(bmp.press0, bmp.press, &z0);
 
-    xTaskCreatePinnedToCore(vTaskPrintAltitude, "Task1", 1024 * 4, (void *) &delta_z, 0, NULL, 0);
+    xTaskCreatePinnedToCore(vTaskPrintAltitude, "Task1", 1024 * 4, (void *) &bmp, 0, NULL, 0);
 
     while(1) {
         bmp.measure(&bmp);
-        estimate_altitude(bmp.press0, bmp.press, &z);
-        delta_z = z - z0;
+        // estimate_altitude(bmp.press0, bmp.press, &z);
+        // delta_z = z - z0;
         // printf("T: %lf °C\t P: %lf hPa\t Z: %lf cm\n", bmp.temp, bmp.press, z * 100.0);
 
         //printf("Altitude (Relative to z0): %lf cm\n", z * 100.0);
 
-        vTaskDelay(pdMS_TO_TICKS(20));
+        vTaskDelay(pdMS_TO_TICKS(80));
     }
 }
 
@@ -141,12 +141,14 @@ static esp_err_t estimate_altitude(double press0, double press, double *z) {
     return ESP_OK;
 }
 
-void vTaskPrintAltitude(void *z) {
-    double *_z = (double *) z;
+void vTaskPrintAltitude(void *any) {
+    bmp390_t *bmp = (bmp390_t *) any;
 
     while(1) {
-        printf("Altitude (relative to z0): %lf cm\n", (*_z) * 100.0);
+        // printf("Altitude (relative to z0): %lf cm\n", (*_z) * 100.0);
 
-        vTaskDelay(pdMS_TO_TICKS(500));
+        printf("P: %lf hPa\n", bmp->press);
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }

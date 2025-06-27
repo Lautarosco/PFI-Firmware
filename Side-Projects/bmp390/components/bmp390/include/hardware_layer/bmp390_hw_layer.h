@@ -17,6 +17,25 @@
  */
 inline uint16_t CONCAT_BYTES(uint8_t msb, uint8_t lsb) {return (((uint16_t) msb << 8) | (uint16_t) lsb);}
 
+/**
+ * @brief Set <mode> bits of <reg> register starting at <starting_bit_pos> bit position
+ * 
+ * @note
+ *      i.e: <reg> = xxx? ?xxx --> We aim to set mode = 01 in ?? bits of reg. Then,
+ *      <mask> = 11
+ *      <mode> = 01
+ *      <starting_bit_pos> = 3
+ * 
+ * @param reg: Register address
+ * @param mask: Bits to be set
+ * @param mode: New bit/s
+ * @param starting_bit_pos: Starting bit position
+ * 
+ * @retval
+ *      - Register with <mode> bit/s set
+ */
+inline uint8_t SET_BITS(uint8_t reg, uint8_t mask, uint8_t mode, uint8_t starting_bit_pos) {return ((reg & ~(mask << starting_bit_pos)) | (mode << starting_bit_pos));}
+
 /* ========== Public structs ========== */
 
 typedef struct device_interface device_interface_t;

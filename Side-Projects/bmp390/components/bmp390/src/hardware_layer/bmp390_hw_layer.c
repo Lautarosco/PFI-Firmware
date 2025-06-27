@@ -251,10 +251,11 @@ esp_err_t bmp390_hwl_spi_en(device_interface_t dev_iface, bmp390_if_conf_reg_spi
         }
 
         /* Clear bit in position <BMP390_IF_CONF_SPI3> of <if_conf>. Then, set <spi_mode> bit as its new value */
-        uint8_t new_if_conf = (if_conf & ~(1U << BMP390_IF_CONF_SPI3)) | (spi_mode << BMP390_IF_CONF_SPI3);
+        uint8_t mask = SET_BITS(if_conf, 1U, spi_mode, BMP390_IF_CONF_SPI3);
+        // uint8_t new_if_conf = (if_conf & ~(1U << BMP390_IF_CONF_SPI3)) | (spi_mode << BMP390_IF_CONF_SPI3);
         
         /* Write new register value to IF_CONF register and check for errors */
-        if((dev_iface.write_bytes(dev_iface.master_cfg, dev_iface.dev_cfg, BMP390_IF_CONF_RW_REG, new_if_conf, dev_iface.iface_sel)) || (bmp390_hwl_err(dev_iface))) {
+        if((dev_iface.write_bytes(dev_iface.master_cfg, dev_iface.dev_cfg, BMP390_IF_CONF_RW_REG, mask, dev_iface.iface_sel)) || (bmp390_hwl_err(dev_iface))) {
             ESP_LOGE(bmp390_hwl_tag, "{Function <%s> in line %d}: Set SPI mode --> FAILED", __func__, __LINE__);
             return ESP_FAIL;
         }
@@ -298,10 +299,11 @@ esp_err_t bmp390_hwl_i2c_en_wdt(device_interface_t dev_iface, bmp390_if_conf_reg
         }
         
         /* Clear i2c_wdt_en and i2c_wdt_sel bits, then enable I2C wdt timeout and define its period <i2c_wdt_tout> */
-        uint8_t new_if_conf = (if_conf & ~((1U << BMP390_IF_CONF_I2C_WDT_EN) | (1U << BMP390_IF_CONF_I2C_WDT_SEL))) | ((1U << BMP390_IF_CONF_I2C_WDT_EN) | (i2c_wdt_tout << BMP390_IF_CONF_I2C_WDT_SEL));
+        uint8_t mask = SET_BITS(if_conf, 0b11, ((BMP390_IF_CONF_I2C_WDT_EN << 0) | (i2c_wdt_tout << 1)), 1);
+        // uint8_t new_if_conf = (if_conf & ~((1U << BMP390_IF_CONF_I2C_WDT_EN) | (1U << BMP390_IF_CONF_I2C_WDT_SEL))) | ((1U << BMP390_IF_CONF_I2C_WDT_EN) | (i2c_wdt_tout << BMP390_IF_CONF_I2C_WDT_SEL));
         
         /* Write IF_CONF register and check for errors */
-        if((dev_iface.write_bytes(dev_iface.master_cfg, dev_iface.dev_cfg, BMP390_IF_CONF_RW_REG, new_if_conf, dev_iface.iface_sel) != ESP_OK) || (bmp390_hwl_err(dev_iface) != ESP_OK)) {
+        if((dev_iface.write_bytes(dev_iface.master_cfg, dev_iface.dev_cfg, BMP390_IF_CONF_RW_REG, mask, dev_iface.iface_sel) != ESP_OK) || (bmp390_hwl_err(dev_iface) != ESP_OK)) {
             ESP_LOGE(bmp390_hwl_tag, "{Function <%s> in line %d}: Enable and configure I2C watchdog timeout --> FAILED", __func__, __LINE__);
             return ESP_FAIL;
         }
@@ -349,10 +351,11 @@ esp_err_t bmp390_hwl_i2c_dis_wdt(device_interface_t dev_iface) {
         }
         
         /* Clear <BMP390_IF_CONF_I2C_WDT_EN> bit of IF_CONF register and disable watchdog timeout */
-        uint8_t new_if_conf = (if_conf & ~(1U << BMP390_IF_CONF_I2C_WDT_EN)) | (BMP390_IF_CONF_I2C_WDT_OFF << BMP390_IF_CONF_I2C_WDT_EN);
+        uint8_t mask = SET_BITS(if_conf, 1U, BMP390_IF_CONF_I2C_WDT_OFF, BMP390_IF_CONF_I2C_WDT_EN);
+        // uint8_t new_if_conf = (if_conf & ~(1U << BMP390_IF_CONF_I2C_WDT_EN)) | (BMP390_IF_CONF_I2C_WDT_OFF << BMP390_IF_CONF_I2C_WDT_EN);
         
         /* Write IF_CONF register and check for errors */
-        if((dev_iface.write_bytes(dev_iface.master_cfg, dev_iface.dev_cfg, BMP390_IF_CONF_RW_REG, new_if_conf, dev_iface.iface_sel) != ESP_OK) || (bmp390_hwl_err(dev_iface) != ESP_OK)) {
+        if((dev_iface.write_bytes(dev_iface.master_cfg, dev_iface.dev_cfg, BMP390_IF_CONF_RW_REG, mask, dev_iface.iface_sel) != ESP_OK) || (bmp390_hwl_err(dev_iface) != ESP_OK)) {
             ESP_LOGE(bmp390_hwl_tag, "{Function <%s> in line %d}: Disable I2C watchdog timeout --> FAILED", __func__, __LINE__);
             return ESP_FAIL;
         }
@@ -378,7 +381,8 @@ esp_err_t bmp390_hwl_set_pwr_mode(device_interface_t dev_iface, bmp390_pwr_ctrl_
     }
 
     /* Clear bits 4 and 5 of PWR_CTRL register, then set the power mode */
-    uint8_t mask = (pwr_ctrl & ~(0b11 << BMP390_PWR_CTRL_MODE)) | (pwr_mode << BMP390_PWR_CTRL_MODE);
+    uint8_t mask = SET_BITS(pwr_ctrl, 0b11, pwr_mode, BMP390_PWR_CTRL_MODE);
+    // uint8_t mask = (pwr_ctrl & ~(0b11 << BMP390_PWR_CTRL_MODE)) | (pwr_mode << BMP390_PWR_CTRL_MODE);
 
     /* Write mask to PWR_CTRL register and check for errors */
     if((dev_iface.write_bytes(dev_iface.master_cfg, dev_iface.dev_cfg, BMP390_PWR_CTRL_RW_REG, mask, dev_iface.iface_sel) != ESP_OK) || (bmp390_hwl_err(dev_iface) != ESP_OK)) {
@@ -412,7 +416,8 @@ esp_err_t bmp390_hwl_press_en(device_interface_t dev_iface) {
     }
 
     /* Clear bits 4 and 5 of PWR_CTRL register, then enable pressure sensor */
-    uint8_t mask = (pwr_ctrl & ~(1U << BMP390_PWR_CTRL_PRESS_EN)) | (BMP390_PWR_CTRL_PRESS_ON << BMP390_PWR_CTRL_PRESS_EN);
+    uint8_t mask = SET_BITS(pwr_ctrl, 1U, BMP390_PWR_CTRL_PRESS_ON, BMP390_PWR_CTRL_PRESS_EN);
+    // uint8_t mask = (pwr_ctrl & ~(1U << BMP390_PWR_CTRL_PRESS_EN)) | (BMP390_PWR_CTRL_PRESS_ON << BMP390_PWR_CTRL_PRESS_EN);
 
     /* Write mask to PWR_CTRL register and check for errors */
     if((dev_iface.write_bytes(dev_iface.master_cfg, dev_iface.dev_cfg, BMP390_PWR_CTRL_RW_REG, mask, dev_iface.iface_sel) != ESP_OK) || (bmp390_hwl_err(dev_iface) != ESP_OK)) {
@@ -446,7 +451,8 @@ esp_err_t bmp390_hwl_temp_en(device_interface_t dev_iface) {
     }
 
     /* Clear bits[5:4] of PWR_CTRL register, then enable temperature sensor */
-    uint8_t mask = (pwr_ctrl & ~(1U << BMP390_PWR_CTRL_TEMP_EN)) | (BMP390_PWR_CTRL_TEMP_ON << BMP390_PWR_CTRL_TEMP_EN);
+    uint8_t mask = SET_BITS(pwr_ctrl, 1U, BMP390_PWR_CTRL_TEMP_ON, BMP390_PWR_CTRL_TEMP_EN);
+    // uint8_t mask = (pwr_ctrl & ~(1U << BMP390_PWR_CTRL_TEMP_EN)) | (BMP390_PWR_CTRL_TEMP_ON << BMP390_PWR_CTRL_TEMP_EN);
 
     /* Write mask to PWR_CTRL register and check for errors */
     if((dev_iface.write_bytes(dev_iface.master_cfg, dev_iface.dev_cfg, BMP390_PWR_CTRL_RW_REG, mask, dev_iface.iface_sel) != ESP_OK) || (bmp390_hwl_err(dev_iface) != ESP_OK)) {
@@ -485,7 +491,8 @@ esp_err_t bmp390_hwl_set_osr_press(device_interface_t dev_iface, bmp390_osr_pres
     }
 
     /* Clear bits[2:0] of OSR register and set oversampling rate for pressure measurements */
-    uint8_t mask = (osr & ~(0b111 << BMP390_OSR_P)) | (osr_press << BMP390_OSR_P);
+    uint8_t mask = SET_BITS(osr, 0b111, osr_press, BMP390_OSR_P);
+    // uint8_t mask = (osr & ~(0b111 << BMP390_OSR_P)) | (osr_press << BMP390_OSR_P);
 
     if((dev_iface.write_bytes(dev_iface.master_cfg, dev_iface.dev_cfg, BMP390_OSR_RW_REG, mask, dev_iface.iface_sel) != ESP_OK) || (bmp390_hwl_err(dev_iface) != ESP_OK)) {
         ESP_LOGE(bmp390_hwl_tag, "{Function <%s> in line %d}: Set pressure oversampling rate --> FAILED", __func__, __LINE__);
@@ -523,7 +530,8 @@ esp_err_t bmp390_hwl_set_osr_temp(device_interface_t dev_iface, bmp390_osr_temp_
     }
 
     /* Clear bits[2:0] of OSR register and set oversampling rate for temperature measurements */
-    uint8_t mask = (osr & ~(0b111 << BMP390_OSR_T)) | (osr_temp << BMP390_OSR_T);
+    uint8_t mask = SET_BITS(osr, 0b111, osr_temp, BMP390_OSR_T);
+    // uint8_t mask = (osr & ~(0b111 << BMP390_OSR_T)) | (osr_temp << BMP390_OSR_T);
 
     if((dev_iface.write_bytes(dev_iface.master_cfg, dev_iface.dev_cfg, BMP390_OSR_RW_REG, mask, dev_iface.iface_sel) != ESP_OK) || (bmp390_hwl_err(dev_iface) != ESP_OK)) {
         ESP_LOGE(bmp390_hwl_tag, "{Function <%s> in line %d}: Set temperature oversampling rate --> FAILED", __func__, __LINE__);
@@ -561,7 +569,8 @@ esp_err_t bmp390_hwl_set_odr(device_interface_t dev_iface, bmp390_odr_sel_t odr_
     }
 
     /* Clear bits[4:0] of ODR register and set output data rates */
-    uint8_t mask = (odr & ~(0b1111 << BMP390_ODR_ODR_SEL)) | (odr_sel << BMP390_ODR_ODR_SEL);
+    uint8_t mask = SET_BITS(odr, 0b1111, odr_sel, BMP390_ODR_ODR_SEL);
+    // uint8_t mask = (odr & ~(0b1111 << BMP390_ODR_ODR_SEL)) | (odr_sel << BMP390_ODR_ODR_SEL);
 
     if((dev_iface.write_bytes(dev_iface.master_cfg, dev_iface.dev_cfg, BMP390_ODR_RW_REG, mask, dev_iface.iface_sel) != ESP_OK) || (bmp390_hwl_err(dev_iface) != ESP_OK)) {
         ESP_LOGE(bmp390_hwl_tag, "{Function <%s> in line %d}: Set output data rate --> FAILED", __func__, __LINE__);
@@ -599,7 +608,8 @@ esp_err_t bmp390_hwl_set_iir_coef(device_interface_t dev_iface, bmp390_config_co
     }
 
     /* Clear bits[3:1] of CONFIG register and set IIR filter coefficient */
-    uint8_t mask = (config & ~(0b111 << BMP390_CONFIG_IIR)) | (iir_coef << BMP390_CONFIG_IIR);
+    // uint8_t mask = (config & ~(0b111 << BMP390_CONFIG_IIR)) | (iir_coef << BMP390_CONFIG_IIR);
+    uint8_t mask = SET_BITS(config, 0b111, iir_coef, BMP390_CONFIG_IIR);
 
     if((dev_iface.write_bytes(dev_iface.master_cfg, dev_iface.dev_cfg, BMP390_CONFIG_RW_REG, mask, dev_iface.iface_sel) != ESP_OK) || (bmp390_hwl_err(dev_iface) != ESP_OK)) {
         ESP_LOGE(bmp390_hwl_tag, "{Function <%s> in line %d}: Set IIR filter coefficient --> FAILED", __func__, __LINE__);
@@ -632,7 +642,8 @@ esp_err_t bmp390_hwl_exec_cmd(device_interface_t dev_iface, bmp390_cmd_t cmd_sel
     }
 
     /* Clear all bits[7:0] of CONFIG register and set cmd to be executed */
-    uint8_t mask = (cmd & ~0b11111111) | cmd_sel;
+    uint8_t mask = SET_BITS(cmd, 0xFF, cmd_sel, 0);
+    // uint8_t mask = (cmd & ~0b11111111) | cmd_sel;
 
     if((dev_iface.write_bytes(dev_iface.master_cfg, dev_iface.dev_cfg, BMP390_CMD_RW_REG, mask, dev_iface.iface_sel) != ESP_OK) || (bmp390_hwl_err(dev_iface) != ESP_OK)) {
         ESP_LOGE(bmp390_hwl_tag, "{Function <%s> in line %d}: Set CMD --> FAILED", __func__, __LINE__);
