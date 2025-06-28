@@ -228,6 +228,7 @@ void vTaskprint( void * drone_ ) {
                 "static:roll/P,%.2f|roll/I,%.2f|roll/D,%.2f|roll_d/P,%.2f|roll_d/I,%.2f|roll_d/D,%.2f|"
                 "pitch/P,%.2f|pitch/I,%.2f|pitch/D,%.2f|pitch_d/P,%.2f|pitch_d/I,%.2f|pitch_d/D,%.2f|"
                 "yaw/P,%.2f|yaw/I,%.2f|yaw/D,%.2f|yaw_d/P,%.2f|yaw_d/I,%.2f|yaw_d/D,%.2f|"
+                "ema_roll,%.2f|ema_pitch,%.2f|ema_yaw,%.2f|"
                 "state,%s\n",
 
                 // dynamic state
@@ -276,6 +277,11 @@ void vTaskprint( void * drone_ ) {
                 drone->attributes.components.controllers[YAW_D].gain.kp,
                 drone->attributes.components.controllers[YAW_D].gain.ki,
                 drone->attributes.components.controllers[YAW_D].gain.kd,
+
+                // ema values
+                drone->attributes.config.IIR_coeff_roll_dot,
+                drone->attributes.config.IIR_coeff_pitch_dot,
+                drone->attributes.config.IIR_coeff_yaw_dot,
             
                 // state machine current state
                 StateMachine_GetStateName(drone->attributes.state_machine.curr_state)

@@ -360,10 +360,21 @@ static void save_to_nvs( drone_t * drone ) {
 
         /* Continue updating NVS with Drone parameters */
         else {
-
             /* Store "i" parameter to NVS, according to drone_flash_params_t enum */
-            __write_to_flash( NVS_NAMESPACE, i, drone->attributes.flash_params_arr[ i ], sizeof( drone->attributes.flash_params_arr[ i ] ) );
+            esp_err_t err = __write_to_flash( NVS_NAMESPACE, i, drone->attributes.flash_params_arr[ i ], sizeof( *(float*)drone->attributes.flash_params_arr[ i ] ) );
+            if (err == ESP_OK) {
             ESP_LOGI( DRONE_TAG, "Saved %s: %.2f", GetKeyName( i ), *(float*) (drone->attributes.flash_params_arr[i]) );
+            } else {
+            ESP_LOGE( DRONE_TAG, "Failed to save %s (err: %s)", GetKeyName( i ), esp_err_to_name(err) );
+            }
+
+            float check_value = 0.0f;
+            if (__read_from_flash(NVS_NAMESPACE, i, &check_value, sizeof(check_value)) == ESP_OK) {
+                ESP_LOGI(DRONE_TAG, "Checked %s from flash: %.2f", GetKeyName(i), check_value);
+            } else {
+                ESP_LOGW(DRONE_TAG, "Could not read back %s from flash", GetKeyName(i));
+            }
+
         }
     }
 }
@@ -387,9 +398,13 @@ static void read_from_nvs( drone_t * drone ) {
 
         /* Continue reading NVS */
         else {
-            __read_from_flash( NVS_NAMESPACE, i, &read_var, sizeof( read_var ) );
-            *(float*) (drone->attributes.flash_params_arr[i]) = read_var;
-            ESP_LOGI( DRONE_TAG, "Updated %s: %.2f", GetKeyName( i ), read_var );
+        esp_err_t err = __read_from_flash(NVS_NAMESPACE, i, &read_var, sizeof(read_var));
+        if (err != ESP_OK) {
+            ESP_LOGE(DRONE_TAG, "Error leyendo flash para %s: %s", GetKeyName(i), esp_err_to_name(err));
+        } else {
+            *(float*)(drone->attributes.flash_params_arr[i]) = read_var;
+            ESP_LOGI(DRONE_TAG, "Updated %s: %.2f", GetKeyName(i), read_var);
+        }
         }
     }
 }
@@ -765,8 +780,8 @@ void Drone( drone_t * drone ) {
     drone->attributes.flash_params_arr[ PID_ROLL_D_KD ] = &( drone->attributes.components.controllers[ ROLL_D ].gain.kd );
     drone->attributes.flash_params_arr[ PID_ROLL_D_KB ] = &( drone->attributes.components.controllers[ ROLL_D ].gain.kb );
     drone->attributes.flash_params_arr[ ROLL_D_IIR_COEFF] = &( drone->attributes.config.IIR_coeff_roll_dot );
-    drone->attributes.flash_params_arr[ PID_PITCH_KP ]  = &( drone->attributes.components.controllers[ PITCH ].gain.kp );
 
+    drone->attributes.flash_params_arr[ PID_PITCH_KP ]  = &( drone->attributes.components.controllers[ PITCH ].gain.kp );
     drone->attributes.flash_params_arr[ PID_PITCH_KI ]  = &( drone->attributes.components.controllers[ PITCH ].gain.ki );
     drone->attributes.flash_params_arr[ PID_PITCH_KD ]  = &( drone->attributes.components.controllers[ PITCH ].gain.kd );
     drone->attributes.flash_params_arr[ PID_PITCH_KB ]  = &( drone->attributes.components.controllers[ PITCH ].gain.kb );

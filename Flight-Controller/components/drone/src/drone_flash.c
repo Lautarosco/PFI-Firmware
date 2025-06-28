@@ -1,5 +1,5 @@
 #include <drone_flash.h>
-
+#include <string.h>
 /* Function implementations */
 
 esp_err_t __write_to_flash( const char* namespace, drone_flash_params_t key_param, const void* value, size_t size ) {
@@ -44,8 +44,10 @@ esp_err_t __read_from_flash( const char* namespace, drone_flash_params_t key_par
 
     size_t required_size = size;
     ret = nvs_get_blob( handle, key, value, &required_size );
-    if ( ret != ESP_OK ) {
-
+    if ( ret == ESP_ERR_NVS_NOT_FOUND ) {
+        printf( "Key '%s' not found in NVS. Initializing with default value.\n", key );
+        memset(value, 0, size); // Set value to zero or provide your own default
+    } else if ( ret != ESP_OK ) {
         printf( "Error ( %s ) reading data from NVS!\n", esp_err_to_name( ret ) );
     }
 
@@ -56,58 +58,13 @@ esp_err_t __read_from_flash( const char* namespace, drone_flash_params_t key_par
     * @brief Get the key name for a given drone_flash_params_t enum value
     * @param key: The drone_flash_params_t enum value
     * @retval The corresponding key name as a string, or "NOT FOUND" if the key is not recognized
-    */
 */
+
 const char * GetKeyName( drone_flash_params_t key ) {
 
-    switch ( key ) {
-
-        case GYRO_OFFSET_X:
-            return "gyro_offset_x";
-            break;
-        
-        case GYRO_OFFSET_Y:
-            return "gyro_offset_y";
-            break;
-
-        case GYRO_OFFSET_Z:
-            return "gyro_offset_z";
-            break;
-
-        case PID_ROLL_KP:
-            return "pid_roll_kp";
-            break;
-
-        case PID_ROLL_KI:
-            return "pid_roll_ki";
-            break;
-
-        case PID_ROLL_KD:
-            return "pid_roll_kd";
-            break;
-
-        case PID_ROLL_KB:
-            return "pid_roll_kb";
-            break;
-
-        case PID_ROLL_D_KP:
-            return "pid_roll_d_kp";
-            break;
-
-        case PID_ROLL_D_KI:
-            return "pid_roll_d_ki";
-            break;
-
-        case PID_ROLL_D_KD:
-            return "pid_roll_d_kd";
-            break;
-
-        case PID_ROLL_D_KB:
-            return "pid_roll_d_kb";
-            break;
-
-        default:
-            return "NOT FOUND";
-            break;
+    int num_keys = sizeof(key_names) / sizeof(key_names[0]);
+    if (key >= 0 && key < num_keys) {
+        return key_names[key];
     }
+    return "NOT FOUND";
 }

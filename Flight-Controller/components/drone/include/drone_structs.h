@@ -10,7 +10,7 @@
 #include <mma.h>
 #include <state_machine.h>
 
-#define FLASH_PARAMS 36 /* Total Drone parameters to be stored in flash memory */
+#define FLASH_PARAMS 40 /* Total Drone parameters to be stored in flash memory */
 #define NVS_NAMESPACE "storage"
 
 
@@ -137,9 +137,49 @@ typedef enum drone_flash_params {
     /* Z_d IIR filter coefficient */
     Z_D_IIR_COEFF,
 
-
 } drone_flash_params_t;
 
+static const char* key_names[] = {
+    "gyro_offset_x",      // GYRO_OFFSET_X = 0
+    "gyro_offset_y",      // GYRO_OFFSET_Y = 1
+    "gyro_offset_z",      // GYRO_OFFSET_Z = 2
+    "pid_roll_kp",        // PID_ROLL_KP = 3
+    "pid_roll_ki",        // PID_ROLL_KI = 4
+    "pid_roll_kd",        // PID_ROLL_KD = 5
+    "pid_roll_kb",        // PID_ROLL_KB = 6
+    "pid_roll_d_kp",      // PID_ROLL_D_KP = 7
+    "pid_roll_d_ki",      // PID_ROLL_D_KI = 8
+    "pid_roll_d_kd",      // PID_ROLL_D_KD = 9
+    "pid_roll_d_kb",      // PID_ROLL_D_KB = 10
+    "roll_d_iir_coeff",   // ROLL_D_IIR_COEFF = 11
+    "pid_pitch_kp",       // PID_PITCH_KP = 12
+    "pid_pitch_ki",       // PID_PITCH_KI = 13
+    "pid_pitch_kd",       // PID_PITCH_KD = 14
+    "pid_pitch_kb",       // PID_PITCH_KB = 15
+    "pid_pitch_d_kp",     // PID_PITCH_D_KP = 16
+    "pid_pitch_d_ki",     // PID_PITCH_D_KI = 17
+    "pid_pitch_d_kd",     // PID_PITCH_D_KD = 18
+    "pid_pitch_d_kb",     // PID_PITCH_D_KB = 19
+    "pitch_d_iir_coeff",  // PITCH_D_IIR_COEFF = 20
+    "pid_yaw_kp",         // PID_YAW_KP = 21
+    "pid_yaw_ki",         // PID_YAW_KI = 22
+    "pid_yaw_kd",         // PID_YAW_KD = 23
+    "pid_yaw_kb",         // PID_YAW_KB = 24
+    "pid_yaw_d_kp",       // PID_YAW_D_KP = 25
+    "pid_yaw_d_ki",       // PID_YAW_D_KI = 26
+    "pid_yaw_d_kd",       // PID_YAW_D_KD = 27
+    "pid_yaw_d_kb",       // PID_YAW_D_KB = 28
+    "yaw_d_iir_coeff",    // YAW_D_IIR_COEFF = 29
+    "pid_z_kp",           // PID_Z_KP = 30
+    "pid_z_ki",           // PID_Z_KI = 31
+    "pid_z_kd",           // PID_Z_KD = 32
+    "pid_z_kb",           // PID_Z_KB = 33
+    "pid_z_d_kp",         // PID_Z_D_KP = 34
+    "pid_z_d_ki",         // PID_Z_D_KI = 35
+    "pid_z_d_kd",         // PID_Z_D_KD = 36
+    "pid_z_d_kb",         // PID_Z_D_KB = 37
+    "z_d_iir_coeff"       // Z_D_IIR_COEFF = 38
+};
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
