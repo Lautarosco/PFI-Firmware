@@ -1,35 +1,32 @@
 #ifndef BMP280_STRUCTS_H
 #define BMP280_STRUCTS_H
 
+/* Gereral headers */
 #include <stdint.h>
 #include <esp_err.h>
-#include <driver/i2c_master.h>
+#include <stdbool.h>
 
-
-typedef struct __i2c_cfg {
-    int sda;                                            /* I2C SDA (data) GPIO */
-    int scl;                                            /* I2C SCL (clock) GPIO */
-    i2c_master_dev_handle_t bmp280_i2c_bus_handler;     /* bmp280 I2C bus handler */
-} __i2c_cfg_t;
+/* Components headers */
+#include <serial.h>         /* Serial interfaces driver */
 
 typedef struct bmp280 bmp280_t;
 
 typedef struct bmp280 {
-    uint8_t addr;       /* [A] Address - 0x76 if SDO = 0 or 0x77 if SDO = 1 */
-    __i2c_cfg_t i2c;    /* [A] I2C interface settings */
-    uint8_t id;         /* [A] Chip ID - should be 0x58 */
+    /* [A] Chip ID - should be 0x58 */
+    uint8_t id;
+
+    /* [A] bmp serial interface */
+    dev_serial_iface_t serial_iface;
     
     /**
      * @brief [M] Initialize Bmp280 Class
      * 
      * @param bmp: Pointer to Bmp280 object
-     * @param addr: Sensor address
-     * @param sda: SDA data pin
-     * @param scl: SCL clock pin
+     * @param bmp_iface: bmp serial interface
      * 
      * @return ESP_OK if success - ESP_FAIL
      */
-    esp_err_t (*init)(bmp280_t * bmp, i2c_master_bus_handle_t * master_i2c_bus_handler, int addr, int sda, int scl);
+    esp_err_t (*init)(bmp280_t *bmp, dev_serial_iface_t *bmp_iface);
 
     /**
      * @brief [M] Compensate raw temperature values stored in registers and return temperature
@@ -50,22 +47,43 @@ typedef struct bmp280 {
     /**
      * @brief [M] Measure pressure and temperature
      * 
-     * @param bmp: Bmp280 object
+     * @param bmp_iface: bmp280 serial interface
      * 
      * @return ESP_OK if success - ESP_FAIL
      */
-    esp_err_t (*measure)(i2c_master_dev_handle_t bmp280_i2c_bus_handler);
+    esp_err_t (*measure)(dev_serial_iface_t bmp_iface);
 
     /**
      * @brief [M] Calculate altitude based on measured pressure 'p' and relative pressure 'p0'. The latter should be calculated with
      * 'bmp280_GetRelativeP' function or use sea level value, ~1013.25 hPa (value taken from https://cdn-shop.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf, p. 16, Sec. 3.6)
      * 
-     * @param p: Measured pressure
-     * @param p0: Relative pressure
+     * @param p: Measured pressure in hPa
+     * @param p0: Relative pressure in hPa
      * 
      * @return 64-bit estimated altitude
      */
     double (*get_altitude)(double p, double p0);
+
+    /**
+     * @brief [M] Calculate pressure 'n' times and get average value in hPa. Should be used as an alternative to sea level pressure
+     * 
+     * @param bmp: Bmp280 object
+     * @param n: Total samples
+     * 
+     * @return 64-bit calculated average pressure
+     */
+    double (*get_avg_pressure)(bmp280_t bmp, int n);
+
+    /**
+     * @brief [M] Calculate altitude 'n' times and get average value in meters
+     * 
+     * @param bmp: Bmp280 object
+     * @param p0: Relative pressure in hPa. It could be sea level pressure or average pressure obtained with get_avg_pressure method
+     * @param n: Total samples
+     * 
+     * @return 64-bit calculated average altitude
+     */
+    double (*get_avg_altitude)(bmp280_t bmp, double p0, int n);
 } bmp280_t;
 
 #endif
