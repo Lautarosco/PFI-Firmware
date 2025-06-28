@@ -178,12 +178,12 @@ void vTaskDroneMeasure( void * pvParameters ) {
             int r_stick_x = drone->attributes.global_variables.tx_buttons.right_stick.x;
             if (r_stick_x > 100) r_stick_x = 100;
             if (r_stick_x < -100) r_stick_x = -100;
-            drone->attributes.sp.roll = (r_stick_x / 100.0f) * MAX_ROLL * (M_PI/180.0f);
+            drone->attributes.sp.roll = (r_stick_x / 100.0f) * MAX_ROLL;
 
             int r_stick_y = drone->attributes.global_variables.tx_buttons.right_stick.y;
             if (r_stick_y > 100) r_stick_y = 100;
             if (r_stick_y < -100) r_stick_y = -100;
-            drone->attributes.sp.pitch = (r_stick_y / 100.0f) * MAX_PITCH * (M_PI/180.0f);
+            drone->attributes.sp.pitch = (r_stick_y / 100.0f) * MAX_PITCH;
 
             drone->attributes.sp.yaw = 0;
             drone->attributes.sp.z = 0;

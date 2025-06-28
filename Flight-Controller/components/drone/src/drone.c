@@ -363,6 +363,7 @@ static void save_to_nvs( drone_t * drone ) {
 
             /* Store "i" parameter to NVS, according to drone_flash_params_t enum */
             __write_to_flash( NVS_NAMESPACE, i, drone->attributes.flash_params_arr[ i ], sizeof( drone->attributes.flash_params_arr[ i ] ) );
+            ESP_LOGI( DRONE_TAG, "Saved %s: %.2f", GetKeyName( i ), *(float*) (drone->attributes.flash_params_arr[i]) );
         }
     }
 }
@@ -757,11 +758,35 @@ void Drone( drone_t * drone ) {
     drone->attributes.flash_params_arr[ PID_ROLL_KP ]   = &( drone->attributes.components.controllers[ ROLL ].gain.kp );
     drone->attributes.flash_params_arr[ PID_ROLL_KI ]   = &( drone->attributes.components.controllers[ ROLL ].gain.ki );
     drone->attributes.flash_params_arr[ PID_ROLL_KD ]   = &( drone->attributes.components.controllers[ ROLL ].gain.kd );
-    drone->attributes.flash_params_arr[ PID_ROLL_D_KB ] = &( drone->attributes.components.controllers[ ROLL ].gain.kb );
+    drone->attributes.flash_params_arr[ PID_ROLL_KB ]   = &( drone->attributes.components.controllers[ ROLL ].gain.kb );
     drone->attributes.flash_params_arr[ PID_ROLL_D_KP ] = &( drone->attributes.components.controllers[ ROLL_D ].gain.kp );
     drone->attributes.flash_params_arr[ PID_ROLL_D_KI ] = &( drone->attributes.components.controllers[ ROLL_D ].gain.ki );
     drone->attributes.flash_params_arr[ PID_ROLL_D_KD ] = &( drone->attributes.components.controllers[ ROLL_D ].gain.kd );
     drone->attributes.flash_params_arr[ PID_ROLL_D_KB ] = &( drone->attributes.components.controllers[ ROLL_D ].gain.kb );
+    drone->attributes.flash_params_arr[ PID_PITCH_KP ]  = &( drone->attributes.components.controllers[ PITCH ].gain.kp );
+    drone->attributes.flash_params_arr[ PID_PITCH_KI ]  = &( drone->attributes.components.controllers[ PITCH ].gain.ki );
+    drone->attributes.flash_params_arr[ PID_PITCH_KD ]  = &( drone->attributes.components.controllers[ PITCH ].gain.kd );
+    drone->attributes.flash_params_arr[ PID_PITCH_KB ]  = &( drone->attributes.components.controllers[ PITCH ].gain.kb );
+    drone->attributes.flash_params_arr[ PID_PITCH_D_KP ]= &( drone->attributes.components.controllers[ PITCH_D ].gain.kp );
+    drone->attributes.flash_params_arr[ PID_PITCH_D_KI ]= &( drone->attributes.components.controllers[ PITCH_D ].gain.ki );
+    drone->attributes.flash_params_arr[ PID_PITCH_D_KD ]= &( drone->attributes.components.controllers[ PITCH_D ].gain.kd );
+    drone->attributes.flash_params_arr[ PID_PITCH_D_KB ]= &( drone->attributes.components.controllers[ PITCH_D ].gain.kb );
+    drone->attributes.flash_params_arr[ PID_YAW_KP ]    = &( drone->attributes.components.controllers[ YAW ].gain.kp );
+    drone->attributes.flash_params_arr[ PID_YAW_KI ]    = &( drone->attributes.components.controllers[ YAW ].gain.ki );
+    drone->attributes.flash_params_arr[ PID_YAW_KD ]    = &( drone->attributes.components.controllers[ YAW ].gain.kd );
+    drone->attributes.flash_params_arr[ PID_YAW_KB ]    = &( drone->attributes.components.controllers[ YAW ].gain.kb );
+    drone->attributes.flash_params_arr[ PID_YAW_D_KP ]  = &( drone->attributes.components.controllers[ YAW_D ].gain.kp );
+    drone->attributes.flash_params_arr[ PID_YAW_D_KI ]  = &( drone->attributes.components.controllers[ YAW_D ].gain.ki );
+    drone->attributes.flash_params_arr[ PID_YAW_D_KD ]  = &( drone->attributes.components.controllers[ YAW_D ].gain.kd );
+    drone->attributes.flash_params_arr[ PID_YAW_D_KB ]  = &( drone->attributes.components.controllers[ YAW_D ].gain.kb );
+    drone->attributes.flash_params_arr[ PID_Z_KP ]      = &( drone->attributes.components.controllers[ Z ].gain.kp );
+    drone->attributes.flash_params_arr[ PID_Z_KI ]      = &( drone->attributes.components.controllers[ Z ].gain.ki );
+    drone->attributes.flash_params_arr[ PID_Z_KD ]      = &( drone->attributes.components.controllers[ Z ].gain.kd );
+    drone->attributes.flash_params_arr[ PID_Z_KB ]      = &( drone->attributes.components.controllers[ Z ].gain.kb );
+    // drone->attributes.flash_params_arr[ PID_Z_D_KP ]    = &( drone->attributes.components.controllers[ Z_D ].gain.kp );
+    // drone->attributes.flash_params_arr[ PID_Z_D_KI ]    = &( drone->attributes.components.controllers[ Z_D ].gain.ki );
+    // drone->attributes.flash_params_arr[ PID_Z_D_KD ]    = &( drone->attributes.components.controllers[ Z_D ].gain.kd );
+    // drone->attributes.flash_params_arr[ PID_Z_D_KB ]    = &( drone->attributes.components.controllers[ Z_D ].gain.kb );
 
     /* Blink MCU internal LED to indicate Transmitter object is ready to receive commands */
     gpio_set_level( GPIO_NUM_2, false );

@@ -10,7 +10,7 @@
 #include <mma.h>
 #include <state_machine.h>
 
-#define FLASH_PARAMS 20 /* Total Drone parameters to be stored in flash memory */
+#define FLASH_PARAMS 36 /* Total Drone parameters to be stored in flash memory */
 #define NVS_NAMESPACE "storage"
 
 
