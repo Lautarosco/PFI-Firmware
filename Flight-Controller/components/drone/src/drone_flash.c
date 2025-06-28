@@ -52,7 +52,12 @@ esp_err_t __read_from_flash( const char* namespace, drone_flash_params_t key_par
     nvs_close( handle );
     return ret;
 }
-
+/*
+    * @brief Get the key name for a given drone_flash_params_t enum value
+    * @param key: The drone_flash_params_t enum value
+    * @retval The corresponding key name as a string, or "NOT FOUND" if the key is not recognized
+    */
+*/
 const char * GetKeyName( drone_flash_params_t key ) {
 
     switch ( key ) {

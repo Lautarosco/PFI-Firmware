@@ -755,7 +755,7 @@ void Drone( drone_t * drone ) {
     drone->attributes.flash_params_arr[ GYRO_OFFSET_X ] = &( drone->attributes.components.bmi.Gyro.offset.x );
     drone->attributes.flash_params_arr[ GYRO_OFFSET_Y ] = &( drone->attributes.components.bmi.Gyro.offset.y );
     drone->attributes.flash_params_arr[ GYRO_OFFSET_Z ] = &( drone->attributes.components.bmi.Gyro.offset.z );
-    
+
     drone->attributes.flash_params_arr[ PID_ROLL_KP ]   = &( drone->attributes.components.controllers[ ROLL ].gain.kp );
     drone->attributes.flash_params_arr[ PID_ROLL_KI ]   = &( drone->attributes.components.controllers[ ROLL ].gain.ki );
     drone->attributes.flash_params_arr[ PID_ROLL_KD ]   = &( drone->attributes.components.controllers[ ROLL ].gain.kd );
@@ -764,8 +764,8 @@ void Drone( drone_t * drone ) {
     drone->attributes.flash_params_arr[ PID_ROLL_D_KI ] = &( drone->attributes.components.controllers[ ROLL_D ].gain.ki );
     drone->attributes.flash_params_arr[ PID_ROLL_D_KD ] = &( drone->attributes.components.controllers[ ROLL_D ].gain.kd );
     drone->attributes.flash_params_arr[ PID_ROLL_D_KB ] = &( drone->attributes.components.controllers[ ROLL_D ].gain.kb );
-    drone->attributes.flash_params_arr[ PID_PITCH_KP ]  = &( drone->attributes.components.controllers[ PITCH ].gain.kp );
     drone->attributes.flash_params_arr[ ROLL_D_IIR_COEFF] = &( drone->attributes.config.IIR_coeff_roll_dot );
+    drone->attributes.flash_params_arr[ PID_PITCH_KP ]  = &( drone->attributes.components.controllers[ PITCH ].gain.kp );
 
     drone->attributes.flash_params_arr[ PID_PITCH_KI ]  = &( drone->attributes.components.controllers[ PITCH ].gain.ki );
     drone->attributes.flash_params_arr[ PID_PITCH_KD ]  = &( drone->attributes.components.controllers[ PITCH ].gain.kd );
