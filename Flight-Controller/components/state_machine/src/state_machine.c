@@ -190,6 +190,10 @@ static void StVibrationCheck(drone_t* drone) {
     else if(pressed(drone, EV_RIGHT)) toggle_motor(drone, 3);
 
     if (pressed(drone, EV_R1)) increase_motor_duty(drone, 0);
+    if (pressed(drone, EV_R2)) increase_motor_duty(drone, 1);
+    if (pressed(drone, EV_L1)) increase_motor_duty(drone, 2);
+    if (pressed(drone, EV_L2)) increase_motor_duty(drone, 3);
+
     
     // Vibration calculation
     float current_acc_vector = sqrtf(
