@@ -172,12 +172,22 @@ void vTaskDroneMeasure( void * pvParameters ) {
             );*/
 
             // TODO: Make these parameters
-            float MAX_ROLL = 15.0f;  // Maximum roll angle in degrees
-            float MAX_PITCH = 15.0f; // Maximum pitch angle in degrees
+            float MAX_ROLL = 10.0f;  // Maximum roll angle in degrees
+            float MAX_PITCH = 10.0f; // Maximum pitch angle in degrees
 
             int r_stick_x = drone->attributes.global_variables.tx_buttons.right_stick.x;
             if (r_stick_x > 100) r_stick_x = 100;
             if (r_stick_x < -100) r_stick_x = -100;
+            
+            // Make the sinewave period adjustable
+            float AMPLITUDE = drone->attributes.global_variables.misc_floats[0];
+            float T = drone->attributes.global_variables.misc_floats[1];
+            float omega;
+            float time_sec = (float)xTaskGetTickCount() / configTICK_RATE_HZ;
+            if (T > 0) {
+                omega = 2.0f * M_PI / T;
+                drone->attributes.sp.roll = AMPLITUDE * sinf(omega * time_sec);
+            }
             drone->attributes.sp.roll = (r_stick_x / 100.0f) * MAX_ROLL;
 
             int r_stick_y = drone->attributes.global_variables.tx_buttons.right_stick.y;
