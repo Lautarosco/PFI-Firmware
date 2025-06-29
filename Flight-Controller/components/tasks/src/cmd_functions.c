@@ -137,7 +137,7 @@ void VarsUpdateCmdFunc(drone_t * drone, char * arr[4]) {
         {.name = "ema_roll",  .addr = &(drone->attributes.config.IIR_coeff_roll_dot)},
         {.name = "ema_pitch", .addr = &(drone->attributes.config.IIR_coeff_pitch_dot)},
         {.name = "ema_yaw",   .addr = &(drone->attributes.config.IIR_coeff_yaw_dot)},
-        
+
         {.name = "roll/P",    .addr = &(drone->attributes.components.controllers[ROLL].gain.kp)},
         {.name = "roll/I",    .addr = &(drone->attributes.components.controllers[ROLL].gain.ki)},
         {.name = "roll/D",    .addr = &(drone->attributes.components.controllers[ROLL].gain.kd)},
@@ -165,6 +165,9 @@ void VarsUpdateCmdFunc(drone_t * drone, char * arr[4]) {
         {.name = "z/P",       .addr = &(drone->attributes.components.controllers[Z].gain.kp)},
         {.name = "z/I",       .addr = &(drone->attributes.components.controllers[Z].gain.ki)},
         {.name = "z/D",       .addr = &(drone->attributes.components.controllers[Z].gain.kd)},
+
+        {.name = "misc/0",    .addr = &(drone->attributes.global_variables.misc_floats[0])},        // amplitude
+        {.name = "misc/1",    .addr = &(drone->attributes.global_variables.misc_floats[1])},        // period
 
         {.name = NULL,        .addr = NULL}
     };

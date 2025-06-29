@@ -19,6 +19,9 @@ typedef struct drone_globals {
     /* Serial data */
     SerialData_t serial_data;
 
+    /* Misc. Floats*/
+    float misc_floats[10];
+
 } drone_globals_t;
 
 #endif
