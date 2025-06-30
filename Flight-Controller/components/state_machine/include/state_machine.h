@@ -2,6 +2,12 @@
 #define STATE_MACHINE_H
 
 /**
+ * @brief State machine tag for logging 
+ */
+extern const char * STATE_MACHINE_TAG;
+
+
+/**
  * @brief Machine states
  */
 typedef enum state_machine_states {
@@ -52,9 +58,58 @@ typedef struct state_machine {
 
 } sm_state_machine_t;
 
+/**
+ * @brief Complete description of a state
+ */
+typedef struct state_transition_row {
 
-/* Create a state_machine object */
-// extern sm_state_machine_t state_machine;
+    /* Current state */
+    sm_state_t curr_state;
+    
+    /* Occured event */
+    sm_event_t event;
+    
+    /* State to go next */
+    sm_state_t next_state;
+
+} state_trans_row_t;
+
+
+/**
+ * @brief State transition matrix
+ */
+static const state_trans_row_t state_trans_matrix[] = {
+
+    /* From IDLE to ... */
+    { .curr_state = ST_IDLE,                  .event = EV_ANY,      .next_state = ST_IDLE },
+    { .curr_state = ST_IDLE,                  .event = EV_CROSS,    .next_state = ST_INIT },
+    { .curr_state = ST_IDLE,                  .event = EV_PS,       .next_state = ST_RESET },
+
+    /* From INIT to ... */
+    { .curr_state = ST_INIT,                  .event = EV_ANY,      .next_state = ST_WAITING },
+    { .curr_state = ST_INIT,                  .event = EV_PS,       .next_state = ST_RESET },
+
+    /* From WAITING to ... */
+    { .curr_state = ST_WAITING,               .event = EV_ANY,      .next_state = ST_WAITING },
+    { .curr_state = ST_WAITING,               .event = EV_TRIANGLE, .next_state = ST_CALIBRATION },
+    { .curr_state = ST_WAITING,               .event = EV_CIRCLE,   .next_state = ST_CONTROL },
+    { .curr_state = ST_WAITING,               .event = EV_SQUARE,    .next_state = ST_PROPELLER_CALIBRATION },
+    { .curr_state = ST_WAITING,               .event = EV_PS,       .next_state = ST_RESET },
+
+    /* From CALIBRATION to ... */
+    { .curr_state = ST_CALIBRATION,           .event = EV_ANY,      .next_state = ST_WAITING },
+    { .curr_state = ST_CALIBRATION,           .event = EV_PS,       .next_state = ST_RESET },
+
+
+    /* From CONTROL to ... */
+    { .curr_state = ST_CONTROL,               .event = EV_ANY,      .next_state = ST_CONTROL },
+    { .curr_state = ST_CONTROL,               .event = EV_PS,       .next_state = ST_RESET },
+
+    /* From PROPELLER CALIBRATION to ... */
+    { .curr_state = ST_PROPELLER_CALIBRATION, .event = EV_ANY,      .next_state = ST_PROPELLER_CALIBRATION },
+    { .curr_state = ST_PROPELLER_CALIBRATION, .event = EV_SQUARE,   .next_state = ST_WAITING },
+    { .curr_state = ST_PROPELLER_CALIBRATION, .event = EV_PS,       .next_state = ST_RESET },
+};
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
@@ -96,6 +151,19 @@ const char * StateMachine_GetStateName( sm_state_t state );
  * @retval const char *
  */
 const char * StateMachine_GetEventName( sm_event_t event );
+
+/**
+ * State functions
+ * ---------------------------
+ */
+
+void StIdleFunc( drone_t * drone );
+void StWaitingFunc( drone_t * drone );
+void StInitFunc( drone_t * drone );
+void StControlFunc( drone_t * drone );
+void StCalibrationFunc( drone_t * drone );
+void StVibrationCheck( drone_t * drone );
+void StResetFunc( drone_t * drone );
 
 
 #endif

@@ -1,3 +1,5 @@
-idf_component_register(SRCS "src/tasks.c" "src/uart_init.c" "src/cmd_functions.c"
+file(GLOB SRC_FILES "src/*.c")
+
+idf_component_register(SRCS ${SRC_FILES}
                     INCLUDE_DIRS "include"
                     REQUIRES "drone" "state_machine")
