@@ -632,29 +632,7 @@ void Drone( drone_t * drone ) {
     }
 
     ESP_LOGI( DRONE_TAG, "Spiffs mounted successfully" );
-
-    /* Number of csv rows */
-    // int n_rows = 0;
-
-    /* Read csv, stored in flash memory of MCU, rows */
-    // csv_row_t * csv_rows = read_csv( "/spiffs/drone_configs.csv", &n_rows );    /* '/base_path/filename.extension' */
-
-    /**
-     * ¡IMPORTANT!
-     * 
-     * Any changes for Drone Class general configs must be done before calling 'GetDroneConfigs' function
-     */
-    // drone->attributes.config.imu_cfg.gyro_offset.x = get_csv_row( csv_rows, n_rows, "x" ).var_value;
-    // drone->attributes.config.imu_cfg.gyro_offset.y = get_csv_row( csv_rows, n_rows, "y" ).var_value;
-    // drone->attributes.config.imu_cfg.gyro_offset.z = get_csv_row( csv_rows, n_rows, "z" ).var_value;
     
-    // printf( "Upper limit ( before ): %.2f\r\n", drone->attributes.config.mma_out_limits.upper );
-    // drone->attributes.config.mma_out_limits.upper = get_csv_row( csv_rows, n_rows, "upper_limit" ).var_value;
-    // printf( "Upper limit ( after ): %.2f\r\n", drone->attributes.config.mma_out_limits.upper );
-    // drone->attributes.config.mma_out_limits.lower = get_csv_row( csv_rows, n_rows, "lower_limit" ).var_value;
-
-    
-
     /* Make an instance of Bmi160 Class */
     #ifndef IGNORE_BMI
     Bmi160(&(drone->attributes.components.bmi),

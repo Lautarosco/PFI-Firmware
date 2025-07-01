@@ -12,29 +12,6 @@ const char * CONTROLLER_TAG = "CONTROLLER";
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
-
-
-/*
-    typedef struct FunctionsMap {
-
-        ControllerFunction * ActionFunc;
-        const char * FuncName;
-
-    } FunctionsMap_t;
-
-    FunctionsMap_t functionTable[] = {
-
-        { .ActionFunc = P_Basic,    .FuncName = "P_Basic"},
-        { .ActionFunc = I_Basic,    .FuncName = "I_Basic"},
-        { .ActionFunc = I_BackCalc, .FuncName = "I_BackCalc"},
-        { .ActionFunc = I_Clamping, .FuncName = "I_Clamping"},
-        { .ActionFunc = D_Basic,    .FuncName = "D_Basic"},
-        { .ActionFunc = D_LPF,      .FuncName = "D_LPF"},
-        { .ActionFunc = NULL,       .FuncName = NULL },
-
-    };
-*/
-
 float pidUpdate( pid_controller_t * obj, float pv, float sp ) {
 
     /* Check if PID object is initialized */
@@ -192,41 +169,40 @@ float I_Clamping( pid_controller_t * obj, float error ) {
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
-float I_BackCalc( pid_controller_t * obj, float error ) {
+float I_BackCalc( pid_controller_t * pid, float error ) {
 
-    float pAction = obj->pFunc( obj, error );
-    float dAction = obj->dFunc( obj, error );
+    float pAction = pid->pFunc( pid, error );
+    float dAction = pid->dFunc( pid, error );
 
     /* Compute the unsaturated output */
-    float iAction = obj->gain.ki * obj->integrator;
+    float iAction = pid->gain.ki * pid->integrator;
     float uUnsat = pAction + iAction + dAction;
 
     /* Saturate PID output */
     float uSat = uUnsat;
-    if( uSat > obj->pid_out_limits.max ) {
-
-        uSat = obj->pid_out_limits.max;
-    } else if( uSat < obj->pid_out_limits.min ) {
-
-        uSat = obj->pid_out_limits.min;
+    if( uSat > pid->pid_out_limits.max ) {
+        uSat = pid->pid_out_limits.max;
+    } else if( uSat < pid->pid_out_limits.min ) {
+        uSat = pid->pid_out_limits.min;
     }
 
     /* Saturate the error */
     float eSat = uSat - uUnsat;
 
     /* Update integrator */
-    obj->integrator += ( error * obj->ts_ms ) + ( obj->gain.kb * eSat * obj->ts_ms );
+    pid->integrator += ( error * pid->ts_ms ) + ( pid->gain.kb * eSat * pid->ts_ms );
 
     /* Additionally clamp integrator */
-    if( obj->integrator > obj->integral_limits.max ) {
+    if( pid->integrator > pid->integral_limits.max ) {
 
-        obj->integrator = obj->integral_limits.max;
-    } else if( obj->integrator < obj->integral_limits.min ) {
+        pid->integrator = pid->integral_limits.max;
+    } else if( pid->integrator < pid->integral_limits.min ) {
 
-        obj->integrator = obj->integral_limits.min;
+        pid->integrator = pid->integral_limits.min;
     }
 
-    return obj->gain.ki * obj->integrator;
+    // check for integral and pid limits
+    return pid->gain.ki * pid->integrator;
 }
 
 
