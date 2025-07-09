@@ -2,4 +2,7 @@ file(GLOB SRC_FILES "src/*.c")
 
 idf_component_register(SRCS ${SRC_FILES}
                     INCLUDE_DIRS "include"
-                    REQUIRES "drone" "state_machine")
+                    REQUIRES "drone" "state_machine" "esp_adc"
+                             "indicators" "bmi160" "transmitter"
+                             "driver" "pwm" "mma" "controllers"
+                             "spiffs")

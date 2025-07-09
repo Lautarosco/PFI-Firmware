@@ -1,5 +1,4 @@
-#ifndef DRONE_H
-#define DRONE_H
+#pragma once
 
 #include <esp_err.h>
 // #include <drone_structs.h>
@@ -13,13 +12,3 @@
  */
 void Drone( drone_t * drone );
 
-/**
- * @brief Sine wave for tunning PID controllers in radians
- * @param A: Sine wave amplitude
- * @param t: Time initialized in 0 ( the function handles time values )
- * @param w: Sine wave angular frequency in rad / s
- * @retval float
- */
-float __sin( float A, float w, float dt_ms );
-
-#endif

@@ -484,9 +484,9 @@ static esp_err_t drone_init( drone_t * drone ) {
     );
 
     /* Blink MCU internal LED to indicate Drone object was successfully initialized */
-    gpio_set_level( GPIO_NUM_2, false );
-    vTaskDelay( pdMS_TO_TICKS( 1000 ) );
-    gpio_set_level( GPIO_NUM_2, true );
+    //gpio_set_level( GPIO_NUM_2, false );
+    //vTaskDelay( pdMS_TO_TICKS( 1000 ) );
+    //gpio_set_level( GPIO_NUM_2, true );
 
     ESP_LOGI( DRONE_TAG, "Drone object initialized" );
 
@@ -660,6 +660,12 @@ void Drone( drone_t * drone ) {
     }
     #endif
 
+    /* Initialize Battery */
+    Battery(&(drone->attributes.components.battery));
+
+    /* Initialize Indicators */
+    Indicators(&(drone->attributes.components.indicators));
+
     /* Make an instance of Mma Class */
 
     Mma(&drone->attributes.components.mma);
@@ -729,15 +735,6 @@ void Drone( drone_t * drone ) {
 
     /* =============== END Global variables assignment =============== */
 
-
-    /* Free memory used for csv object */
-    // for( int i = 0; i < n_rows; i++ ) {
-
-    //     free( csv_rows[ i ].var_name );
-    //     free( csv_rows[ i ].var_type );
-    // }
-    // free( csv_rows );
-
     /* Initialize flash variable pointers to NULL */
     for( int i = 0; i < FLASH_PARAMS; i++ ) {
 
@@ -799,21 +796,15 @@ void Drone( drone_t * drone ) {
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
-static float timer = 0;
-
-float __sin( float A, float w, float dt_ms ) {
-
-    float retval = A * sin( w * ( timer ) );
-
-    if( timer*w > ( 2 * M_PI ) ) {
-
-        timer = 0.0f;
-    }
-
-    else {
-
-        timer += dt_ms / 1000.0f;
-    }
-
-    return retval;
+/**
+ * @brief Initialize battery parameters
+ * @param battery: Pointer to battery structure
+ * @retval none
+ */
+void Battery( battery_t * battery ) {
+    /* Initialize battery parameters */
+    memset( battery, 0, sizeof( battery_t ) );
+    battery->cells = 3;
 }
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
