@@ -44,60 +44,58 @@ static bmp390_sampling_times_t ts_arr[] = {
 
 /* =========== Private functions =========== */
 
-static esp_err_t bmp390_init(bmp390_t *bmp, device_interface_t *dev_iface, bmp390_configs_t bmp_settings, bmp390_temp_units_t temp_unit, bmp390_press_units_t press_unit, unsigned int press0_samples) {
-    /* 1.a Copy <dev_iface> parameter into bmp's <iface> attribute */
-    memcpy(&(bmp->iface), dev_iface, sizeof(device_interface_t));
-
-    /* 1.b Copy temperature and pressure units to bmp's <temp_unit> and <press_unit> attributes */
-    bmp->temp_unit  = temp_unit;
-    bmp->press_unit = press_unit;
+static esp_err_t bmp390_init(bmp390_t *bmp, bmp390_configs_t bmp_settings, bmp390_temp_units_t temp_unit, bmp390_press_units_t press_unit, unsigned int press0_samples) {
+    /* 1. Copy temperature and pressure units to bmp's <temp_unit> and <press_unit> attributes */
+    bmp->temp_unit       = temp_unit;
+    bmp->press_unit      = press_unit;
+    bmp->i2c_bmp_handler = *(bmp_settings.i2c_handler);
 
     /* 2. Reset device to default settings */
-    if(bmp390_hwl_exec_cmd(*dev_iface, BMP390_CMD_SOFTRESET) != ESP_OK) {
+    if(bmp390_hwl_exec_cmd(bmp->i2c_bmp_handler, BMP390_CMD_SOFTRESET) != ESP_OK) {
         return ESP_FAIL;
     }
 
     /* 3. Wait until device is successfully reseted */
-    while(!bmp390_hwl_detect_soft_reset(*dev_iface));
+    while(!bmp390_hwl_detect_soft_reset(bmp->i2c_bmp_handler));
 
     /* 4. Configure interface */
     if(bmp_settings.i2c_wdt_en) {
-        if(bmp390_hwl_i2c_en_wdt(*dev_iface, bmp_settings.i2c_wdt_tout) != ESP_OK) {
+        if(bmp390_hwl_i2c_en_wdt(bmp->i2c_bmp_handler, bmp_settings.i2c_wdt_tout) != ESP_OK) {
             return ESP_FAIL;
         }
     }
 
     /* 5. Enable pressure sensor and set its resolution */
     if(bmp_settings.press_en) {
-        if((bmp390_hwl_press_en(*dev_iface) != ESP_OK) || (bmp390_hwl_set_osr_press(*dev_iface, bmp_settings.osr_press) != ESP_OK)) {
+        if((bmp390_hwl_press_en(bmp->i2c_bmp_handler) != ESP_OK) || (bmp390_hwl_set_osr_press(bmp->i2c_bmp_handler, bmp_settings.osr_press) != ESP_OK)) {
             return ESP_FAIL;
         }
     }
 
     /* 6. Enable temperature sensor and set its resolution */
     if(bmp_settings.temp_en) {
-        if((bmp390_hwl_temp_en(*dev_iface) != ESP_OK) || (bmp390_hwl_set_osr_temp(*dev_iface, bmp_settings.osr_temp) != ESP_OK)) {
+        if((bmp390_hwl_temp_en(bmp->i2c_bmp_handler) != ESP_OK) || (bmp390_hwl_set_osr_temp(bmp->i2c_bmp_handler, bmp_settings.osr_temp) != ESP_OK)) {
             return ESP_FAIL;
         }
     }
     
     /* 7. Set BMP390 internal IIR filter coefficient */
-    if(bmp390_hwl_set_iir_coef(*dev_iface, bmp_settings.iir_coef) != ESP_OK) {
+    if(bmp390_hwl_set_iir_coef(bmp->i2c_bmp_handler, bmp_settings.iir_coef) != ESP_OK) {
         return ESP_FAIL;
     }
 
     /* 8. Set sampling frequency in Hz */
-    if(bmp390_hwl_set_odr(*dev_iface, bmp_settings.odr_sel) != ESP_OK) {
+    if(bmp390_hwl_set_odr(bmp->i2c_bmp_handler, bmp_settings.odr_sel) != ESP_OK) {
         return ESP_FAIL;
     }
 
     /* 9. Set power mode */
-    if(bmp390_hwl_set_pwr_mode(*dev_iface, bmp_settings.pwr_mode)) {
+    if(bmp390_hwl_set_pwr_mode(bmp->i2c_bmp_handler, bmp_settings.pwr_mode)) {
         return ESP_FAIL;
     }
 
     /* 10. Read and update compensation coefficients */
-    if(bmp390_hwl_get_comp_coefs(*dev_iface, &calib_data) != ESP_OK) {
+    if(bmp390_hwl_get_comp_coefs(bmp->i2c_bmp_handler, &calib_data) != ESP_OK) {
         return ESP_FAIL;
     }
 
@@ -124,14 +122,14 @@ static esp_err_t bmp390_init(bmp390_t *bmp, device_interface_t *dev_iface, bmp39
 }
 
 static void bmp390_get_mode_value(bmp390_t *bmp, uint8_t reg_addr, uint8_t mode, char *msg, size_t msg_length) {
-    bmp390_hwl_get_mode_val(bmp->iface, reg_addr, mode, msg, msg_length);
+    bmp390_hwl_get_mode_val(bmp->i2c_bmp_handler, reg_addr, mode, msg, msg_length);
 }
 
 static esp_err_t bmp390_measure(bmp390_t *bmp) {
     uint32_t adc_press = 0;
     uint32_t adc_temp  = 0;
 
-    if(bmp390_hwl_read_raw_data(bmp->iface, &adc_temp, &adc_press) != ESP_OK) {
+    if(bmp390_hwl_read_raw_data(bmp->i2c_bmp_handler, &adc_temp, &adc_press) != ESP_OK) {
         return ESP_FAIL;
     }
 
@@ -150,7 +148,7 @@ static esp_err_t bmp390_measure(bmp390_t *bmp) {
 
     /* If temperature sensor is enabled, then update bmp's temperature attribute */
     char msg[256];
-    if(bmp390_hwl_get_mode_val(bmp->iface, BMP390_PWR_CTRL_RW_REG, BMP390_PWR_CTRL_TEMP_EN, msg, sizeof(msg)) == BMP390_PWR_CTRL_TEMP_ON) {
+    if(bmp390_hwl_get_mode_val(bmp->i2c_bmp_handler, BMP390_PWR_CTRL_RW_REG, BMP390_PWR_CTRL_TEMP_EN, msg, sizeof(msg)) == BMP390_PWR_CTRL_TEMP_ON) {
         bmp->temp = temp;
     }
 

@@ -2,8 +2,9 @@
 #define BMP390_APP_LAYER_H
 
 #include <hardware_layer/bmp390_registers.h>
-#include <interface.h>
+#include <driver/i2c_master.h>
 #include <stdbool.h>
+
 
 /* =========== Public structs =========== */
 
@@ -21,6 +22,7 @@ typedef struct bmp390_configs {
     bmp390_if_conf_reg_spi_t spi_mode;                      /* SPI mode (cannot select other interface) */
     bmp390_if_conf_reg_i2c_wdt_en_t i2c_wdt_en;             /* Enable I2C watchdog timeout (cannot select other interface) */
     bmp390_if_conf_reg_i2c_wdt_tout_t i2c_wdt_tout;         /* I2C watchdog timeout */
+    i2c_master_dev_handle_t *i2c_handler;                   /* Pointer to BMP390 I2C bus handler */
     bmp390_pwr_ctrl_mode_t pwr_mode;                        /* Power mode */
     bool press_en;                                          /* Enable pressure measurements */
     bool temp_en;                                           /* Enable temperature measurements */
@@ -49,7 +51,7 @@ typedef struct bmp390 {
      *      - ESP_OK: success
      *      - ESP_FAIL
      */
-    esp_err_t (*init)(bmp390_t *bmp, device_interface_t *dev_iface, bmp390_configs_t bmp_settings, bmp390_temp_units_t temp_unit, bmp390_press_units_t press_unit, unsigned int press0_samples);
+    esp_err_t (*init)(bmp390_t *bmp, bmp390_configs_t bmp_settings, bmp390_temp_units_t temp_unit, bmp390_press_units_t press_unit, unsigned int press0_samples);
 
     /**
      * @brief Read raw pressure and temperature data and compensate them to obtain actual values
@@ -91,12 +93,12 @@ typedef struct bmp390 {
      */
     esp_err_t (*get_relative_press)(bmp390_t *bmp, unsigned int n_samples, unsigned int t_ms);
 
-    device_interface_t iface;                   /* Sensor interface */
-    double press;                               /* Last pressure measurement */
-    double press0;                              /* Relative pressure */
-    double temp;                                /* Last temperature measurement */
-    bmp390_temp_units_t temp_unit;              /* Temperature measurements unit */
-    bmp390_press_units_t press_unit;            /* Pressure measurements unit */
+    i2c_master_dev_handle_t i2c_bmp_handler;        /* I2C bus BMP390 handler */
+    double press;                                   /* Last pressure measurement */
+    double press0;                                  /* Relative pressure */
+    double temp;                                    /* Last temperature measurement */
+    bmp390_temp_units_t temp_unit;                  /* Temperature measurements unit */
+    bmp390_press_units_t press_unit;                /* Pressure measurements unit */
 } bmp390_t;
 
 /**

@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include <application_layer/bmp390_app_layer.h>
 
-#include <i2c/interface_i2c.h>      /* I2C custom driver */
-
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
 #include <math.h>
+
+
 
 /* =========== Defines =========== */
 
@@ -14,18 +14,19 @@
 #define BMP390_I2C_SCL_F_HZ                 100000          /* I2C SCL (clock) line frequency in Hz */
 #define GPIO_SDA                            21              /* I2C SDA data line */
 #define GPIO_SCL                            22              /* I2C SCL clock line */
-#define BMP390_TEMP_UNIT                    C               /* Unit of measured temperature */
-#define BMP390_PRESS_UNIT                   HPA             /* Unit of measured pressure */
-#define BMP390_REL_PRESS_SAMPLES            100             /* Total samples to compute relative pressure */
 #define VIRTUAL_TEMP_K                      293.87          /* Virtual temperature See (https://www.weather.gov/epz/wxcalc_virtualtemperature) */
 #define GAS_CONSTANT_R                      287.05          /* Gas constant for dry air in J/(kg·K) */
 #define GRAVITY_ACCELERATION_G              9.80665         /* Standard gravity in m/s² */
+
+
 
 /* =========== Functions prototypes =========== */
 
 static esp_err_t estimate_altitude(double press0, double press, double *z);
 static esp_err_t hypsometric_eqn(double press0, double press, double *z);
 void vTaskPrintAltitude(void *any);
+
+
 
 /* =========== Main app =========== */
 
@@ -41,63 +42,58 @@ void app_main(void)
     i2c_master_bus_handle_t i2c_master_handler = NULL;      /* I2C master bus handler */
 
     /* 2.b Set I2C master bus configs */
-    i2c_master_custom_t i2c_master = {
-        .i2c_master_handler = &i2c_master_handler,
-        .i2c_master_configs = {
-            .clk_source                   = I2C_CLK_SRC_APB,
-            .i2c_port                     = I2C_NUM_0,
-            .scl_io_num                   = GPIO_SCL,
-            .sda_io_num                   = GPIO_SDA,
-            .glitch_ignore_cnt            = 7,
-            .flags.enable_internal_pullup = true
-        }
+    i2c_master_bus_config_t i2c_master_cfg = {
+        .clk_source                   = I2C_CLK_SRC_APB,
+        .i2c_port                     = I2C_NUM_0,
+        .scl_io_num                   = GPIO_SCL,
+        .sda_io_num                   = GPIO_SDA,
+        .glitch_ignore_cnt            = 7,
+        .flags.enable_internal_pullup = true
     };
 
     /* 3.a Set I2C device bus handler */
     i2c_master_dev_handle_t i2c_bmp_handler = NULL;         /* I2C BMP390 bus handler */
 
     /* 3.b Set I2C BMP390 bus configs */
-    i2c_dev_custom_t i2c_bmp = {
-        .i2c_dev_handler = &i2c_bmp_handler,
-        .i2c_dev_configs = {
-            .device_address          = BMP390_ADDR,
-            .dev_addr_length         = I2C_ADDR_BIT_LEN_7,
-            .scl_speed_hz            = BMP390_I2C_SCL_F_HZ,
-            .flags.disable_ack_check = false,
-            .scl_wait_us             = BMP390_IF_CONF_I2C_WDT_SEL_1250US
-        }
-    };
-
-    /* 3.c Define I2C BMP390 interface settings */
-    device_interface_t bmp_iface = {
-        .dev_cfg     = &i2c_bmp,
-        .master_cfg  = &i2c_master,
-        .iface_sel   = I2C,
-        .read_bytes  = i2c_read_bytes,
-        .write_bytes = i2c_write_byte
+    i2c_device_config_t i2c_bmp_cfg = {
+        .device_address          = BMP390_ADDR,
+        .dev_addr_length         = I2C_ADDR_BIT_LEN_7,
+        .scl_speed_hz            = BMP390_I2C_SCL_F_HZ,
+        .flags.disable_ack_check = false,
+        .scl_wait_us             = BMP390_IF_CONF_I2C_WDT_SEL_1250US
     };
 
     /* 4. Define BMP390 modes of operation */
-    bmp390_configs_t bmp_modes = {
+    bmp390_configs_t bmp_configs = {
         .i2c_wdt_en   = BMP390_IF_CONF_I2C_WDT_EN,
         .i2c_wdt_tout = BMP390_IF_CONF_I2C_WDT_SEL_1250US,
-        .iir_coef     = BMP390_CONFIG_COEF_3,
+        .i2c_handler  = &i2c_bmp_handler,
+        .iir_coef     = BMP390_CONFIG_COEF_1,
         .odr_sel      = BMP390_ODR_SEL_12P5_HZ,
         .osr_press    = BMP390_OSR_P_X32,
-        .osr_temp     = BMP390_OSR_T_X4,
+        .osr_temp     = BMP390_OSR_T_X2,
         .press_en     = true,
         .temp_en      = true,
         .pwr_mode     = BMP390_PWR_CTRL_NORMAL_MODE
     };
 
+    esp_err_t ret = ESP_OK;
+
     /* 5. Initialize I2C master bus */
-    i2c_init_master_bus(&(i2c_master.i2c_master_configs), &i2c_master_handler);
+    ret = i2c_new_master_bus(&i2c_master_cfg, &i2c_master_handler);
+    if(ret != ESP_OK) {
+        return;
+    }
 
     /* 6. Add BMP390 to I2C bus */
-    i2c_add_new_device(i2c_master_handler, &(i2c_bmp.i2c_dev_configs), &i2c_bmp_handler, bmp_iface.iface_sel);
+    ret = i2c_master_bus_add_device(i2c_master_handler, &i2c_bmp_cfg, &i2c_bmp_handler);
+    if(ret != ESP_OK) {
+        return;
+    }
 
     /* 7. Initialize BMP390 sensor */
-    if(bmp.init(&bmp, &bmp_iface, bmp_modes, BMP390_TEMP_UNIT, BMP390_PRESS_UNIT, BMP390_REL_PRESS_SAMPLES) != ESP_OK) {
+    ret = bmp.init(&bmp, bmp_configs, C, HPA, 100);
+    if(ret != ESP_OK) {
         return;
     }
 
@@ -108,7 +104,7 @@ void app_main(void)
     hypsometric_eqn(bmp.press0, bmp.press, &z0);
     printf("z0: %lf cm\n", z0 * 100.0);
 
-    xTaskCreatePinnedToCore(vTaskPrintAltitude, "Task1", 1024 * 4, (void *) &bmp, 0, NULL, 0);
+    xTaskCreatePinnedToCore(vTaskPrintAltitude, "Task1", 1024 * 4, &bmp, 0, NULL, 0);
 
     while(1) {
         bmp.measure(&bmp);
@@ -118,6 +114,8 @@ void app_main(void)
         vTaskDelay(pdMS_TO_TICKS(80));
     }
 }
+
+
 
 /* =========== Functions implementations =========== */
 
