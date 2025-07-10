@@ -3,6 +3,7 @@
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <freertos/timers.h>
 
 #include <math.h>
 
@@ -19,7 +20,6 @@
 #define GRAVITY_ACCELERATION_G              9.80665         /* Standard gravity in m/s² */
 
 
-
 /* =========== Functions prototypes =========== */
 
 static esp_err_t estimate_altitude(double press0, double press, double *z);
@@ -27,15 +27,28 @@ static esp_err_t hypsometric_eqn(double press0, double press, double *z);
 void vTaskPrintAltitude(void *any);
 
 
+typedef struct {
+    bmp390_t *bmp;
+    double *z;
+    double *z0;
+} bmp_wrapper_t;
+
+void bmp_callback(TimerHandle_t xTimer) {
+    void *pv = pvTimerGetTimerID(xTimer);
+    bmp_wrapper_t *bmp_wrapper = (bmp_wrapper_t *) pv;
+
+    bmp_wrapper->bmp->measure(bmp_wrapper->bmp);
+    hypsometric_eqn(bmp_wrapper->bmp->press0, bmp_wrapper->bmp->press, bmp_wrapper->z);
+}
+
+
 
 /* =========== Main app =========== */
-
-double delta_z = 0.0;
 
 void app_main(void)
 {
     /* 1. Make an instance of Bmp390 Class */
-    bmp390_t bmp;
+    static bmp390_t bmp;
     Bmp390(&bmp);
 
     /* 2.a Set I2C master bus handler */
@@ -98,21 +111,24 @@ void app_main(void)
     }
 
     /* Altitude */
-    double z = 0.0;
-    double z0 = 0.0;
+    static double z = 0.0;
+    static double z0 = 0.0;
 
     hypsometric_eqn(bmp.press0, bmp.press, &z0);
     printf("z0: %lf cm\n", z0 * 100.0);
 
-    xTaskCreatePinnedToCore(vTaskPrintAltitude, "Task1", 1024 * 4, &bmp, 0, NULL, 0);
+    static bmp_wrapper_t bmp_wrapper = {
+        .bmp = &bmp,
+        .z = &z,
+        .z0 = &z0
+    };
 
-    while(1) {
-        bmp.measure(&bmp);
-        hypsometric_eqn(bmp.press0, bmp.press, &z);
-        delta_z = z - z0;
+    TimerHandle_t bmp_timer = xTimerCreate("bmp_timer", pdMS_TO_TICKS(80), pdTRUE, (void *) &bmp_wrapper, bmp_callback);
+    xTimerStart(bmp_timer, 0);
 
-        vTaskDelay(pdMS_TO_TICKS(80));
-    }
+    xTaskCreatePinnedToCore(vTaskPrintAltitude, "Task1", 1024 * 4, &bmp_wrapper, 0, NULL, 0);
+
+    return;
 }
 
 
@@ -165,10 +181,10 @@ static esp_err_t hypsometric_eqn(double press0, double press, double *z) {
 }
 
 void vTaskPrintAltitude(void *any) {
-    bmp390_t *bmp = (bmp390_t *) any;
+    bmp_wrapper_t *bmp_wrapper = (bmp_wrapper_t *) any;
 
     while(1) {
-        printf("T: %lf °C, P: %lf hPa, Altitude: %lf cm\n", bmp->temp, bmp->press, delta_z * 100.0);
+        printf("T: %lf °C, P: %lf hPa, Altitude: %lf cm\n", bmp_wrapper->bmp->temp, bmp_wrapper->bmp->press, (*(bmp_wrapper->z) - *(bmp_wrapper->z0)) * 100.0);
 
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
