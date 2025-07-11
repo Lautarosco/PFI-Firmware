@@ -1,7 +1,7 @@
 {
     "version":            "1.1",
     "project_name":       "gnss",
-    "project_version":    "8edc81d-dirty",
+    "project_version":    "85b2ff1-dirty",
     "project_path":       "C:/Users/35000703/Documents/PFI-Firmware/Side-Projects/gnss",
     "idf_path":           "C:/Users/35000703/esp/v5.4/esp-idf",
     "build_dir":          "C:/Users/35000703/Documents/PFI-Firmware/Side-Projects/gnss/build",
