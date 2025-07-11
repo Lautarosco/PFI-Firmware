@@ -651,22 +651,3 @@ void Drone( drone_t * drone ) {
 }
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
-static float timer = 0;
-
-float __sin( float A, float w, float dt_ms ) {
-
-    float retval = A * sin( w * ( timer ) );
-
-    if( timer*w > ( 2 * M_PI ) ) {
-
-        timer = 0.0f;
-    }
-
-    else {
-
-        timer += dt_ms / 1000.0f;
-    }
-
-    return retval;
-}

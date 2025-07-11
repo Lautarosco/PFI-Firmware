@@ -24,14 +24,6 @@ void vTaskDroneMeasure( void * pvParameters ) {
             /* Update drone states */
             drone->methods.update_states( drone, 10 );
 
-            /* Update sp */
-            /*printf("Analog stick values: LX\t LY\t RX\t RY\n%d\t, %d\t, %d\t, %d\n",
-                drone->attributes.global_variables.tx_buttons.left_stick.x,
-                drone->attributes.global_variables.tx_buttons.left_stick.y,
-                drone->attributes.global_variables.tx_buttons.right_stick.x,
-                drone->attributes.global_variables.tx_buttons.right_stick.y
-            );*/
-
             // TODO: Make these parameters
             float MAX_ROLL = 10.0f;  // Maximum roll angle in degrees
             float MAX_PITCH = 10.0f; // Maximum pitch angle in degrees
@@ -109,7 +101,8 @@ void vTaskDroneMeasure( void * pvParameters ) {
             drone->attributes.sp.yaw = 0;
             drone->attributes.sp.z = 0;
         
-        vTaskDelay( pdMS_TO_TICKS( 10 ) );
         }
+        vTaskDelay( pdMS_TO_TICKS( 10 ) );
+
     }
 }
