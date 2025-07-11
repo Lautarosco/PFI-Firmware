@@ -198,6 +198,9 @@ typedef struct drone_states {
     /* yaw angular position */
     float yaw;
 
+    /* z linear velocity */
+    float z_dot;
+
     /* roll angular velocity */
     float roll_dot;
 
@@ -229,7 +232,7 @@ typedef struct drone_components {
     mma_t mma;
 
     /* Controller component */
-    pid_controller_t controllers[ 7 ];
+    pid_controller_t controllers[ 8 ];
     
 } drone_components_t;
 
@@ -335,7 +338,7 @@ typedef struct drone_cfg {
     /* Pwm configs */
     pwm_cfg_t pwm_cfg[ 4 ];
 
-    PidCfgs_t pid_cfgs[ 7 ];
+    PidCfgs_t pid_cfgs[ 8 ];
 
     /* Upper and lower limits of mma output */
     limits_t mma_out_limits;

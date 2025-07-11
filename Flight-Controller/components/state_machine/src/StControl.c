@@ -20,10 +20,7 @@ void StControlFunc( drone_t * drone ) {
 
     /* Compute PID algorithm for all states */
 
-    /* ROLL - Cascaded PID*/
-
-    // float alpha_ema = 2/(drone->attributes.global_variables.ema_filter_roll+1);
-    // filtered_roll = alpha_ema*drone->attributes.states.roll + (1-alpha_ema)*filtered_roll;
+    /* ROLL - Cascaded PID */
 
     float CRoll = drone->attributes.components.controllers[ ROLL ].pidUpdate(
         &drone->attributes.components.controllers[ ROLL ],
@@ -31,8 +28,6 @@ void StControlFunc( drone_t * drone ) {
         drone->attributes.sp.roll
     );
     
-    // float sine = __sin( 80.0f, 2*M_PI*(1 / 1.0f), 10 );
-
     drone->attributes.sp.roll_dot = CRoll;
 
     float CRolld = drone->attributes.components.controllers[ ROLL_D ].pidUpdate(
@@ -41,8 +36,42 @@ void StControlFunc( drone_t * drone ) {
         drone->attributes.sp.roll_dot
     );
     
+    /* PITCH - Cascaded PID */
+
+    float CPitch = drone->attributes.components.controllers[ PITCH ].pidUpdate(
+        &drone->attributes.components.controllers[ PITCH ],
+        drone->attributes.states.pitch,
+        drone->attributes.sp.pitch
+    );
+
+    drone->attributes.sp.pitch_dot = CPitch;
+
+    float CPitchd = drone->attributes.components.controllers[ PITCH_D ].pidUpdate(
+        &drone->attributes.components.controllers[ PITCH_D ],
+        drone->attributes.states.pitch_dot,
+        drone->attributes.sp.pitch_dot
+    );
+
+    /* Z - Cascaded PID */
+
+    float CZ = drone->attributes.components.controllers[ Z ].pidUpdate(
+        &drone->attributes.components.controllers[ Z ],
+        drone->attributes.states.z,
+        drone->attributes.sp.z
+    );
+
+    drone->attributes.sp.z_dot = CZ;
+
+    float CZd = 0*drone->attributes.components.controllers[ Z_D ].pidUpdate(  // multiplied by 0 to disable Z control
+        &drone->attributes.components.controllers[ Z_D ],
+        drone->attributes.states.z_dot,
+        drone->attributes.sp.z_dot
+    );
+
     /* Update MMA inputs with PID outputs */
     drone->attributes.components.mma.input[ C_ROLL ] = CRolld;
+    drone->attributes.components.mma.input[ C_PITCH ] = CPitchd;
+    drone->attributes.components.mma.input[ C_Z ] = CZd; // Z control is not implemented yet
 
     /* Compute MMA algorithm */
     drone->attributes.components.mma.compute(

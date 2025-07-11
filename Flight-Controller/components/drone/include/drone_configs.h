@@ -144,6 +144,17 @@ static drone_cfg_t DroneConfigs = {
             .pid_output_limits = { .min = -500.0f, .max = 500.0f }
         },
         {
+            .tag = Z_D,
+            .pid_gains = {
+                .kp = 0.0f,
+                .ki = 0.0f,
+                .kd = 0.0f,
+                .kb = 0.0f
+            },
+            .integral_limits = { .min = 0.0f, .max = 0.0f },
+            .pid_output_limits = { .min = 0.0f, .max = 0.0f }
+        },
+        {
             .tag = ROLL,
             .pid_gains = {
                 .kp = 0.0f,

@@ -26,6 +26,8 @@ pid_gain_t *GlobalPitchGains;           /** @brief Pointer to pitch controller g
 pid_gain_t *GlobalPitch_dGains;         /** @brief Pointer to pitch controller gains */
 pid_gain_t *GlobalYawGains;             /** @brief Pointer to yaw controller gains */
 pid_gain_t *GlobalYaw_dGains;           /** @brief Pointer to yaw controller gains */
+pid_gain_t *GlobalZGains;               /** @brief Pointer to Z controller gains */
+pid_gain_t *GlobalZ_dGains;             /** @brief Pointer to Z_d controller gains */
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
@@ -207,135 +209,6 @@ static bool i2c_scan( void ) {
     }
 
     return found;
-}
-
-
-/* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
-
-/**
- * @brief Read drone_configs csv file and return csv_row_t object with each row data
- * @param filename: Path to csv file
- * @param n_rows: Rows count variable pre-initialized in 0
- * @retval Updated csv_row_t object with csv rows
- */
-static csv_row_t * read_csv( const char * filename, int * n_rows ) {
-
-    /* Open file in read only mode */
-    FILE * fp = fopen( filename, "r" );
-
-    /* Initialize rows to NULL */
-    csv_row_t * rows = NULL;
-
-    /* Initialize rows count to 0 */
-    *n_rows = 0;
-
-    /* Check if file was successfully opened */
-    if( !fp ) {
-
-        ESP_LOGE( DRONE_TAG, "Failed to open '%s' file... See function %s in line %d", filename, __func__, __LINE__ );
-    }
-
-    /* File was successfully opened */
-    else {
-
-        /* Buffer to store a csv row */
-        char buffer[ 1024 ];
-
-        const char * delimeter = ", ";
-
-        /* Read csv rows until end of file */
-        while( fgets( buffer, 1024, fp ) ) {
-
-
-            /* ASCII integer value of # is 35 => If first character is #, then it's the header row */
-            if(  ( int ) buffer[ 0 ] == 35 ) {
-                
-                continue;
-            }
-
-            /* Increment rows count */
-            ( *n_rows )++;
-
-            /* Re-alocate memory for a new row */
-            rows = realloc( rows, ( *n_rows ) * sizeof( csv_row_t ) );
-
-            /* Check memory re-alocation was successfull */
-            if( !rows ) {
-
-                ESP_LOGE( DRONE_TAG, "Failed to re-alocate memory for another row... See function %s in line %d", __func__, __LINE__ );
-                fclose( fp );
-                return NULL;
-            }
-
-            /* Get each column value */
-            char * token = strtok( buffer, delimeter );
-
-            /* Get all column values */
-            for( int i = 0; token != NULL; i++ ) {
-
-                switch( i ) {
-
-                    case 0:
-                        rows[ ( *n_rows ) - 1 ].var_name = strdup( token );
-                        break;
-                    
-                    case 1:
-                        rows[ ( *n_rows ) - 1 ].var_type = strdup( token );
-                        break;
-
-                    case 2:
-                        rows[ ( *n_rows ) - 1 ].var_value = atof( token );
-                        break;
-
-                    default:
-                        break;
-                }
-
-                /* Get next column value */
-                token = strtok( NULL, delimeter );
-            }
-        }
-        
-        /* Close file */
-        fclose( fp );
-    }
-
-    return rows;
-}
-
-
-/* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
-
-/**
- * @brief Retrieve first occurence of 'name' in 'Name' column of drone_configs csv file
- * @param csv_rows: csv rows object retrieved by 'read_csv' function
- * @param n_rows: Total rows of drone_configs csv
- * @param name: Name to look for
- * @retval csv row of given name - NULL
- */
-static csv_row_t get_csv_row( csv_row_t * csv_rows, int n_rows, const char * name ) {
-
-    /* Set default values for a row */
-    csv_row_t csv_row = {
-
-        .var_name  = "",
-        .var_type  = "",
-        .var_value = 0.0f
-    };
-
-    /* Look for given name in all rows */
-    for( int i = 0; i < n_rows; i++ ) {
-
-        /* Check if actual row name matches parameter name */
-        if( !strcmp( csv_rows[ i ].var_name, name ) ) {
-
-            csv_row = csv_rows[ i ];
-        }
-    }
-
-    return csv_row;
 }
 
 
@@ -552,32 +425,7 @@ static void UpdateStates( drone_t * drone, float ts ) {
     }
 }
 
-
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
-/**
- * @brief Update Drone set points
- * @param drone: Address of Drone object
- * @retval none
- */
-static void UpdateSetPoint(drone_t * drone) {
-    // 1. Update only if current state machine state is ST_CONTROL
-    if(drone->attributes.state_machine.curr_state == ST_CONTROL) {
-        // Triangle for + delta
-        if(drone->attributes.global_variables.tx_buttons.triangle) {
-            drone->attributes.sp.roll += 0.1;
-        }
-
-        // Triangle for - delta
-        else if(drone->attributes.global_variables.tx_buttons.cross) {
-            drone->attributes.sp.roll -= 0.1;
-        }
-    }
-}
-
-
-/* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
 
 void Drone( drone_t * drone ) {
 
@@ -591,7 +439,6 @@ void Drone( drone_t * drone ) {
 
     /* Pointer to Drone functions ( methods ) */
     drone->methods.update_states    = UpdateStates;
-    drone->methods.update_sp        = UpdateSetPoint;
     drone->methods.init             = drone_init;
     drone->methods.i2c_scan         = i2c_scan;
     drone->methods.read_from_flash  = read_from_nvs;
@@ -712,20 +559,26 @@ void Drone( drone_t * drone ) {
     /* Point 'GlobalRollGains' global variable to roll controller */
     GlobalRollGains = &(drone->attributes.components.controllers[ROLL].gain);
 
-    /* Point 'GlobalRollGains' global variable to roll_d controller */
+    /* Point 'GlobalRoll_dGains' global variable to roll_d controller */
     GlobalRoll_dGains = &(drone->attributes.components.controllers[ROLL_D].gain);
 
-    /* Point 'GlobalRollGains' global variable to pitch controller */
+    /* Point 'GlobalPitchGains' global variable to pitch controller */
     GlobalPitchGains = &(drone->attributes.components.controllers[PITCH].gain);
 
-    /* Point 'GlobalRollGains' global variable to pitch_d controller */
+    /* Point 'GlobalPitch_dGains' global variable to pitch_d controller */
     GlobalPitch_dGains = &(drone->attributes.components.controllers[PITCH_D].gain);
 
-    /* Point 'GlobalRollGains' global variable to yaw controller */
+    /* Point 'GlobalYawGains' global variable to yaw controller */
     GlobalYawGains = &(drone->attributes.components.controllers[YAW].gain);
 
-    /* Point 'GlobalRollGains' global variable to yaw_d controller */
+    /* Point 'GlobalYaw_dGains' global variable to yaw_d controller */
     GlobalYaw_dGains = &(drone->attributes.components.controllers[YAW_D].gain);
+
+    /* Point 'GlobalZGains' global variable to z controller */
+    // GlobalZGains = &(drone->attributes.components.controllers[Z].gain);
+
+    /* Point 'GlobalZ_dGains' global variable to z_d controller */
+    // GlobalZ_dGains = &(drone->attributes.components.controllers[Z_D].gain);
 
     /* =============== END Global variables assignment =============== */
 

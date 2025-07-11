@@ -15,6 +15,9 @@ typedef enum states {
 
     /* z index used in Arrays */
     Z,
+
+    /* z_d index used in Arrays */
+    Z_D,
     
     /* Roll index used in Arrays */
     ROLL,
