@@ -15,19 +15,20 @@
 #define BUZZER_PIN     GPIO_NUM_15
 
 // I2C Pins
-#define I2C_SDA_PIN    GPIO_NUM_21
-#define I2C_SCL_PIN    GPIO_NUM_22
+#define I2C_SDA_PIN    GPIO_NUM_22
+#define I2C_SCL_PIN    GPIO_NUM_21
 
 // Voltage Divider
 #define VOLTAGE_ADC_CH ADC_CHANNEL_0  // GPIO36
 #define VOLTAGE_ADC_UNIT ADC_UNIT_1
 
 // Ultrasonic Sensor
-#define US_TRIG_PIN    GPIO_NUM_25
-#define US_ECHO_PIN    GPIO_NUM_26
+#define US_TRIG_PIN    GPIO_NUM_26
+#define US_ECHO_PIN    GPIO_NUM_39
 
 // UARTS
-#define UART1_TX       GPIO_NUM_1
-#define UART1_RX       GPIO_NUM_3
-#define UART2_TX       GPIO_NUM_4
-#define UART2_RX       GPIO_NUM_5
+#define UART1_TX       GPIO_NUM_4
+#define UART1_RX       GPIO_NUM_27
+
+#define UART2_TX       GPIO_NUM_16
+#define UART2_RX       GPIO_NUM_17

@@ -57,4 +57,11 @@ void vTaskParseCommand( void * pvParameters );
  */
 void vTaskUartEvent(void * pvParameters);
 
+/**
+ * @brief FreeRTOS task to handle GNSS events
+ * @param pvParameters: Any
+ * @retval none
+ */
+void vTaskGPSEvents(void * pvParameters);
+
 #endif

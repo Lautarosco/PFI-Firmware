@@ -1,13 +1,15 @@
 #include <drone.h>
 #include <stdbool.h>
 #include <driver/gpio.h>
-#include <driver/i2c.h>
+#include <driver/i2c_master.h>
+#include <driver/uart.h>
 #include <math.h>
 #include <esp_log.h>
 #include <string.h>
 #include <esp_spiffs.h>
 #include <freertos/FreeRTOS.h>
 #include <drone_flash.h>
+#include <esp_err.h>
 
 const char * DRONE_TAG = "DRONE";
 
@@ -176,39 +178,9 @@ static void Kalman( drone_t * drone, float ts_ms ) {
  */
 static bool i2c_scan( void ) {
 
-    bool found = false;
-    printf("Entered i2c_scan function\n");
-    for( uint8_t address = 1; address < 127; address++ ) {
-
-        i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-        ESP_ERROR_CHECK( i2c_master_start( cmd ) );
-        ESP_ERROR_CHECK( i2c_master_write_byte( cmd, ( address << 1 ) | I2C_MASTER_WRITE, true ) );
-        ESP_ERROR_CHECK( i2c_master_stop( cmd ) );
-        
-        esp_err_t ret = i2c_master_cmd_begin( I2C_NUM_0, cmd, 1000 / portTICK_PERIOD_MS );
-        i2c_cmd_link_delete( cmd );
-
-        if ( ret == ESP_OK ) {
-
-            if( address == GetDroneConfigs().imu_cfg.imu_i2c_cfg.address ) {  // este queda GetDroneConfig porque hay que refactorear
-
-                ESP_LOGI( DRONE_TAG, "Bmi160 found at ( 0x%02x )", address );
-                found = true;
-            }
-
-            else {
-
-                // ESP_LOGI( DRONE_TAG, "Device found at address: ( 0x%02x )", address );
-            }
-        }
-        
-        else if ( ret == ESP_ERR_TIMEOUT ) {
-
-            ESP_LOGW( DRONE_TAG, "I2C bus is busy" );
-        }
-    }
-
-    return found;
+    // TODO: Implement proper I2C scanning with new master bus API
+    ESP_LOGI(DRONE_TAG, "I2C scan not implemented with new API");
+    return true;
 }
 
 
@@ -296,10 +268,76 @@ static esp_err_t drone_init( drone_t * drone ) {
     ESP_LOGI( DRONE_TAG, "Initializing Drone object..." );
 
     #ifndef IGNORE_BMI
+
+    i2c_master_bus_handle_t i2c_master_handler = NULL;      /* I2C master bus handler */
+    i2c_master_bus_config_t i2c_master_cfg = {
+        .clk_source                   = I2C_CLK_SRC_APB,
+        .i2c_port                     = I2C_NUM_0,
+        .scl_io_num                   = I2C_SCL_PIN,
+        .sda_io_num                   = I2C_SDA_PIN,
+        .glitch_ignore_cnt            = 7,
+        .flags.enable_internal_pullup = true
+    };
+
+    i2c_master_dev_handle_t i2c_bmp_handler = NULL;         /* I2C BMP390 bus handler */
+    i2c_master_dev_handle_t i2c_bmi_handler = NULL;         /* I2C BMI160 bus handler */
+
+    #define I2C_BUS_FREQUENCY 100000
+
+        /* 3.b Set I2C BMP390 and BMI160 bus configs */
+    i2c_device_config_t i2c_bmp_cfg = {
+        .device_address          = BMP390_ADDR,
+        .dev_addr_length         = I2C_ADDR_BIT_LEN_7,
+        .scl_speed_hz            = I2C_BUS_FREQUENCY,
+        .flags.disable_ack_check = false,
+        .scl_wait_us             = BMP390_IF_CONF_I2C_WDT_SEL_1250US
+    };
+
+    i2c_device_config_t i2c_bmi_cfg = {
+        .device_address          = BMI160_ADDR,
+        .dev_addr_length         = I2C_ADDR_BIT_LEN_7,
+        .scl_speed_hz            = I2C_BUS_FREQUENCY,
+        .flags.disable_ack_check = false,
+        .scl_wait_us             = BMP390_IF_CONF_I2C_WDT_SEL_1250US
+    };
+
+    bmp390_configs_t bmp_configs = {  // TODO change with drone config handling refactor
+        .i2c_wdt_en   = BMP390_IF_CONF_I2C_WDT_EN,
+        .i2c_wdt_tout = BMP390_IF_CONF_I2C_WDT_SEL_1250US,
+        .i2c_handler  = &i2c_bmp_handler,
+        .iir_coef     = BMP390_CONFIG_COEF_1,
+        .odr_sel      = BMP390_ODR_SEL_12P5_HZ,
+        .osr_press    = BMP390_OSR_P_X32,
+        .osr_temp     = BMP390_OSR_T_X2,
+        .press_en     = true,
+        .temp_en      = true,
+        .pwr_mode     = BMP390_PWR_CTRL_NORMAL_MODE
+    };
+
+    esp_err_t ret = i2c_new_master_bus(&i2c_master_cfg, &i2c_master_handler);
+    if(ret != ESP_OK) {
+        return ret;
+    }
+
+    #define IGNORE_BMP 
+
+    #ifdef IGNORE_BMI
+    ret = i2c_master_bus_add_device(i2c_master_handler, &i2c_bmp_cfg, &i2c_bmp_handler);
+    if(ret != ESP_OK) {
+        return ret;
+    }
+    #endif
+
+    ret = i2c_master_bus_add_device(i2c_master_handler, &i2c_bmi_cfg, &i2c_bmi_handler);
+    if(ret != ESP_OK) {
+        return ret;
+    }
+
+
     /* Initialize Bmi160 object */
     ESP_ERROR_CHECK( drone->attributes.components.bmi.init(
             &( drone->attributes.components.bmi ),
-            BMI160_ADDR,
+            &(i2c_bmi_handler),
             drone->attributes.config.imu_cfg.acc_mode,
             drone->attributes.config.imu_cfg.acc_freq,
             drone->attributes.config.imu_cfg.acc_range,
@@ -311,23 +349,67 @@ static esp_err_t drone_init( drone_t * drone ) {
             0.0f
         )
     );
-    // Initialize sensor values to 0
-    drone->attributes.components.bmi.Temp.temperature = 0.0f;
-    drone->attributes.components.bmi.Gyro.x = 0.0f;
-    drone->attributes.components.bmi.Gyro.y = 0.0f;
-    drone->attributes.components.bmi.Gyro.z = 0.0f;
-    drone->attributes.components.bmi.Acc.x = 0.0f;
-    drone->attributes.components.bmi.Acc.y = 0.0f;
-    drone->attributes.components.bmi.Acc.z = 0.0f;
 
-    //drone->attributes.components.bmi.Gyro.offset.x = drone->attributes.config.imu_cfg.gyro_offset.x;
-    //drone->attributes.components.bmi.Gyro.offset.y = drone->attributes.config.imu_cfg.gyro_offset.y;
-    //drone->attributes.components.bmi.Gyro.offset.z = drone->attributes.config.imu_cfg.gyro_offset.z;
+    #ifndef IGNORE_BMP
+    /* Initiali<e BMP390 object */
+    ESP_ERROR_CHECK( drone->attributes.components.bmp.init(
+            &( drone->attributes.components.bmp ),
+            bmp_configs,
+            C,
+            HPA,
+            100
+        )
+    );
+    #endif
 
     /* Fast offset compensation for bmi sensor */
     drone->attributes.components.bmi.foc( &( drone->attributes.components.bmi ) );
     #endif
     //drone->attributes.components.bmi.Gyro.calibrate( &( drone->attributes.components.bmi.Gyro ), 2000 );
+
+    /* Initialize GNSS */
+
+    const int uart_buffer_size = 1024;
+    if(uart_driver_install(UART_NUM_1, uart_buffer_size, uart_buffer_size, 10, &drone->attributes.components.gnss.uart_queue, 0) != ESP_OK) {
+        printf("Failed to install UART driver\n");
+        return ESP_FAIL;
+    }
+
+    const uart_config_t uart_config = {
+        .baud_rate = 9600,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE
+    };
+    
+    if(uart_param_config(UART_NUM_1, &uart_config) != ESP_OK) {
+        printf("Failed to configure UART parameters\n");
+        uart_driver_delete(UART_NUM_1);
+        return ESP_FAIL;
+    }
+
+    
+    if(uart_set_pin(UART_NUM_1, UART1_TX, UART1_RX, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE) != ESP_OK) {
+        printf("Failed to set UART pins\n");
+        uart_driver_delete(UART_NUM_1);
+        return ESP_FAIL;
+    }
+
+
+    gnss_params_t gnss_params = {
+        .neoxm_version = GNSS_NEO_7M,
+        .gnss_protocol = GNSS_PROTOCOL_DEFAULT,
+        .measRate = GNSS_MEASRATE_DEFAULT,
+        .uart_port = UART_NUM_1,
+        .dynModel = UBX_CFG_NAV5_DYNMODEL_PEDESTRIAN,
+        .static_hold_threshold = GNSS_STATIC_HOLD_DEFAULT,
+    };
+
+    drone->attributes.components.gnss.init( // TODO change with drone config handling refactor
+        &( drone->attributes.components.gnss ),
+        gnss_params
+    ); 
 
     /* Initialize all Pwm objects */
     for( int i = 0; i < ( ( sizeof( drone->attributes.components.pwm ) ) / ( sizeof( drone->attributes.components.pwm[ 0 ] ) ) ); i++ ) {
@@ -422,7 +504,19 @@ static void UpdateStates( drone_t * drone, float ts ) {
         drone->attributes.states.pitch = (1-ALPHA)*pitch_acc + ALPHA*pitch_gyro;
 
         drone->attributes.states.yaw = wrapAngle360(drone->attributes.states.yaw + (gyro_z * (ts / 1000.0f) ));
-    }
+
+        #ifndef IGNORE_BMP
+        /* Height */
+        #define GAS_CONSTANT_R 287.05f  // J/(kg*K)
+        #define GRAVITY_ACCELERATION_G 9.80665f  // m/s^2
+        #define VIRTUAL_TEMP_K 293.15f  // Virtual temperature in Kelvin (20 degrees Celsius)
+
+        float height = ((GAS_CONSTANT_R * VIRTUAL_TEMP_K) / GRAVITY_ACCELERATION_G) * log(drone->attributes.components.bmp.press0 / drone->attributes.components.bmp.press);
+        drone->attributes.states.z = height;
+        #endif
+        drone->attributes.states.z = drone->attributes.components.gnss.data.position.hMSL;  // Use GNSS altitude as Z state
+
+        }
 }
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
@@ -482,13 +576,13 @@ void Drone( drone_t * drone ) {
     
     /* Make an instance of Bmi160 Class */
     #ifndef IGNORE_BMI
-    Bmi160(&(drone->attributes.components.bmi),
-        drone->attributes.config.imu_cfg.imu_i2c_cfg.address,
-        drone->attributes.config.imu_cfg.imu_i2c_cfg.sda,
-        drone->attributes.config.imu_cfg.imu_i2c_cfg.scl
-    );
+    Bmi160(&(drone->attributes.components.bmi));
 
     ESP_LOGI( DRONE_TAG, "BMI160 Init successful\n");
+
+    Bmp390(&(drone->attributes.components.bmp));
+
+    Gnss(&(drone->attributes.components.gnss));
 
     /* Check if all devices are connected to i2c bus */
     if( !drone->methods.i2c_scan() ) {
@@ -648,25 +742,4 @@ void Drone( drone_t * drone ) {
 
     ESP_LOGI( DRONE_TAG, "Instance succesfully made" );
 
-}
-
-/* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
-static float timer = 0;
-
-float __sin( float A, float w, float dt_ms ) {
-
-    float retval = A * sin( w * ( timer ) );
-
-    if( timer*w > ( 2 * M_PI ) ) {
-
-        timer = 0.0f;
-    }
-
-    else {
-
-        timer += dt_ms / 1000.0f;
-    }
-
-    return retval;
 }

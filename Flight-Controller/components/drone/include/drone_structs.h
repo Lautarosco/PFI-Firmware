@@ -4,6 +4,8 @@
 #include <drone_globals.h>
 #include "state_machine.h"
 #include <bmi160.h>
+#include "application_layer/bmp390_app_layer.h"
+#include "application_layer/gnss_app_layer.h"
 #include <transmitter.h>
 #include <pwm.h>
 #include <controllers.h>
@@ -221,6 +223,12 @@ typedef struct drone_components {
     
     /* bmi160 component  */
     bmi160_t bmi;
+
+    /* bmp390 component */
+    bmp390_t bmp;
+
+    /* gnss component */
+    gnss_t gnss;
 
     /* Transmitter component */
     transmitter_t Tx;

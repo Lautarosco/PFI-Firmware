@@ -30,4 +30,6 @@ void app_main( void ) {
 
     xTaskCreatePinnedToCore( vTaskUartEvent, "APP_Uart", 1024 * 5, ( void * ) ( &drone ), 1, NULL, CORE_0 );
 
+    xTaskCreatePinnedToCore( vTaskGPSEvents, "APP_GNSS", 1024 * 3, ( void * ) ( &drone.attributes.components.gnss ), 1, NULL, CORE_0 );
+
 }

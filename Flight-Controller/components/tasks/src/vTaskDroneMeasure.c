@@ -8,18 +8,19 @@
 
 void vTaskDroneMeasure( void * pvParameters ) {
 
-    printf("Entering vTaskDroneMeasure\n");
     /* Cast parameter into Drone object */
     drone_t * drone = ( drone_t * ) pvParameters;
-    printf("Casted drone object\n");
-    printf("init_ok: ");
-    printf("%d\n", drone->attributes.init_ok);
-    
+
     while( 1 ) {
 
         if (drone->attributes.init_ok) {
             /* Measure attitude and update bmi sensor internal registers with respective values */
             drone->attributes.components.bmi.measure( &( drone->attributes.components.bmi ) );
+
+            #define IGNORE_BMP 
+            #ifndef IGNORE_BMP
+            drone->attributes.components.bmp.measure((&drone->attributes.components.bmp));
+            #endif
 
             /* Update drone states */
             drone->methods.update_states( drone, 10 );
@@ -109,7 +110,8 @@ void vTaskDroneMeasure( void * pvParameters ) {
             drone->attributes.sp.yaw = 0;
             drone->attributes.sp.z = 0;
         
-        vTaskDelay( pdMS_TO_TICKS( 10 ) );
         }
+        vTaskDelay( pdMS_TO_TICKS( 10 ) );
+
     }
 }

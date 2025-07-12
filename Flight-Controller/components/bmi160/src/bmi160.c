@@ -4,7 +4,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "communication.h"
+// #include "communication.h"
 #include "registers.h"
 #include "bmi160.h"
 
@@ -15,7 +15,8 @@ static const char *TAG = "BMI160";
 
 // Device Methods
 /*Takes an empty bmi160_t struct and inits its functions and parameters*/
-esp_err_t Bmi160(bmi160_t* bmi, int i2c_address_param, int i2c_scl_param, int i2c_sda_param) {
+esp_err_t Bmi160(bmi160_t* bmi) {
+    memset(bmi, 0, sizeof(bmi160_t));
 
     // Function pointers assignment
     bmi->init                 = bmi_init;
@@ -27,42 +28,96 @@ esp_err_t Bmi160(bmi160_t* bmi, int i2c_address_param, int i2c_scl_param, int i2
     bmi->Gyro.set_range       = gyro_set_range;
     bmi->Gyro.calibrate       = gyro_calibrate;
 
-    esp_err_t i2c_ret = i2c_init(i2c_sda_param, i2c_scl_param);
+    // esp_err_t i2c_ret = i2c_init(i2c_sda_param, i2c_scl_param);
 
-    if (i2c_ret == ESP_OK){
-        bmi->i2c.address = i2c_address_param;
-        bmi->i2c.scl = i2c_scl_param;
-        bmi->i2c.sda = i2c_sda_param;
-    } else {
-        ESP_LOGI(TAG, "INIT->I2C ERROR: %d", i2c_ret);
-    }
+    // if (i2c_ret == ESP_OK){
+    //     bmi->i2c.address = i2c_address_param;
+    //     bmi->i2c.scl = i2c_scl_param;
+    //     bmi->i2c.sda = i2c_sda_param;
+    // } else {
+    //     ESP_LOGI(TAG, "INIT->I2C ERROR: %d", i2c_ret);
+    // }
 
-    bmi->Acc.i2c = bmi->i2c;
-    bmi->Gyro.i2c = bmi->i2c;
+    // bmi->i2c.address = i2c_address_param;
+    // bmi->Acc.i2c = bmi->i2c;
+    // bmi->Gyro.i2c = bmi->i2c;
 
     return ESP_OK;
 }
 
-esp_err_t bmi_init( bmi160_t * self, int bmi_address,
+esp_err_t bmi_init(bmi160_t *bmi, i2c_master_dev_handle_t *i2c_bmi_handler,
     int acc_mode,  int acc_freq,  int acc_range,
     int gyro_mode, int gyro_freq, int gyro_range,
     int gyro_offset_x, int gyro_offset_y, int gyro_offset_z
-)
-{
+) {
+    bmi->i2c_bmi_handler = *(i2c_bmi_handler);
+    bmi->Acc.i2c_bmi_handler = bmi->i2c_bmi_handler;
+    bmi->Gyro.i2c_bmi_handler = bmi->i2c_bmi_handler;
+    bmi->Mag.i2c_bmi_handler = bmi->i2c_bmi_handler;
+
+    esp_err_t ret = ESP_OK;
+
+    uint8_t regs[6][2] = {
+        {BMI160_CMD_REG, acc_mode},
+        {BMI160_ACC_CONF, acc_freq},
+        {BMI160_ACC_RANGE, acc_range},
+        {BMI160_CMD_REG, gyro_mode},
+        {BMI160_GYRO_CONF, gyro_freq},
+        {BMI160_GYRO_RANGE, gyro_range}
+    };
+    
     /* Initialize Acelerometer */
-    ESP_ERROR_CHECK( bmi160_write_byte( bmi_address, BMI160_CMD_REG,   acc_mode ) );       
-    ESP_ERROR_CHECK( bmi160_write_byte( bmi_address, BMI160_ACC_CONF,  acc_freq ) );
-    ESP_ERROR_CHECK( bmi160_write_byte( bmi_address, BMI160_ACC_RANGE, acc_range ) );
+    ret = i2c_master_transmit(bmi->i2c_bmi_handler, regs[0], sizeof(regs[0]), pdMS_TO_TICKS(100));
+    if(ret != ESP_OK) {
+        ESP_LOGE(TAG, "{Function %s in line %d}: Write to 0x%X register --> FAILED", __func__, __LINE__, regs[0][0]);
+        return ESP_FAIL;
+    }
+    
+    ret = i2c_master_transmit(bmi->i2c_bmi_handler, regs[1], sizeof(regs[1]), pdMS_TO_TICKS(100));
+    if(ret != ESP_OK) {
+        ESP_LOGE(TAG, "{Function %s in line %d}: Write to 0x%X register --> FAILED", __func__, __LINE__, regs[1][0]);
+        return ESP_FAIL;
+    }
+    
+    ret = i2c_master_transmit(bmi->i2c_bmi_handler, regs[2], sizeof(regs[2]), pdMS_TO_TICKS(100));
+    if(ret != ESP_OK) {
+        ESP_LOGE(TAG, "{Function %s in line %d}: Write to 0x%X register --> FAILED", __func__, __LINE__, regs[2][0]);
+        return ESP_FAIL;
+    }
     
     /* Initialize Gyroscope */
-    ESP_ERROR_CHECK( bmi160_write_byte( bmi_address, BMI160_CMD_REG,   gyro_mode ) );      
-    ESP_ERROR_CHECK( bmi160_write_byte( bmi_address, BMI160_GYRO_CONF,  gyro_freq ) );
-    ESP_ERROR_CHECK( bmi160_write_byte( bmi_address, BMI160_GYRO_RANGE, gyro_range ) );
+    ret = i2c_master_transmit(bmi->i2c_bmi_handler, regs[3], sizeof(regs[3]), pdMS_TO_TICKS(100));
+    if(ret != ESP_OK) {
+        ESP_LOGE(TAG, "{Function %s in line %d}: Write to 0x%X register --> FAILED", __func__, __LINE__, regs[3][0]);
+        return ESP_FAIL;
+    }
+    
+    ret = i2c_master_transmit(bmi->i2c_bmi_handler, regs[4], sizeof(regs[4]), pdMS_TO_TICKS(100));
+    if(ret != ESP_OK) {
+        ESP_LOGE(TAG, "{Function %s in line %d}: Write to 0x%X register --> FAILED", __func__, __LINE__, regs[4][0]);
+        return ESP_FAIL;
+    }
+    
+    ret = i2c_master_transmit(bmi->i2c_bmi_handler, regs[5], sizeof(regs[5]), pdMS_TO_TICKS(100));
+    if(ret != ESP_OK) {
+        ESP_LOGE(TAG, "{Function %s in line %d}: Write to 0x%X register --> FAILED", __func__, __LINE__, regs[5][0]);
+        return ESP_FAIL;
+    }
+
+    // /* Initialize Acelerometer */
+    // ESP_ERROR_CHECK( bmi160_write_byte( bmi->i2c.address, BMI160_CMD_REG,   acc_mode ) );
+    // ESP_ERROR_CHECK( bmi160_write_byte( bmi->i2c.address, BMI160_ACC_CONF,  acc_freq ) );
+    // ESP_ERROR_CHECK( bmi160_write_byte( bmi->i2c.address, BMI160_ACC_RANGE, acc_range ) );
+    
+    // /* Initialize Gyroscope */
+    // ESP_ERROR_CHECK( bmi160_write_byte( bmi->i2c.address, BMI160_CMD_REG,   gyro_mode ) );
+    // ESP_ERROR_CHECK( bmi160_write_byte( bmi->i2c.address, BMI160_GYRO_CONF,  gyro_freq ) );
+    // ESP_ERROR_CHECK( bmi160_write_byte( bmi->i2c.address, BMI160_GYRO_RANGE, gyro_range ) );
 
     /* Set initials offsets*/
-    self->Gyro.offset.x = gyro_offset_x;
-    self->Gyro.offset.y = gyro_offset_y;
-    self->Gyro.offset.z = gyro_offset_z;
+    bmi->Gyro.offset.x = gyro_offset_x;
+    bmi->Gyro.offset.y = gyro_offset_y;
+    bmi->Gyro.offset.z = gyro_offset_z;
 
     return ESP_OK;
 }
@@ -74,8 +129,15 @@ esp_err_t bmi160_measure(bmi160_t* bmi) {
     int16_t accel_x, accel_y, accel_z;
     int16_t gyro_x, gyro_y, gyro_z;
 
+    uint8_t reg_addr = BMI160_GYRO_REGISTER;
+
     // Read accelerometer, gyroscope, and magnetometer data
-    bmi160_read_bytes(bmi->i2c.address, BMI160_GYRO_REGISTER, sensor_data, 12);
+    esp_err_t ret = i2c_master_transmit_receive(bmi->i2c_bmi_handler, &reg_addr, sizeof(reg_addr), sensor_data, sizeof(sensor_data), pdMS_TO_TICKS(100));
+    if(ret != ESP_OK) {
+        ESP_LOGE(TAG, "{Function %s in line %d}: Read to 0x%X register --> FAILED", __func__, __LINE__, reg_addr);
+        return ESP_FAIL;
+    }
+    // bmi160_read_bytes(bmi->i2c.address, BMI160_GYRO_REGISTER, sensor_data, 12);
 
     // Parse and calibrate data from sensors
 
@@ -132,7 +194,13 @@ esp_err_t acc_set_range(acc_t* acc, uint8_t fs_sel) {
     if (fs_sel > 3) {
         return ESP_ERR_INVALID_ARG;
     }
-    esp_err_t ret = bmi160_write_byte(acc->i2c.address, BMI160_ACC_RANGE, fs_sel & 0b00001111);
+
+    uint8_t mask = fs_sel & 0b00001111;
+    uint8_t write_data[2] = {BMI160_ACC_RANGE, mask};
+
+    esp_err_t ret = i2c_master_transmit(acc->i2c_bmi_handler, write_data, sizeof(write_data), pdMS_TO_TICKS(100));
+    // esp_err_t ret = bmi160_write_byte(acc->i2c.address, BMI160_ACC_RANGE, fs_sel & 0b00001111);
+
     if (ret != ESP_OK) {
         printf("Failed to set_accel_range: %s\n", esp_err_to_name(ret));
     }
@@ -144,7 +212,15 @@ void print_binary(unsigned int num);
 
 float acc_get_sensitivity(acc_t acc) {
     uint8_t accel_sensitivity_setting;
-    bmi160_read_bytes(acc.i2c.address, BMI160_ACC_RANGE, &accel_sensitivity_setting, 1);
+
+    uint8_t reg_addr = BMI160_ACC_RANGE;
+
+    esp_err_t ret = i2c_master_transmit_receive(acc.i2c_bmi_handler, &reg_addr, sizeof(reg_addr), &accel_sensitivity_setting, sizeof(accel_sensitivity_setting), pdMS_TO_TICKS(100));
+    if(ret != ESP_OK) {
+        ESP_LOGE(TAG, "{Function %s in line %d}: Read to 0x%X register --> FAILED", __func__, __LINE__, reg_addr);
+        return ESP_FAIL;
+    }
+    // bmi160_read_bytes(acc.i2c.address, BMI160_ACC_RANGE, &accel_sensitivity_setting, 1);
 /*
     uint8_t txBuff[1024];
     sprintf((char *)txBuff, "acc_sens: %d\n", accel_sensitivity_setting);
@@ -194,7 +270,12 @@ esp_err_t gyro_set_range(gyro_t* gyro, uint8_t fs_sel){
     if (fs_sel > 3) {
         return ESP_ERR_INVALID_ARG;
     }
-    esp_err_t ret = bmi160_write_byte(gyro->i2c.address, BMI160_GYRO_CONF, fs_sel << 3);
+
+    uint8_t mask = fs_sel << 3;
+    uint8_t write_data[2] = {BMI160_GYRO_CONF, mask};
+
+    esp_err_t ret = i2c_master_transmit(gyro->i2c_bmi_handler, write_data, sizeof(write_data), pdMS_TO_TICKS(100));
+    // esp_err_t ret = bmi160_write_byte(gyro->i2c.address, BMI160_GYRO_CONF, fs_sel << 3);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to set_gyro_range: %s\n", esp_err_to_name(ret));
     }
@@ -203,7 +284,15 @@ esp_err_t gyro_set_range(gyro_t* gyro, uint8_t fs_sel){
 }
 float gyro_get_sensitivity(gyro_t gyro){
     uint8_t gyro_sensitivity_setting;
-    bmi160_read_bytes(gyro.i2c.address, BMI160_GYRO_RANGE, &gyro_sensitivity_setting, 1);
+
+    uint8_t reg_addr = BMI160_GYRO_RANGE;
+
+    esp_err_t ret = i2c_master_transmit_receive(gyro.i2c_bmi_handler, &reg_addr, sizeof(reg_addr), &gyro_sensitivity_setting, sizeof(gyro_sensitivity_setting), pdMS_TO_TICKS(100));
+    if(ret != ESP_OK) {
+        ESP_LOGE(TAG, "{Function %s in line %d}: Read to 0x%X register --> FAILED", __func__, __LINE__, reg_addr);
+        return ESP_FAIL;
+    }
+    // bmi160_read_bytes(gyro.i2c.address, BMI160_GYRO_RANGE, &gyro_sensitivity_setting, 1);
 
     switch (gyro_sensitivity_setting & 0b111) {
         case 0b000:  // ±2000 °/s
@@ -243,9 +332,17 @@ esp_err_t gyro_calibrate(gyro_t* gyro, uint32_t samples) {
 
     ESP_LOGI(TAG, "Gyro calibration starting...");
 
+    esp_err_t ret = ESP_OK;
+    uint8_t reg_addr = BMI160_GYRO_REGISTER;
+
     for (int i = 0; i < samples; i++) {
 
-        bmi160_read_bytes(gyro->i2c.address, BMI160_GYRO_REGISTER, sensor_data, 6);
+        ret = i2c_master_transmit_receive(gyro->i2c_bmi_handler, &reg_addr, sizeof(reg_addr), sensor_data, sizeof(sensor_data), pdMS_TO_TICKS(100));
+        if(ret != ESP_OK) {
+            ESP_LOGE(TAG, "{Function %s in line %d}: Read to 0x%X register --> FAILED", __func__, __LINE__, reg_addr);
+            return ESP_FAIL;
+        }
+        // bmi160_read_bytes(gyro->i2c.address, BMI160_GYRO_REGISTER, sensor_data, 6);
 
         gyro_x = ((sensor_data[1] << 8) | sensor_data[0]);
         gyro_y = ((sensor_data[3] << 8) | sensor_data[2]);
@@ -271,11 +368,26 @@ esp_err_t gyro_calibrate(gyro_t* gyro, uint32_t samples) {
 esp_err_t bmi160_foc(bmi160_t* bmi){
 
     // Put gyro in normal mode
-    bmi160_write_byte(bmi->i2c.address, BMI160_CMD_REG, BMI160_CMD_GYRO_NORMAL_MODE);
+    uint8_t write_data[2] = {BMI160_CMD_REG, BMI160_CMD_GYRO_NORMAL_MODE};
+
+    esp_err_t ret = i2c_master_transmit(bmi->i2c_bmi_handler, write_data, sizeof(write_data), pdMS_TO_TICKS(100));
+    if(ret != ESP_OK) {
+        ESP_LOGE(TAG, "{Function %s in line %d}: Write to 0x%X register --> FAILED", __func__, __LINE__, write_data[0]);
+        return ESP_FAIL;
+    }
+
+    // bmi160_write_byte(bmi->i2c.address, BMI160_CMD_REG, BMI160_CMD_GYRO_NORMAL_MODE);
     vTaskDelay(50 / portTICK_PERIOD_MS);
 
-    uint8_t previous_offset[7]; 
-    bmi160_read_bytes(bmi->i2c.address, 0x71, previous_offset, 7);
+    uint8_t previous_offset[7];
+
+    uint8_t reg_addr = 0x71;
+    ret = i2c_master_transmit_receive(bmi->i2c_bmi_handler, &reg_addr, sizeof(reg_addr), previous_offset, sizeof(previous_offset), pdMS_TO_TICKS(100));
+    if(ret != ESP_OK) {
+        ESP_LOGE(TAG, "{Function %s in line %d}: Read to 0x%X register --> FAILED", __func__, __LINE__, 0x71);
+        return ESP_FAIL;
+    }
+    // bmi160_read_bytes(bmi->i2c.address, 0x71, previous_offset, 7);
 
     int16_t prev_gyro_x = (int16_t)(((previous_offset[6] & 0b00000011) << 8) | previous_offset[3]);
     int16_t prev_gyro_y = (int16_t)(((previous_offset[6] & 0b00001100) << 6) | previous_offset[4]);
@@ -305,32 +417,48 @@ esp_err_t bmi160_foc(bmi160_t* bmi){
     // configure FOC
     uint8_t foc_config = BMI160_FOC_GYRO_ENABLE | (BMI160_FOC_ACC_DISABLED << BMI160_FOC_ACC_X_SHIFT) | (BMI160_FOC_ACC_DISABLED << BMI160_FOC_ACC_Y_SHIFT) | (BMI160_FOC_ACC_DISABLED << BMI160_FOC_ACC_Z_SHIFT)  ;
     printf("0x%02X\n", foc_config);
-    bmi160_write_byte(bmi->i2c.address, BMI160_FOC_CONF_REG, foc_config);
+
+    uint8_t foc_write[2] = {BMI160_FOC_CONF_REG, foc_config};
+    i2c_master_transmit(bmi->i2c_bmi_handler, foc_write, sizeof(foc_write), pdMS_TO_TICKS(100));
+    // bmi160_write_byte(bmi->i2c.address, BMI160_FOC_CONF_REG, foc_config);
 
     // trigger FOC by cmd
-    bmi160_write_byte(bmi->i2c.address, BMI160_CMD_REG, BMI160_FOC_START_CMD);
+    uint8_t foc_cmd_write[2] = {BMI160_CMD_REG, BMI160_FOC_START_CMD};
+    i2c_master_transmit(bmi->i2c_bmi_handler, foc_cmd_write, sizeof(foc_cmd_write), pdMS_TO_TICKS(100));
+    // bmi160_write_byte(bmi->i2c.address, BMI160_CMD_REG, BMI160_FOC_START_CMD);
 
     // wait for FOC to complete
     uint8_t status = 0;
+    reg_addr = BMI160_STATUS_REG;
     do {
-        bmi160_read_bytes(bmi->i2c.address, BMI160_STATUS_REG, &status, 1);
+        i2c_master_transmit_receive(bmi->i2c_bmi_handler, &reg_addr, sizeof(reg_addr), &status, sizeof(status), pdMS_TO_TICKS(100));
+        // bmi160_read_bytes(bmi->i2c.address, BMI160_STATUS_REG, &status, 1);
         vTaskDelay(10 / portTICK_PERIOD_MS);
     } while (status & 0x08);  // FOC running bit
 
     // read data to clear data ready bit
     uint8_t dummy_sensor_data[12];
-    bmi160_read_bytes(bmi->i2c.address, BMI160_GYRO_REGISTER, dummy_sensor_data, 12);
+    reg_addr = BMI160_GYRO_REGISTER;
+    i2c_master_transmit_receive(bmi->i2c_bmi_handler, &reg_addr, sizeof(reg_addr), dummy_sensor_data, sizeof(dummy_sensor_data), pdMS_TO_TICKS(100));
+    // bmi160_read_bytes(bmi->i2c.address, BMI160_GYRO_REGISTER, dummy_sensor_data, 12);
 
     ESP_LOGI(TAG, "Fast Offset Compensation completed.");
 
     // enable offset
     uint8_t current_offset_bit;
-    bmi160_read_bytes(bmi->i2c.address, 0x77, &current_offset_bit, 1);
-    bmi160_write_byte(bmi->i2c.address, 0x77, 0b10000000 | current_offset_bit);
+    reg_addr = 0x77;
+    i2c_master_transmit_receive(bmi->i2c_bmi_handler, &reg_addr, sizeof(reg_addr), &current_offset_bit, sizeof(current_offset_bit), pdMS_TO_TICKS(100));
+    // bmi160_read_bytes(bmi->i2c.address, 0x77, &current_offset_bit, 1);
+
+    uint8_t off_write[2] = {0x77, (0b10000000 | current_offset_bit)};
+    i2c_master_transmit(bmi->i2c_bmi_handler, off_write, sizeof(off_write), pdMS_TO_TICKS(100));
+    // bmi160_write_byte(bmi->i2c.address, 0x77, 0b10000000 | current_offset_bit);
 
     // get and print offsets
     uint8_t offset_data[7];
-    bmi160_read_bytes(bmi->i2c.address, 0x71, offset_data, 7);
+    reg_addr = 0x71;
+    i2c_master_transmit_receive(bmi->i2c_bmi_handler, &reg_addr, sizeof(reg_addr), offset_data, sizeof(offset_data), pdMS_TO_TICKS(100));
+    // bmi160_read_bytes(bmi->i2c.address, 0x71, offset_data, 7);
 
     int8_t acc_x = offset_data[0];
     int8_t acc_y = offset_data[1];

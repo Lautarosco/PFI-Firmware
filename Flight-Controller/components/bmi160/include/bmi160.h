@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include "esp_system.h"
 #include "registers.h"
+#include <driver/i2c_master.h>
 
 // Structs
 
@@ -22,7 +23,8 @@ typedef struct magnetometer {
     float y;
     float z;
 
-    i2c_params_t i2c;
+    // i2c_params_t i2c;
+    i2c_master_dev_handle_t i2c_bmi_handler;            /* BMI160 I2C bus handler */
 
     offset_t offset;
 
@@ -40,7 +42,8 @@ typedef struct accelerometer {
     float y;
     float z;
 
-    i2c_params_t i2c;
+    // i2c_params_t i2c;
+    i2c_master_dev_handle_t i2c_bmi_handler;            /* BMI160 I2C bus handler */
 
     offset_t offset;
 
@@ -56,7 +59,8 @@ typedef struct gyroscope {
     float y;
     float z;
 
-    i2c_params_t i2c;
+    // i2c_params_t i2c;
+    i2c_master_dev_handle_t i2c_bmi_handler;            /* BMI160 I2C bus handler */
 
     offset_t offset;
 
@@ -77,9 +81,9 @@ typedef struct temperature {
 
 typedef struct bmi160_t {
     // Device config
-    i2c_params_t i2c;
+    i2c_master_dev_handle_t i2c_bmi_handler;            /* BMI160 I2C bus handler */
 
-    esp_err_t (*init)(struct bmi160_t* self, int bmi_address, int acc_mode, int acc_freq, int acc_range, int gyro_mode, int gyro_freq, int gyro_range, int gyro_offset_x, int gyro_offset_y, int gyro_offset_z);
+    esp_err_t (*init)(struct bmi160_t* bmi, i2c_master_dev_handle_t *i2c_bmi_handler, int acc_mode, int acc_freq, int acc_range, int gyro_mode, int gyro_freq, int gyro_range, int gyro_offset_x, int gyro_offset_y, int gyro_offset_z);
     esp_err_t (*measure)(struct bmi160_t* self);
     esp_err_t (*foc)(struct bmi160_t* self);
     
@@ -116,17 +120,14 @@ esp_err_t bmi160_foc(bmi160_t* bmi);
 
 /**
  * @brief Make an instance of Bmi160 Class
- * @param i2c_addr: i2c address of bmi sensor
- * @param i2c_sda: SDA GPIO
- * @param i2c_scl: SCL GPIO
+ * @param i2c_address_param: i2c address of bmi sensor
  * @retval Pointer to Bmi160 object
  */
-esp_err_t Bmi160( bmi160_t* bmi, int i2c_addr, int i2c_sda, int i2c_scl );
+esp_err_t Bmi160(bmi160_t *bmi);
 
 /**
  * @brief Initialize Bmi160 object
- * @param self: Address of Bmi160 object
- * @param bmi_address: Bmi160 I2C address
+ * @param bmi: Address of Bmi160 object
  * @param acc_mode: Accelerometer mode
  * @param acc_freq: Accelerometer operation frequency
  * @param acc_range: Accelerometer range
@@ -139,7 +140,7 @@ esp_err_t Bmi160( bmi160_t* bmi, int i2c_addr, int i2c_sda, int i2c_scl );
  * @retval esp_err_t
  */
 
-esp_err_t bmi_init( bmi160_t * self, int bmi_address,
+esp_err_t bmi_init( bmi160_t *bmi, i2c_master_dev_handle_t *i2c_bmi_handler,
     int acc_mode,  int acc_freq,  int acc_range,
     int gyro_mode, int gyro_freq, int gyro_range,
     int gyro_offset_x, int gyro_offset_y, int gyro_offset_z
