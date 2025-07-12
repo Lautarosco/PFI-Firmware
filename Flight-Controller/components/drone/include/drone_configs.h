@@ -134,89 +134,49 @@ static drone_cfg_t DroneConfigs = {
     .pid_cfgs = {
         {
             .tag = Z,
-            .pid_gains = {
-                .kp = 0.0f,
-                .ki = 0.0f,
-                .kd = 0.0f,
-                .kb = 1.0f
-            },
+
             .integral_limits = { .min = -125.0f, .max = 125.0f },
             .pid_output_limits = { .min = -500.0f, .max = 500.0f }
         },
         {
             .tag = Z_D,
-            .pid_gains = {
-                .kp = 0.0f,
-                .ki = 0.0f,
-                .kd = 0.0f,
-                .kb = 0.0f
-            },
+
             .integral_limits = { .min = 0.0f, .max = 0.0f },
             .pid_output_limits = { .min = 0.0f, .max = 0.0f }
         },
         {
             .tag = ROLL,
-            .pid_gains = {
-                .kp = 0.0f,
-                .ki = 0.0f,
-                .kd = 0.0f,
-                .kb = 1.0f
-            },
+
             .integral_limits = { .min = -125.0f, .max = 125.0f },
             .pid_output_limits = { .min = -500.0f, .max = 500.0f }
         },
         {
             .tag = PITCH,
-            .pid_gains = {
-                .kp = 0.0f,
-                .ki = 0.0f,
-                .kd = 0.0f,
-                .kb = 0.0f
-            },
-            .integral_limits = { .min = 0.0f, .max = 0.0f },
-            .pid_output_limits = { .min = 0.0f, .max = 0.0f }
+
+            .integral_limits = { .min = -125.0f, .max = 125.0f },
+            .pid_output_limits = { .min = -500.0f, .max = 500.0f }
         },
         {
             .tag = YAW,
-            .pid_gains = {
-                .kp = 0.0f,
-                .ki = 0.0f,
-                .kd = 0.0f,
-                .kb = 0.0f
-            },
+
             .integral_limits = { .min = 0.0f, .max = 0.0f },
             .pid_output_limits = { .min = 0.0f, .max = 0.0f }
         },
         {
             .tag = ROLL_D,
-            .pid_gains = {
-                .kp = 0.0f,
-                .ki = 0.0f,
-                .kd = 0.0f,
-                .kb = 1.0f
-            },
+
             .integral_limits = { .min = -100000.0f, .max = 100000.0f },
             .pid_output_limits = { .min = -100000.0f, .max = 100000.0f }
         },
         {
             .tag = PITCH_D,
-            .pid_gains = {
-                .kp = 0.0f,
-                .ki = 0.0f,
-                .kd = 0.0f,
-                .kb = 0.0f
-            },
-            .integral_limits = { .min = 0.0f, .max = 0.0f },
-            .pid_output_limits = { .min = 0.0f, .max = 0.0f }
+
+            .integral_limits = { .min = -100000.0f, .max = 100000.0f },
+            .pid_output_limits = { .min = -100000.0f, .max = 100000.0f }
         },
         {
             .tag = YAW_D,
-            .pid_gains = {
-                .kp = 0.0f,
-                .ki = 0.0f,
-                .kd = 0.0f,
-                .kb = 0.0f
-            },
+
             .integral_limits = { .min = 0.0f, .max = 0.0f },
             .pid_output_limits = { .min = 0.0f, .max = 0.0f }
         }

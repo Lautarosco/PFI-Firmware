@@ -335,6 +335,8 @@ static esp_err_t drone_init( drone_t * drone ) {
         drone->attributes.components.pwm[ i ].init( &drone->attributes.components.pwm[ i ], drone->attributes.config.pwm_cfg[ i ] );
     }
 
+    pid_gain_t emtpy_gains = { .kp = 0.0f, .ki = 0.0f, .kd = 0.0f, .kb = 0.0f };
+
     /* Initialize all Pid objects */
     for( int i = 0; i < ( ( sizeof( drone->attributes.components.controllers ) ) / ( sizeof( drone->attributes.components.controllers[ 0 ] ) ) ); i++ ) {
 
@@ -343,7 +345,7 @@ static esp_err_t drone_init( drone_t * drone ) {
             i,
             10.0f,
             1.0f,
-            drone->attributes.config.pid_cfgs[ i ].pid_gains,
+            emtpy_gains,
             drone->attributes.config.pid_cfgs[ i ].integral_limits,
             drone->attributes.config.pid_cfgs[ i ].pid_output_limits
         );
