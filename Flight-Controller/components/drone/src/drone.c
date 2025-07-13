@@ -111,13 +111,13 @@ inline bool GPIO_INIT( gpio_num_t GPIOx, gpio_mode_t io_mode, gpio_pull_mode_t u
  * @param in: New input to filter
  * @param out: Previous output of filter 
  * @param ts_s: Sampling time in seconds
- * @param tau_s: Time constant of filter in seconds
+ * @param alpha: Filter coefficient (0 - 1)
  * @return float
  */
-static float FirstOrderIIR( float in, float out, float ts_s, float tau_s ) {
-    
-    float alpha = ts_s / ( ts_s + tau_s );
-
+float FirstOrderIIR( float in, float out, float ts_s, float alpha ) {
+    if (alpha > 1 || alpha < 0) {
+        ESP_LOGE("FirstOrderIIR", "INCORRECT ALPHA SELECTED %.2f", alpha);
+    }
     return ( ( 1 - alpha ) * in ) + ( alpha * out );
 }
 

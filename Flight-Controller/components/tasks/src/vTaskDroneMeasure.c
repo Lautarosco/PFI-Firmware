@@ -42,7 +42,8 @@ void vTaskDroneMeasure( void * pvParameters ) {
                 drone->attributes.sp.roll = AMPLITUDE * sinf(omega * time_sec);
             } else {
                 // If T is zero or negative, use the joystick value directly
-                drone->attributes.sp.roll = (r_stick_x / 100.0f) * MAX_ROLL;
+                drone->attributes.sp.roll = FirstOrderIIR((r_stick_x / 100.0f) * MAX_ROLL, drone->attributes.sp.roll, 0.010, 0.7);
+                // drone->attributes.sp.roll = (r_stick_x / 100.0f) * MAX_ROLL;
             }
 
 
@@ -95,10 +96,17 @@ void vTaskDroneMeasure( void * pvParameters ) {
             #else
                 if (r_stick_y > 100) r_stick_y = 100;
                 if (r_stick_y < -100) r_stick_y = -100;
-                drone->attributes.sp.pitch = (r_stick_y / 100.0f) * MAX_PITCH;
+                drone->attributes.sp.pitch = FirstOrderIIR((r_stick_y / 100.0f) * MAX_PITCH, drone->attributes.sp.pitch, 0.010, 0.7);
+                // drone->attributes.sp.pitch = (r_stick_y / 100.0f) * MAX_PITCH;
             #endif
 
             drone->attributes.sp.yaw = 0;
+
+
+            int l_stick_y = drone->attributes.global_variables.tx_buttons.left_stick.y;
+            
+
+
             drone->attributes.sp.z = 0;
         
         }
