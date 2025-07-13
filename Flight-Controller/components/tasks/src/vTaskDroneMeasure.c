@@ -48,7 +48,7 @@ void vTaskDroneMeasure( void * pvParameters ) {
 
             int r_stick_y = drone->attributes.global_variables.tx_buttons.right_stick.y;
 
-            #define PITCH_SIMULATE
+            // #define PITCH_SIMULATE
             #ifdef PITCH_SIMULATE
 
             // Set flags to start right or left pulse
