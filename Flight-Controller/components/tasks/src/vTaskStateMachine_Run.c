@@ -49,6 +49,12 @@ static void getEvent( sm_state_machine_t * state_machine, drone_t* drone ) {
                 state_machine->event = EV_ANY;
                 return;
             }  // positive edge
+
+            if (pressed(drone, EV_PS)) {
+                printf("Reset from prop calibration\n");
+                state_machine->event = EV_PS;
+                return;
+            }  // positive edge
             break;
 
         default:
