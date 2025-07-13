@@ -67,6 +67,31 @@ static esp_err_t gnss_neoxm_hal_measure(gnss_t *gnss) {
     return ESP_OK;
 }
 
+static esp_err_t gnss_neoxm_hal_get_sv_info(gnss_t *gnss) {
+    if(gnss == NULL) {
+        ESP_LOGE(gnss_app_layer_tag, "{Function %s in line %d}: GNSS instance is NULL. Initialize Gnss object --> FAILED", __func__, __LINE__);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    switch (gnss->__neoxm_version) {
+        case GNSS_NEO_6M:
+            ESP_LOGE(gnss_app_layer_tag, "NEO-6M measure function not implemented yet");
+            break;
+
+        case GNSS_NEO_7M:
+            esp_err_t ret = gnss_neo7m_update_SVs_data(gnss);
+            if(ret != ESP_OK) {
+                return ESP_FAIL;
+            }
+            break;
+
+        default:
+            break;
+    }
+
+    return ESP_OK;
+}
+
 
 /* ========== Public functions ========== */
 
@@ -78,8 +103,9 @@ esp_err_t Gnss(gnss_t *gnss) {
     
     memset(gnss, 0, sizeof(gnss_t));   /* Initialize all attributes of Gnss object to 0 */
     
-    gnss->init    = gnss_neoxm_hal_init;
-    gnss->measure = gnss_neoxm_hal_measure;
+    gnss->init     = gnss_neoxm_hal_init;
+    gnss->measure  = gnss_neoxm_hal_measure;
+    gnss->get_sv_status = gnss_neoxm_hal_get_sv_info;
 
     ESP_LOGI(gnss_app_layer_tag, "Make an instance of Gnss Class --> OK");
 

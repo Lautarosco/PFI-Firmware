@@ -178,7 +178,9 @@ esp_err_t gnss_neo7m_measure(gnss_t *gnss) {
     ubx_nav_dop_t nav_dop;
     gnss_parse_nav_dop(ubx_nav_dop_pyld, pyld_len, &nav_dop);
 
-    gnss->data.position.vDOP = nav_dop.vDOP / 100.0;
+    if(gnss_neo7m_vDOP_is_valid(nav_dop.vDOP)) {
+        gnss->data.position.vDOP = nav_dop.vDOP / 100.0;
+    }
 
     return ESP_OK;
 }

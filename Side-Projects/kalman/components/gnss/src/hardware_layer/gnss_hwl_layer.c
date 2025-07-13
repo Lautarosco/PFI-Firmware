@@ -93,11 +93,11 @@ bool is_packet_valid(const gnss_packet_t *packet, gnss_packet_len_t packet_len) 
 }
 
 ubx_msg_status_t check_ubx_msg(const gnss_packet_t *packet, gnss_packet_len_t packet_len, gnss_class_t class, gnss_id_t id, const char *func_caller) {
-    // printf("Receiver response (%d bytes): ", packet_len);
-    // for(int i = 0; i < packet_len; i++) {
-    //     printf("0x%X ", packet[i]);
-    // }
-    // printf("\n\n");
+    printf("Receiver response (%d bytes): ", packet_len);
+    for(int i = 0; i < packet_len; i++) {
+        printf("0x%X ", packet[i]);
+    }
+    printf("\n\n");
 
     /* 1. Check if data is at least 8 bytes (default UBX packet length if payload = 0 bytes) */
     if(packet_len < GNSS_UBX_DEFAULT_PACKET_LEN) {

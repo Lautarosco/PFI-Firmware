@@ -116,6 +116,8 @@ typedef struct gnss {
      *      - ESP_FAIL
      */
     esp_err_t (*measure)(gnss_t *gnss);
+
+    esp_err_t (*get_sv_status)(gnss_t *gnss);
 } gnss_t;
 
 

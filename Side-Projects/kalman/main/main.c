@@ -334,13 +334,13 @@ void app_main(void) {
 
     /* ========== Sensor processing task ========== */
 
-    xTaskCreate(xTask_process_bmp, "xTask_process_bmp", 1024 * 4, &drone, 0, NULL);
-    xTaskCreate(xTask_process_bmi, "xTask_process_bmi", 1024 * 4, &drone, 0, NULL);
+    // xTaskCreate(xTask_process_bmp, "xTask_process_bmp", 1024 * 4, &drone, 0, NULL);
+    // xTaskCreate(xTask_process_bmi, "xTask_process_bmi", 1024 * 4, &drone, 0, NULL);
 
     /* ========== Timer/Task BMP390 ========== */
 
-    TimerHandle_t bmp_timer = xTimerCreate("bmp_timer", pdMS_TO_TICKS(BMP390_SAMPLING_RATE), pdTRUE, &drone, bmp_callback);
-    xTimerStart(bmp_timer, 0);
+    // TimerHandle_t bmp_timer = xTimerCreate("bmp_timer", pdMS_TO_TICKS(BMP390_SAMPLING_RATE), pdTRUE, &drone, bmp_callback);
+    // xTimerStart(bmp_timer, 0);
 
     /* ========== Task NEO-7M ========== */
 
@@ -348,16 +348,17 @@ void app_main(void) {
 
     /* ========== Timer/Task BMI160 ========== */
 
-    TimerHandle_t bmi_timer = xTimerCreate("bmi_timer", pdMS_TO_TICKS(BMI160_SAMPLING_RATE), pdTRUE, &drone, bmi_callback);
-    xTimerStart(bmi_timer, 0);
+    // TimerHandle_t bmi_timer = xTimerCreate("bmi_timer", pdMS_TO_TICKS(BMI160_SAMPLING_RATE), pdTRUE, &drone, bmi_callback);
+    // xTimerStart(bmi_timer, 0);
 
     while(1) {
-        printf(
-            "printer:z,%f|vel_z,%f\n",
-            drone.states.z, drone.states.vz
-        );
+        // printf(
+        //     "printer:z,%f|vel_z,%f\n",
+        //     drone.states.z, drone.states.vz
+        // );
+        drone.sensors.gnss.get_sv_status(&(drone.sensors.gnss));
 
-        vTaskDelay(pdMS_TO_TICKS(BMI160_SAMPLING_RATE));
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 
     return;
