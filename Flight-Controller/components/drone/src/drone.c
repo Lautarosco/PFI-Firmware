@@ -352,11 +352,7 @@ static esp_err_t drone_init( drone_t * drone ) {
     }
 
     /* Initialize Mma object */
-    drone->attributes.components.mma.init(
-        &drone->attributes.components.mma,
-        drone->attributes.config.mma_out_limits.upper,
-        drone->attributes.config.mma_out_limits.lower
-    );
+    drone->attributes.components.mma.init(&drone->attributes.components.mma);
 
     /* Blink MCU internal LED to indicate Drone object was successfully initialized */
     gpio_set_level( GPIO_NUM_2, false );
@@ -424,6 +420,8 @@ static void UpdateStates( drone_t * drone, float ts ) {
         drone->attributes.states.pitch = (1-ALPHA)*pitch_acc + ALPHA*pitch_gyro;
 
         drone->attributes.states.yaw = wrapAngle360(drone->attributes.states.yaw + (gyro_z * (ts / 1000.0f) ));
+
+        drone->attributes.states.z_dot = drone->attributes.states.z_dot + ts*drone->attributes.components.bmi.Acc.z;
     }
 }
 

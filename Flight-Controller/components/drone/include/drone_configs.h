@@ -180,10 +180,6 @@ static drone_cfg_t DroneConfigs = {
             .integral_limits = { .min = 0.0f, .max = 0.0f },
             .pid_output_limits = { .min = 0.0f, .max = 0.0f }
         }
-    },
-    .mma_out_limits = {
-        .upper = 0.8f,
-        .lower = 1.3f
     }
 };
 

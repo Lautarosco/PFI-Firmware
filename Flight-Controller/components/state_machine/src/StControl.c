@@ -73,11 +73,13 @@ void StControlFunc( drone_t * drone ) {
     drone->attributes.components.mma.input[ C_PITCH ] = CPitchd;
     drone->attributes.components.mma.input[ C_Z ] = CZd; // Z control is not implemented yet
 
+    float range = drone->attributes.components.pwm[ 0 ].dc_max - drone->attributes.components.pwm[ 0 ].dc_min;
+
     /* Compute MMA algorithm */
     drone->attributes.components.mma.compute(
         &drone->attributes.components.mma,
-        drone->attributes.components.pwm[ 0 ].dc_min * drone->attributes.config.mma_out_limits.lower,
-        drone->attributes.components.pwm[ 0 ].dc_max * drone->attributes.config.mma_out_limits.upper
+        drone->attributes.components.pwm[ 0 ].dc_min + 0.3*range,
+        drone->attributes.components.pwm[ 0 ].dc_min + 0.8*range
     );
 
     /* Update all pwm duty cycle */

@@ -17,7 +17,7 @@ static void toggle_motor(drone_t* drone, int pwm_num) {
     printf("Current PWM DC for motor %d: %.2f\n", pwm_num, current_pwm_dc);
 
     float dc_min = drone->attributes.components.pwm[pwm_num].dc_min;
-    float dc_target = dc_min*drone->attributes.config.mma_out_limits.lower; 
+    float dc_target = dc_min + ((drone->attributes.components.pwm[pwm_num].dc_max - dc_min) / 2); // Set target to half between min and max
     float avg = (dc_min + dc_target) / 2.0;
 
     if (current_pwm_dc > avg) {
@@ -30,10 +30,6 @@ static void toggle_motor(drone_t* drone, int pwm_num) {
 
     } else {
         // float dc_target = dc_min + ((dc_max - dc_min) / 2); 
-        printf("dc_min: %f\n", dc_min);
-        printf("dc_target: %f\n", dc_target);
-        printf("avg: %f\n", avg);
-        printf("lower_limit: %f\n", drone->attributes.components.mma.limit.lower);
         
         drone->attributes.components.pwm[ pwm_num ].set_pwm_dc(
             &drone->attributes.components.pwm[ pwm_num ],

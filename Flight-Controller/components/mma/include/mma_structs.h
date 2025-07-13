@@ -51,21 +51,6 @@ typedef enum mma_outputs {
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
-/* @brief Upper and lower limit for mma output */  // TODO: hacerlo mas claro.
-typedef struct limits {
-
-    /* Lower limit, from 0 to 1 */
-    float lower;
-
-    /* Upper limit, from 0 to 1 */
-    float upper;
-    
-} limits_t;
-
-
-/* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
-
 /** @details Forward declaration to avoid warning in function pointers */
 typedef struct mma mma_t;
 
@@ -79,14 +64,11 @@ typedef struct mma {
     /* [ A ] Mma object outputs */
     float output[ 4 ];
 
-    /* Upper and lower limit of mma output */
-    limits_t limit;
+    /** @brief Initialize object of Mma Class @param mma: Mma object */
+    void ( * init )( mma_t * mma);
 
-    /** @brief Initialize object of Mma Class @param drone: Mma object @param upper_limit: Upper limit of mma output @param lower_limit: Lower limit of mma output @retval none */
-    void ( * init )( mma_t * drone, float upper_limit, float lower_limit );
-
-    /** @brief [ M ] Compute MMA algorithm and update object outputs @param drone: Address of Mma Object @param dc_min: Minimum duty cycle @param dc_max: Maximum duty cycle @retval none */
-    void ( * compute )( mma_t * drone, float dc_min, float dc_max );
+    /** @brief [ M ] Compute MMA algorithm and update object outputs @param mma: Address of Mma Object @param dc_min: Minimum duty cycle @param dc_max: Maximum duty cycle @retval none */
+    void ( * compute )( mma_t * mma, float dc_min, float dc_max );
 
 } mma_t;
 

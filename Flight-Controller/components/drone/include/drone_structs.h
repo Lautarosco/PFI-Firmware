@@ -337,9 +337,6 @@ typedef struct drone_cfg {
 
     PidCfgs_t pid_cfgs[ 8 ];
 
-    /* Upper and lower limits of mma output */
-    limits_t mma_out_limits;
-
 } drone_cfg_t;
 
 
