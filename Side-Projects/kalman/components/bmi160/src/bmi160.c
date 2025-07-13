@@ -134,7 +134,7 @@ esp_err_t bmi160_measure(bmi160_t* bmi) {
     // Read accelerometer, gyroscope, and magnetometer data
     esp_err_t ret = i2c_master_transmit_receive(bmi->i2c_bmi_handler, &reg_addr, sizeof(reg_addr), sensor_data, sizeof(sensor_data), pdMS_TO_TICKS(100));
     if(ret != ESP_OK) {
-        ESP_LOGE(TAG, "{Function %s in line %d}: Read to 0x%X register --> FAILED", __func__, __LINE__, reg_addr);
+        // ESP_LOGE(TAG, "{Function %s in line %d}: Read to 0x%X register --> FAILED", __func__, __LINE__, reg_addr);
         return ESP_FAIL;
     }
     // bmi160_read_bytes(bmi->i2c.address, BMI160_GYRO_REGISTER, sensor_data, 12);

@@ -69,14 +69,6 @@ esp_err_t gnss_neo7m_init(gnss_t *gnss, gnss_params_t gnss_params) {
     }
     gnss->data.time.measRate = cfg_rate.measRate;
 
-    // static ubx_nav_svinfo_t ubx_nav_svinfo;
-    // ret = gnss_hwl_read_nav_svinfo(gnss->uart_port, &ubx_nav_svinfo);
-    // // ret = gnss_neo7m_update_SVs_data(gnss);       /* Update Satellites vehicles information */
-    // if(ret != ESP_OK) {
-    //     ESP_LOGE(neo7m_app_layer_tag, "{Function %s in line %d}: Update SVs info --> FAILED", __func__, __LINE__);
-    //     return ESP_FAIL;
-    // }
-
     ret = gnss_hwl_set_dynModel(gnss->uart_port, gnss_params.dynModel);     /* Set dynamic platform model */
     if(ret != ESP_OK) {
         ESP_LOGE(neo7m_app_layer_tag, "{Function %s in line %d}: Set dynamic portable model --> FAILED", __func__, __LINE__);
@@ -95,17 +87,6 @@ esp_err_t gnss_neo7m_init(gnss_t *gnss, gnss_params_t gnss_params) {
         ESP_LOGE(neo7m_app_layer_tag, "{Function %s in line %d}: Read UBX-CFG-NAV5 --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
-
-    // ubx_nav_dop_t ubx_nav_dop;
-    // ret = gnss_hwl_read_nav_dop(gnss->uart_port, &ubx_nav_dop);
-    // if(ret != ESP_OK) {
-    //     ESP_LOGE(neo7m_app_layer_tag, "{Function %s in line %d}: Read UBX-NAV-DOP --> FAILED", __func__, __LINE__);
-    //     return ESP_FAIL;
-    // }
-    // gnss->data.position.pDOP = ubx_nav_dop.pDOP / 100.0;        /* Update position DOP */
-    // gnss->data.position.vDOP = ubx_nav_dop.vDOP / 100.0;        /* Update vertical DOP */
-    // ESP_LOGI(neo7m_app_layer_tag, "{Function %s in line %d}: Initial pDOP: %lf", __func__, __LINE__, gnss->data.position.pDOP);
-    // ESP_LOGI(neo7m_app_layer_tag, "{Function %s in line %d}: Initial vDOP: %lf", __func__, __LINE__, gnss->data.position.vDOP);
 
     gnss_hwl_set_uart_msg_mode(gnss->uart_port, UBX_CLASS_NAV, UBX_NAV_PVT_ID, UBX_MSG_PERIODIC);
     gnss_hwl_set_uart_msg_mode(gnss->uart_port, UBX_CLASS_NAV, UBX_NAV_DOP_ID, UBX_MSG_PERIODIC);

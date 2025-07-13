@@ -36,7 +36,7 @@ static inline bool GNSS_NACK(gnss_class_t class, gnss_id_t id) {return (class ==
 
 /* ========== Private variables ========== */
 
-const char *gnss_hwl_tag = "[GNSS_HWL_LAYER]";
+const char *gnss_hwl_tag = "[GNSS_HW_LAYER]";
 
 
 /* ========== Public functions ========== */
@@ -93,11 +93,11 @@ bool is_packet_valid(const gnss_packet_t *packet, gnss_packet_len_t packet_len) 
 }
 
 ubx_msg_status_t check_ubx_msg(const gnss_packet_t *packet, gnss_packet_len_t packet_len, gnss_class_t class, gnss_id_t id, const char *func_caller) {
-    printf("Receiver response (%d bytes): ", packet_len);
-    for(int i = 0; i < packet_len; i++) {
-        printf("0x%X ", packet[i]);
-    }
-    printf("\n\n");
+    // printf("Receiver response (%d bytes): ", packet_len);
+    // for(int i = 0; i < packet_len; i++) {
+    //     printf("0x%X ", packet[i]);
+    // }
+    // printf("\n\n");
 
     /* 1. Check if data is at least 8 bytes (default UBX packet length if payload = 0 bytes) */
     if(packet_len < GNSS_UBX_DEFAULT_PACKET_LEN) {
@@ -359,7 +359,7 @@ esp_err_t gnss_hwl_receive_packet(uart_port_t uart_port, gnss_class_t class, gns
 
     /* If <should_wait> is set to true, then we must wait until receiver responds or timeout */
     if(should_wait) {
-        uart_read_ticks = 100;
+        uart_read_ticks = 20;
         xDelay = 10;
     }
 
