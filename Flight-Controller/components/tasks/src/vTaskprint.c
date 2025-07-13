@@ -35,6 +35,7 @@ void vTaskprint( void * drone_ ) {
                 "dc1,%.2f|dc2,%.2f|dc3,%.2f|dc4,%.2f|"
                 "gyro_x,%.2f|gyro_y,%.2f|gyro_z,%.2f|"
                 "mma_in_roll,%.2f|mma_in_pitch,%.2f|mma_in_yaw,%.2f"
+                "misc/2,%.2f|misc/3,%.2f"
                 "\n"  // end of dynamic values
                 "static:roll/P,%.2f|roll/I,%.2f|roll/D,%.2f|roll/KB,%.2f|roll_d/P,%.2f|roll_d/I,%.2f|roll_d/D,%.2f|roll_d/KB,%.2f|"
                 "pitch/P,%.2f|pitch/I,%.2f|pitch/D,%.2f|pitch/KB,%.2f|pitch_d/P,%.2f|pitch_d/I,%.2f|pitch_d/D,%.2f|pitch_d/KB,%.2f|"
@@ -50,7 +51,9 @@ void vTaskprint( void * drone_ ) {
                 drone->attributes.components.pwm[0].get_pwm_dc(&drone->attributes.components.pwm[0])*1000, drone->attributes.components.pwm[1].get_pwm_dc(&drone->attributes.components.pwm[1])*1000, drone->attributes.components.pwm[2].get_pwm_dc(&drone->attributes.components.pwm[2])*1000, drone->attributes.components.pwm[3].get_pwm_dc(&drone->attributes.components.pwm[3])*1000,
                 drone->attributes.components.bmi.Gyro.x, drone->attributes.components.bmi.Gyro.y, drone->attributes.components.bmi.Gyro.z,
                 drone->attributes.components.mma.input[C_ROLL], drone->attributes.components.mma.input[C_PITCH], drone->attributes.components.mma.input[C_YAW],
-                
+                drone->attributes.components.controllers[ROLL].integrator*drone->attributes.components.controllers[ROLL].gain.ki,
+                drone->attributes.components.controllers[ROLL_D].integrator*drone->attributes.components.controllers[ROLL_D].gain.ki,
+
                 // roll gains
                 drone->attributes.components.controllers[ROLL].gain.kp,
                 drone->attributes.components.controllers[ROLL].gain.ki,
