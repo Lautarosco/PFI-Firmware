@@ -3,6 +3,8 @@
 
 #include <hardware_layer/bmp390_modes_names.h>
 
+#include <freertos/FreeRTOS.h>
+
 #include <esp_err.h>
 #include <esp_log.h>
 #include <stdbool.h>
@@ -691,7 +693,7 @@ esp_err_t bmp390_hwl_read_raw_data(i2c_master_dev_handle_t i2c_bmp_handler, uint
     *adc_press = 0;
 
     /* Read DATA register content and check for errors */
-    esp_err_t ret = i2c_master_transmit_receive(i2c_bmp_handler, &reg_addr, 1, data, sizeof(data), 20);
+    esp_err_t ret = i2c_master_transmit_receive(i2c_bmp_handler, &reg_addr, 1, data, sizeof(data), 100);
     if((ret != ESP_OK) || (bmp390_hwl_err(i2c_bmp_handler) != ESP_OK)) {
         ESP_LOGE(bmp390_hwl_tag, "{Function <%s> in line %d}: Read bytes --> FAILED", __func__, __LINE__);    
     }

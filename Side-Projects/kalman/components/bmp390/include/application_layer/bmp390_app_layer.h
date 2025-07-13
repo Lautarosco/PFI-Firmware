@@ -41,7 +41,6 @@ typedef struct bmp390 {
      * @brief Initialize Bmp390 object with given operation modes and selected interface
      * 
      * @param bmp: Pointer to bmp390_t struct
-     * @param dev_iface: Selected interface for serial communication
      * @param bmp_settings: Registers operation modes
      * @param temp_unit: Temperature measurements unit
      * @param press_unit: Pressure measurements unit

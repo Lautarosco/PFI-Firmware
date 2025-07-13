@@ -65,8 +65,8 @@ typedef struct gnss_svs_data {
 
 typedef struct gnss_flags_data {
     bool valid_utc_date;                /* UTC valid date flag */
-    bool valid_gnss_fix_type;           /* GNSS useful fix type flag */
-    bool valid_gnss_fix;                /* GNSS valid fix flag */
+    bool valid_gnss_fix_type;           /* GNSS useful fix type flag. True if fix is 2D, 3D or a combination of both */
+    bool valid_gnss_fix;                /* GNSS valid fix flag. True if applied fixes are valid */
     bool diffSoln_flag;                 /* Differential corrections applied flag */
 } gnss_flags_data_t;
 
@@ -90,6 +90,7 @@ typedef struct gnss gnss_t;
 
 typedef struct gnss {
     uart_port_t uart_port;                  /* UART port number */
+    QueueHandle_t uart_queue;               /* UART queue to store events */
     gnss_polling_data_t data;               /* Data read from receiver */
     gnss_neoxm_t __neoxm_version;           /* Device version (DO NOT MODIFY AFTER INSTANCE INITIALIZATION) */
 
@@ -105,6 +106,15 @@ typedef struct gnss {
      */
     esp_err_t (*init)(gnss_t *gnss, gnss_params_t gnss_params);
 
+    /**
+     * @brief Read UBX-<Class>-<ID> messages to update position
+     * 
+     * @param gnss: Pointer to the Gnss instance
+     * 
+     * @retval
+     *      - ESP_OK: Success
+     *      - ESP_FAIL
+     */
     esp_err_t (*measure)(gnss_t *gnss);
 } gnss_t;
 

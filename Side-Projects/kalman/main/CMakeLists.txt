@@ -1,3 +1,3 @@
 idf_component_register(SRCS "main.c"
                     INCLUDE_DIRS "."
-                    REQUIRES "bmp390" "gnss" "bmi160")
+                    REQUIRES "bmp390" "gnss" "bmi160" "kalman")
