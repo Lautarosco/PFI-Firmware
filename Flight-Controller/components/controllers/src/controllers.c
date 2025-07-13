@@ -33,33 +33,15 @@ float pidUpdate( pid_controller_t * obj, float pv, float sp ) {
     float iAction = obj->iFunc( obj, obj->error );  /* Compute Integral Action */
     float dAction = obj->dFunc( obj, obj->error );  /* Compute Derivative Action */
 
-/*
-        for( int i = 0; functionTable[ i ].ActionFunc != NULL; i++ ) {
-
-            if( functionTable[ i ].ActionFunc == obj->pFunc ) {
-
-                printf( "P func: %s\r\n", functionTable[ i ].FuncName );
-
-            } else if( functionTable[ i ].ActionFunc == obj->iFunc ) {
-
-                printf( "I func: %s\r\n", functionTable[ i ].FuncName );
-
-            } else if( functionTable[ i ].ActionFunc == obj->dFunc ) {
-
-                printf( "D func: %s\r\n", functionTable[ i ].FuncName );
-            }
-        }
-*/
-
     float pid_out = pAction + iAction + dAction;    /* Compute PID output */
 
     /* Saturate PID output */
     if( pid_out > obj->pid_out_limits.max ) {
-
         pid_out = obj->pid_out_limits.max;
-    } else if( pid_out < obj->pid_out_limits.min ) {
 
+    } else if( pid_out < obj->pid_out_limits.min ) {
         pid_out = obj->pid_out_limits.min;
+
     }
 
     obj->prev_error = obj->error;
@@ -137,8 +119,6 @@ float I_Clamping( pid_controller_t * obj, float error ) {
     /* Check for positive saturation */
     if( u > obj->pid_out_limits.max ) {
 
-        u = obj->pid_out_limits.max;    /* Saturate output */
-
         /* Check error sign */
         if( error > 0 ) {
 
@@ -147,8 +127,6 @@ float I_Clamping( pid_controller_t * obj, float error ) {
 
     } else if( u < obj->pid_out_limits.min ) {  /* Check for negative saturation */
         
-        u = obj->pid_out_limits.min;    /* Saturate output */
-
         /* Check error sign */
         if( error < 0 ) {
 
@@ -191,18 +169,18 @@ float I_BackCalc( pid_controller_t * pid, float error ) {
 
     /* Update integrator */
     pid->integrator += ( error * pid->ts_ms ) + ( pid->gain.kb * eSat * pid->ts_ms );
-
+    float iActionBackCalc = pid->gain.ki * pid->integrator;
     /* Additionally clamp integrator */
-    if( pid->integrator > pid->integral_limits.max ) {
 
-        pid->integrator = pid->integral_limits.max;
-    } else if( pid->integrator < pid->integral_limits.min ) {
+    if( iActionBackCalc > pid->integral_limits.max ) {
 
-        pid->integrator = pid->integral_limits.min;
+        iActionBackCalc = pid->integral_limits.max;
+    } else if( iActionBackCalc < pid->integral_limits.min ) {
+
+        iActionBackCalc = pid->integral_limits.min;
     }
 
-    // check for integral and pid limits
-    return pid->gain.ki * pid->integrator;
+    return iActionBackCalc;
 }
 
 
