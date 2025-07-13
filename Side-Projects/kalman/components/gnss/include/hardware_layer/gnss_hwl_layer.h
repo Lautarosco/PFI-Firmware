@@ -121,6 +121,9 @@ bool is_packet_valid(const gnss_packet_t *packet, gnss_packet_len_t packet_len);
  * @param packet_len: Length of the UBX packet
  * @param class: Class ID to be checked
  * @param id: Message ID to be checked
+ * @param payload: Pointer to buffer to store read payload from UART Rx buffer
+ * @param pyld_len: Length of payload buffer
+ * @param rx_pyld_len: Length of payload read from UART Rx buffer
  * @param func_caller: Name of the fuction which is requesting a polling to some UBX message
  * 
  * @retval
@@ -129,7 +132,7 @@ bool is_packet_valid(const gnss_packet_t *packet, gnss_packet_len_t packet_len);
  *      - UBX_MSG_VALID: Receiver replied with an echo (but filling the payload with measured data) or with a MSG-ACK response
  *      - UBX_MSG_ACK: Receiver replied with a ACK
  */
-ubx_msg_status_t check_ubx_msg(const gnss_packet_t *packet, gnss_packet_len_t packet_len, gnss_class_t class, gnss_id_t id, const char *func_caller);
+ubx_msg_status_t check_ubx_msg(const gnss_packet_t *packet, gnss_packet_len_t packet_len, gnss_class_t class, gnss_id_t id, gnss_payload_t *payload, gnss_payload_len_t pyld_len, gnss_payload_len_t *rx_pyld_len, const char *func_caller);
 
 /**
  * @brief Make an UBX packet with the given payload
@@ -171,6 +174,7 @@ esp_err_t gnss_hwl_send_packet(uart_port_t uart_port, gnss_packet_t *packet, gns
  * @param id: Message ID of the UBX message to be received
  * @param response: Pointer to buffer to store the payload from the received UBX packet
  * @param payload_len: Length of the payload in bytes
+ * @param pyld_len: Pointer to store length of payload read from UART Rx buffer
  * @param func_caller: Name of the fuction which is requesting a polling to some UBX message
  * @param should_wait: Flag to determine if the function must wait until receiver reply, or just read ONCE and dont mind if data is ready or not
  * 
@@ -179,7 +183,7 @@ esp_err_t gnss_hwl_send_packet(uart_port_t uart_port, gnss_packet_t *packet, gns
  *      - ESP_FAIL: Failed to read UBX packet from UART port
  *      - ESP_ERR_TIMEOUT: Timeout waiting for receiver response
  */
-esp_err_t gnss_hwl_receive_packet(uart_port_t uart_port, gnss_class_t class, gnss_id_t id, gnss_payload_t *response, gnss_payload_len_t payload_len, const char *func_caller, bool should_wait);
+esp_err_t gnss_hwl_receive_packet(uart_port_t uart_port, gnss_class_t class, gnss_id_t id, gnss_payload_t *response, gnss_payload_len_t payload_len, gnss_payload_len_t *pyld_len, const char *func_caller, bool should_wait);
 
 /**
  * @brief Make an UBX packet for disabling a specific NMEA message

@@ -92,12 +92,14 @@ bool is_packet_valid(const gnss_packet_t *packet, gnss_packet_len_t packet_len) 
     return (packet[UBX_PACKET_POS_PAYLOAD + payload_len] == ck_a) && (packet[UBX_PACKET_POS_PAYLOAD + (payload_len + 1)] == ck_b);
 }
 
-ubx_msg_status_t check_ubx_msg(const gnss_packet_t *packet, gnss_packet_len_t packet_len, gnss_class_t class, gnss_id_t id, const char *func_caller) {
-    printf("Receiver response (%d bytes): ", packet_len);
-    for(int i = 0; i < packet_len; i++) {
-        printf("0x%X ", packet[i]);
-    }
-    printf("\n\n");
+ubx_msg_status_t check_ubx_msg(const gnss_packet_t *packet, gnss_packet_len_t packet_len, gnss_class_t class, gnss_id_t id,
+    gnss_payload_t *payload, gnss_payload_len_t pyld_len, gnss_payload_len_t *rx_pyld_len, const char *func_caller
+) {
+    // printf("Receiver response (%d bytes): ", packet_len);
+    // for(int i = 0; i < packet_len; i++) {
+    //     printf("0x%X ", packet[i]);
+    // }
+    // printf("\n\n");
 
     /* 1. Check if data is at least 8 bytes (default UBX packet length if payload = 0 bytes) */
     if(packet_len < GNSS_UBX_DEFAULT_PACKET_LEN) {
@@ -249,6 +251,20 @@ ubx_msg_status_t check_ubx_msg(const gnss_packet_t *packet, gnss_packet_len_t pa
                                 func_caller,
                                 class, id
                             );
+
+                            /* Check if given payload has enough bytes to store payload read from UART Rx buffer */
+                            if(payload_len > pyld_len) {
+                                ESP_LOGE(
+                                    gnss_hwl_tag,
+                                    "{Function %s in line %d}: [Caller: %s] Payload passed to function does not have enough bytes (%d bytes) to store payload read from UART Rx buffer (%d bytes)",
+                                    __func__, __LINE__, func_caller,
+                                    pyld_len, payload_len
+                                );
+                            }
+
+                            memcpy(payload, &(packet[k + UBX_PACKET_POS_PAYLOAD]), payload_len);
+                            *rx_pyld_len = payload_len;
+
                             return UBX_MSG_VALID;
                         }
 
@@ -269,6 +285,19 @@ ubx_msg_status_t check_ubx_msg(const gnss_packet_t *packet, gnss_packet_len_t pa
                     func_caller,
                     class, id
                 );
+
+                /* Check if given payload has enough bytes to store payload read from UART Rx buffer */
+                if(payload_len > pyld_len) {
+                    ESP_LOGE(
+                        gnss_hwl_tag,
+                        "{Function %s in line %d}: [Caller: %s] Payload passed to function does not have enough bytes (%d bytes) to store payload read from UART Rx buffer (%d bytes)",
+                        __func__, __LINE__, func_caller,
+                        pyld_len, payload_len
+                    );
+                }
+
+                memcpy(payload, &(packet[k + UBX_PACKET_POS_PAYLOAD]), payload_len);
+                *rx_pyld_len = payload_len;
 
                 return UBX_MSG_VALID;
             }
@@ -343,7 +372,7 @@ esp_err_t gnss_hwl_send_packet(uart_port_t uart_port, gnss_packet_t *packet, gns
 }
 
 esp_err_t gnss_hwl_receive_packet(uart_port_t uart_port, gnss_class_t class, gnss_id_t id, gnss_payload_t *response,
-    gnss_payload_len_t payload_len, const char *func_caller, bool should_wait
+    gnss_payload_len_t payload_len, gnss_payload_len_t *pyld_len, const char *func_caller, bool should_wait
 ) {
     /* Initialize some local variables */
     uint8_t rx_buffer[1024];
@@ -382,7 +411,7 @@ esp_err_t gnss_hwl_receive_packet(uart_port_t uart_port, gnss_class_t class, gns
             }
 
             if(check_rx_data) {
-                int ret = check_ubx_msg(&(rx_buffer[ubx_init_pos]), len - ubx_init_pos, class, id, func_caller);
+                int ret = check_ubx_msg(&(rx_buffer[ubx_init_pos]), len - ubx_init_pos, class, id, response, payload_len, pyld_len, func_caller);
 
                 if(ret == UBX_MSG_VALID) {
                     break;
@@ -418,19 +447,12 @@ esp_err_t gnss_hwl_receive_packet(uart_port_t uart_port, gnss_class_t class, gns
     if(ack) {
         return ESP_OK;
     }
-
-    /* If received bytes are less than expected. Then in order to avoid overflow by reading more bytes than what rx_buffer has, update payload length with received sensor data */
-    if(payload_len > rx_payload_len) {
-        ESP_LOGW(
-            gnss_hwl_tag,
-            "{Function %s in line %d}: Expected payload length (%d bytes) is greater than received payload (%d bytes). To avoid overflow, only received payload length bytes are copied",
-            __func__, __LINE__,
-            payload_len, rx_payload_len
-        );
-        payload_len = rx_payload_len;
-    }
     
-    memcpy(response, &(rx_buffer[ubx_init_pos + UBX_PACKET_POS_PAYLOAD]), payload_len);
+    // printf("%s in line %d Payload: ", __func__, __LINE__);
+    // for(int i = 0; i < *pyld_len; i++) {
+    //     printf("0x%X ", response[i]);
+    // }
+    // printf("\n\n");
     
     return ESP_OK;
 }
@@ -476,6 +498,7 @@ esp_err_t gnss_hwl_disable_nmea(uart_port_t uart_port) {
         NMEA_VTG_ID,
         NMEA_ZDA_ID
     };
+    gnss_payload_len_t rx_pyld_len = 0;
 
     for(int i = 0; i < ((sizeof(nmea_messages)) / (sizeof(nmea_messages[0]))); i++) {
         uint8_t ubx_packet[GNSS_UBX_DEFAULT_PACKET_LEN + 8];  /* UBX packet length = 8 bytes + <nmea message payload length> */
@@ -485,7 +508,7 @@ esp_err_t gnss_hwl_disable_nmea(uart_port_t uart_port) {
 
         // vTaskDelay(pdMS_TO_TICKS(50));  /* Wait some time to ensure the packet is sent */
         gnss_payload_t response[UBX_ACK_ACK_LEN_2];
-        if(gnss_hwl_receive_packet(uart_port, UBX_CLASS_ACK, UBX_ACK_ACK_ID, response, 16, __func__, true) != ESP_OK) {
+        if(gnss_hwl_receive_packet(uart_port, UBX_CLASS_ACK, UBX_ACK_ACK_ID, response, 16, &rx_pyld_len, __func__, true) != ESP_OK) {
             ESP_LOGE(gnss_hwl_tag, "{Function %s in line %d}: Disable NMEA message [%d] <0x%X> --> FAILED", __func__, __LINE__, i, nmea_messages[i]);
         } else {
             ESP_LOGI(gnss_hwl_tag, "Disable <0x%X> NMEA message --> OK", nmea_messages[i]);
@@ -557,11 +580,13 @@ esp_err_t gnss_hwl_poll_request(uart_port_t uart_port, gnss_payload_len_t payloa
         return ESP_FAIL;
     }
 
-    ret = gnss_hwl_receive_packet(uart_port, class, id, response, payload_len, func_caller, true);
+    gnss_payload_len_t rx_pyld_len = 0;
+    ret = gnss_hwl_receive_packet(uart_port, class, id, response, payload_len, &rx_pyld_len, func_caller, true);
     if(ret != ESP_OK) {
         ESP_LOGE(gnss_hwl_tag, "{Function %s in line %d}: Receive UBX packet --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
     }
+    // printf("%s in line %d (payload bytes: %d)\n", __func__, __LINE__, rx_pyld_len);
 
     return ESP_OK;
 }
@@ -619,7 +644,8 @@ esp_err_t gnss_hwl_set_meas_rate(uart_port_t uart_port, unsigned short measure_r
     }
 
     gnss_payload_t response[UBX_CFG_RATE_LEN_6];
-    ret = gnss_hwl_receive_packet(uart_port, UBX_CLASS_CFG, UBX_CFG_RATE_ID, response, sizeof(response), __func__, true);
+    gnss_payload_len_t rx_pyld_len = 0;
+    ret = gnss_hwl_receive_packet(uart_port, UBX_CLASS_CFG, UBX_CFG_RATE_ID, response, sizeof(response), &rx_pyld_len, __func__, true);
     if(ret != ESP_OK) {
         ESP_LOGE(gnss_hwl_tag, "{Function %s in line %d}: Read UBX-CFG-RATE response --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
@@ -696,7 +722,8 @@ esp_err_t gnss_hwl_set_dynModel(uart_port_t uart_port, ubx_cfg_nav5_dynModel_t d
     }
 
     gnss_payload_t response[UBX_CFG_NAV5_LEN_36];
-    ret = gnss_hwl_receive_packet(uart_port, UBX_CLASS_CFG, UBX_CFG_NAV5_ID, response, sizeof(response), __func__, true);
+    gnss_payload_len_t rx_pyld_len = 0;
+    ret = gnss_hwl_receive_packet(uart_port, UBX_CLASS_CFG, UBX_CFG_NAV5_ID, response, sizeof(response), &rx_pyld_len, __func__, true);
     if(ret != ESP_OK) {
         ESP_LOGE(gnss_hwl_tag, "{Function %s in line %d}: Set UBX-CFG-NAV5 response --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
@@ -735,7 +762,8 @@ esp_err_t gnss_hwl_set_static_hold_threshold(uart_port_t uart_port, unsigned cha
     }
 
     gnss_payload_t response[UBX_CFG_NAV5_LEN_36];
-    ret = gnss_hwl_receive_packet(uart_port, UBX_CLASS_CFG, UBX_CFG_NAV5_ID, response, sizeof(response), __func__, true);
+    gnss_payload_len_t rx_pyld_len = 0;
+    ret = gnss_hwl_receive_packet(uart_port, UBX_CLASS_CFG, UBX_CFG_NAV5_ID, response, sizeof(response), &rx_pyld_len, __func__, true);
     if(ret != ESP_OK) {
         ESP_LOGE(gnss_hwl_tag, "{Function %s in line %d}: Read UBX-CFG-NAV5 response --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
@@ -792,7 +820,8 @@ esp_err_t gnss_hwl_set_uart_msg_mode(uart_port_t uart_port, gnss_class_t class, 
     }
 
     gnss_payload_t response[UBX_CFG_MSG_LEN_8];
-    ret = gnss_hwl_receive_packet(uart_port, UBX_CLASS_CFG, UBX_CFG_MSG_ID, response, sizeof(response), __func__, true);
+    gnss_payload_len_t rx_pyld_len = 0;
+    ret = gnss_hwl_receive_packet(uart_port, UBX_CLASS_CFG, UBX_CFG_MSG_ID, response, sizeof(response), &rx_pyld_len, __func__, true);
     if(ret != ESP_OK) {
         ESP_LOGE(gnss_hwl_tag, "{Function %s in line %d}: Read UBX-CFG-MSG response --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
