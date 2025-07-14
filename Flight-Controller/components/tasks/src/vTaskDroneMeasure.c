@@ -26,7 +26,10 @@ void vTaskDroneMeasure( void * pvParameters ) {
 
             // TODO: Make these parameters
             float MAX_ROLL = 10.0f;  // Maximum roll angle in degrees
+            float MAX_ROLL_D = 5.0f;  // Maximum roll angle in degrees per sec
+
             float MAX_PITCH = 10.0f; // Maximum pitch angle in degrees
+            float MAX_PITCH_D = 5.0f; // Maximum pitch angle in degrees per sec
 
             int r_stick_x = drone->attributes.global_variables.tx_buttons.right_stick.x;
             if (r_stick_x > 100) r_stick_x = 100;
@@ -42,7 +45,7 @@ void vTaskDroneMeasure( void * pvParameters ) {
                 drone->attributes.sp.roll = AMPLITUDE * sinf(omega * time_sec);
             } else {
                 // If T is zero or negative, use the joystick value directly
-                drone->attributes.sp.roll = (r_stick_x / 100.0f) * MAX_ROLL;
+                drone->attributes.sp.roll_dot = (r_stick_x / 100.0f) * MAX_ROLL_D;
             }
 
 
@@ -95,7 +98,7 @@ void vTaskDroneMeasure( void * pvParameters ) {
             #else
                 if (r_stick_y > 100) r_stick_y = 100;
                 if (r_stick_y < -100) r_stick_y = -100;
-                drone->attributes.sp.pitch = (r_stick_y / 100.0f) * MAX_PITCH;
+                drone->attributes.sp.pitch_dot = (r_stick_y / 100.0f) * MAX_PITCH;
             #endif
 
             drone->attributes.sp.yaw = 0;
