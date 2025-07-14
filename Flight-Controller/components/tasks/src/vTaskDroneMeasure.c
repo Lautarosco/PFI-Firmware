@@ -22,7 +22,7 @@ void vTaskDroneMeasure( void * pvParameters ) {
             drone->attributes.components.bmi.measure( &( drone->attributes.components.bmi ) );
 
             /* Update drone states */
-            drone->methods.update_states( drone, 10 );
+            drone->methods.update_states( drone, 1 );
 
             // TODO: Make these parameters
             float MAX_ROLL = 10.0f;  // Maximum roll angle in degrees
@@ -102,7 +102,7 @@ void vTaskDroneMeasure( void * pvParameters ) {
             drone->attributes.sp.z = 0;
         
         }
-        vTaskDelay( pdMS_TO_TICKS( 10 ) );
+        vTaskDelay( pdMS_TO_TICKS( 1 ) );
 
     }
 }

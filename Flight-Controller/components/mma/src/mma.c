@@ -3,10 +3,10 @@
 #include <mma.h>
 #include <esp_log.h>
 
-#define U_MAX         1         /* Maximum controller value */
-#define U_MIN         0         /* Minimum controller value */
-#define W_MAX         850.43    /* Maximum angular velocity in rad/s */
-
+#define U_MAX         100   /* Maximum controller value */
+#define U_MIN         -100  /* Minimum controller value */
+#define W_MAX         1047  /* Step 10 of prop. cal. in rad/s */
+#define W_MIN         240   /* Step 2 of prop. cal. in rad/s */
 const char * MMA_TAG = "MMA";
 
 
@@ -46,16 +46,13 @@ static float saturate(float input, float min, float max ) {
  */
 static float u2pwm(float u, float dc_min, float dc_max ) {
 
-    float Gu = ( U_MAX - U_MIN ) / ( W_MAX );
-    float u_n = u * Gu; /* Normalized controller action */
+    //float Gu = ( U_MAX - U_MIN ) / ( W_MAX - W_MIN );
+    //float u_n = u * Gu; /* Normalized controller action */
 
-    float m = 0;
-    float b = 0;
+    float m = ( dc_max - dc_min ) / ( U_MAX - U_MIN );
+    float b = dc_min - ( m * U_MIN );
 
-    m = ( dc_max - dc_min ) / ( U_MAX - U_MIN );
-    b = dc_min - ( m * U_MIN );
-
-    return saturate(( m * u_n ) + b, dc_min, dc_max);
+    return saturate(( m * u ) + b, dc_min, dc_max);
 }
 
 

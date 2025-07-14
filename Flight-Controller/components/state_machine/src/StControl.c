@@ -3,6 +3,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <esp_log.h>
+#include <esp_timer.h>
 
 #include "state_machine.h"
 #include "drone.h"
@@ -22,13 +23,13 @@ void StControlFunc( drone_t * drone ) {
 
     /* ROLL - Cascaded PID */
 
-    float CRoll = drone->attributes.components.controllers[ ROLL ].pidUpdate(
-        &drone->attributes.components.controllers[ ROLL ],
-        drone->attributes.states.roll,
-        drone->attributes.sp.roll
-    );
+    // float CRoll = drone->attributes.components.controllers[ ROLL ].pidUpdate(
+    //     &drone->attributes.components.controllers[ ROLL ],
+    //     drone->attributes.states.roll,
+    //     drone->attributes.sp.roll
+    // );
     
-    drone->attributes.sp.roll_dot = CRoll;
+    // drone->attributes.sp.roll_dot = CRoll;
 
     float CRolld = drone->attributes.components.controllers[ ROLL_D ].pidUpdate(
         &drone->attributes.components.controllers[ ROLL_D ],
@@ -70,16 +71,16 @@ void StControlFunc( drone_t * drone ) {
 
     /* Update MMA inputs with PID outputs */
     drone->attributes.components.mma.input[ C_ROLL ] = CRolld;
-    drone->attributes.components.mma.input[ C_PITCH ] = CPitchd;
-    drone->attributes.components.mma.input[ C_Z ] = CZd; // Z control is not implemented yet
+    drone->attributes.components.mma.input[ C_PITCH ] = CPitchd*0;
+    drone->attributes.components.mma.input[ C_Z ] = CZd*0; // Z control is not implemented yet
 
     float range = drone->attributes.components.pwm[ 0 ].dc_max - drone->attributes.components.pwm[ 0 ].dc_min;
 
     /* Compute MMA algorithm */
     drone->attributes.components.mma.compute(
         &drone->attributes.components.mma,
-        drone->attributes.components.pwm[ 0 ].dc_min + 0.3*range,
-        drone->attributes.components.pwm[ 0 ].dc_min + 0.8*range
+        drone->attributes.components.pwm[ 0 ].dc_min + 0.2f * range,
+        drone->attributes.components.pwm[ 0 ].dc_min + 0.7f * range
     );
 
     /* Update all pwm duty cycle */
@@ -90,4 +91,5 @@ void StControlFunc( drone_t * drone ) {
             drone->attributes.components.mma.output[ i ]
         );
     }
+
 }

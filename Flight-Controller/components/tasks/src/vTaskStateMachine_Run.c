@@ -2,7 +2,7 @@
 #include <freertos/task.h>
 #include <esp_log.h>
 #include <string.h>
-
+#include <esp_timer.h>
 #include "tasks.h"
 
 #include "button_helper.h"
@@ -124,12 +124,17 @@ void vTaskStateMachine_Run( void * pvParameters ) {
 
     while( 1 ) {
 
+        // int64_t start_time = esp_timer_get_time();
+
         /* Get occurred event */
         getEvent( &drone->attributes.state_machine, drone );
 
         /* Go to the next state and run it's respective function */
         StateMachine_RunIteration(drone);
-        
-        vTaskDelay( pdMS_TO_TICKS( 10 ) );
+
+        vTaskDelay( pdMS_TO_TICKS( 1 ) );
+
+        // int64_t end_time = esp_timer_get_time();
+        // printf("State machine iteration took %lld us\n", (end_time - start_time));
     }
 }
