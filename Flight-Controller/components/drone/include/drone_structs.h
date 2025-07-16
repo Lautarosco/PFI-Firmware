@@ -300,9 +300,6 @@ typedef struct drone_imu_cfg {
 
 typedef struct PidCfgs {
 
-    /* PID gains */
-    pid_gain_t pid_gains;
-
     /* Integral saturation limits */
     pid_limits_t integral_limits;
 
@@ -347,9 +344,6 @@ typedef struct drone_cfg {
     pwm_cfg_t pwm_cfg[ 4 ];
 
     PidCfgs_t pid_cfgs[ 8 ];
-
-    /* Upper and lower limits of mma output */
-    limits_t mma_out_limits;
 
 } drone_cfg_t;
 

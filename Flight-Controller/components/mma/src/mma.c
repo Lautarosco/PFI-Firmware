@@ -42,6 +42,7 @@ static float saturate(float input, float min, float max ) {
  * @param u: mma block output
  * @param dc_min: Minimum duty cycle
  * @param dc_max: Maximum duty cycle
+ * @return float duty cycle
  */
 static float u2pwm(float u, float dc_min, float dc_max ) {
 
@@ -87,19 +88,9 @@ static void compute_obj( mma_t * mma, float dc_min, float dc_max ) {
  * @param lower_limit: Lower limit of mma output
  * @retval none
  */
-static void mma_init( mma_t * mma, float upper_limit, float lower_limit ) {
+static void mma_init( mma_t * mma ) {
 
     ESP_LOGI( MMA_TAG, "Initializing object of Mma Class..." );
-
-    /* Check upper limit */
-
-
-    /* ---------------------------------------------------------------------- */
-
-
-    /* Check lower limit */
-
-
     ESP_LOGI( MMA_TAG, "Mma object successfully initialized" );
 }
 
@@ -113,13 +104,6 @@ void Mma( mma_t* mma ) {
 
     ESP_LOGI( MMA_TAG, "Making an instance of Mma Class..." );
     memset( mma, 0, sizeof( mma_t ) );
-    /* Default values for Mma Class attributes */
-    for (int i = 0; i < ( ( sizeof( mma->input ) )  / ( sizeof( mma->input[ 0 ] ) ) ); i++) { mma->input[ i ]   = 0; }
-    for (int i = 0; i < ( ( sizeof( mma->output ) ) / ( sizeof( mma->output[ 0 ] ) ) ); i++) { mma->output[ i ] = 0; }
-    
-    /* Upper and lower limits default values */
-    mma->limit.upper = 0.0f;
-    mma->limit.lower = 0.0f;
 
     /* Pointer assignment to Mma Class functions ( methods ) */
     mma->init    = mma_init;

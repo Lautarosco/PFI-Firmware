@@ -113,13 +113,13 @@ inline bool GPIO_INIT( gpio_num_t GPIOx, gpio_mode_t io_mode, gpio_pull_mode_t u
  * @param in: New input to filter
  * @param out: Previous output of filter 
  * @param ts_s: Sampling time in seconds
- * @param tau_s: Time constant of filter in seconds
+ * @param alpha: Filter coefficient (0 - 1)
  * @return float
  */
-static float FirstOrderIIR( float in, float out, float ts_s, float tau_s ) {
-    
-    float alpha = ts_s / ( ts_s + tau_s );
-
+float FirstOrderIIR( float in, float out, float ts_s, float alpha ) {
+    if (alpha > 1 || alpha < 0) {
+        ESP_LOGE("FirstOrderIIR", "INCORRECT ALPHA SELECTED %.2f", alpha);
+    }
     return ( ( 1 - alpha ) * in ) + ( alpha * out );
 }
 
@@ -417,6 +417,8 @@ static esp_err_t drone_init( drone_t * drone ) {
         drone->attributes.components.pwm[ i ].init( &drone->attributes.components.pwm[ i ], drone->attributes.config.pwm_cfg[ i ] );
     }
 
+    pid_gain_t emtpy_gains = { .kp = 0.0f, .ki = 0.0f, .kd = 0.0f, .kb = 0.0f };
+
     /* Initialize all Pid objects */
     for( int i = 0; i < ( ( sizeof( drone->attributes.components.controllers ) ) / ( sizeof( drone->attributes.components.controllers[ 0 ] ) ) ); i++ ) {
 
@@ -425,18 +427,14 @@ static esp_err_t drone_init( drone_t * drone ) {
             i,
             10.0f,
             1.0f,
-            drone->attributes.config.pid_cfgs[ i ].pid_gains,
+            emtpy_gains,
             drone->attributes.config.pid_cfgs[ i ].integral_limits,
             drone->attributes.config.pid_cfgs[ i ].pid_output_limits
         );
     }
 
     /* Initialize Mma object */
-    drone->attributes.components.mma.init(
-        &drone->attributes.components.mma,
-        drone->attributes.config.mma_out_limits.upper,
-        drone->attributes.config.mma_out_limits.lower
-    );
+    drone->attributes.components.mma.init(&drone->attributes.components.mma);
 
     /* Blink MCU internal LED to indicate Drone object was successfully initialized */
     gpio_set_level( GPIO_NUM_2, false );
@@ -505,18 +503,8 @@ static void UpdateStates( drone_t * drone, float ts ) {
 
         drone->attributes.states.yaw = wrapAngle360(drone->attributes.states.yaw + (gyro_z * (ts / 1000.0f) ));
 
-        #ifndef IGNORE_BMP
-        /* Height */
-        #define GAS_CONSTANT_R 287.05f  // J/(kg*K)
-        #define GRAVITY_ACCELERATION_G 9.80665f  // m/s^2
-        #define VIRTUAL_TEMP_K 293.15f  // Virtual temperature in Kelvin (20 degrees Celsius)
-
-        float height = ((GAS_CONSTANT_R * VIRTUAL_TEMP_K) / GRAVITY_ACCELERATION_G) * log(drone->attributes.components.bmp.press0 / drone->attributes.components.bmp.press);
-        drone->attributes.states.z = height;
-        #endif
-        drone->attributes.states.z = drone->attributes.components.gnss.data.position.hMSL;  // Use GNSS altitude as Z state
-
-        }
+        drone->attributes.states.z_dot = drone->attributes.states.z_dot + ts*drone->attributes.components.bmi.Acc.z;
+    }
 }
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
@@ -742,4 +730,25 @@ void Drone( drone_t * drone ) {
 
     ESP_LOGI( DRONE_TAG, "Instance succesfully made" );
 
+}
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ */
+
+static float timer = 0;
+
+float __sin( float A, float w, float dt_ms ) {
+
+    float retval = A * sin( w * ( timer ) );
+
+    if( timer*w > ( 2 * M_PI ) ) {
+
+        timer = 0.0f;
+    }
+
+    else {
+
+        timer += dt_ms / 1000.0f;
+    }
+
+    return retval;
 }
