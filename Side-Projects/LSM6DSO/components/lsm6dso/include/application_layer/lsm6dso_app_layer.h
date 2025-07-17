@@ -37,6 +37,9 @@ typedef struct lsm6dso_private {
     lsm6dso_acc_unit_t acc_unit;                        /* Accelerometer unit */
     float gyro_so;                                      /* Gyroscope sensitivity [dps/LSB] */
     float acc_so;                                       /* Accelerometer sensitivity [g/LSB] */
+    float acc_x_off;                                    /* Acceleration x-axis offset with respect to 1g */
+    float acc_y_off;                                    /* Acceleration y-axis offset with respect to 1g */
+    float acc_z_off;                                    /* Acceleration z-axis offset with respect to 1g */
     lsm6dso_odr_acc_t acc_odr;                          /* Accelerometer sampling frequency */
     lsm6dso_odr_gyro_t gyro_odr;                        /* Gyroscope sampling frequency */
 } lsm6dso_private_t;

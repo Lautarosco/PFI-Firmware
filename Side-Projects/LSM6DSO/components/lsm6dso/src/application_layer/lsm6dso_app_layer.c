@@ -103,6 +103,9 @@ esp_err_t lsm6dso_init(lsm6dso_t *lsm, lsm6dso_params_t lsm_params) {
     }
     lsm->_private.acc_odr = lsm_params.acc.odr;
 
+    lsm->_private.acc_unit = lsm_params.acc.unit;
+    lsm->_private.gyro_unit = lsm_params.gyro.unit;
+    
     /* Set Accelerometer Full-scale */
     ret = lsm6dso_hwl_set_fs_acc(lsm->i2c_lsm_handler, LSM6DSO_ACC_FS_4G, msg, sizeof(msg));
     if(ret != ESP_OK) {
@@ -115,6 +118,9 @@ esp_err_t lsm6dso_init(lsm6dso_t *lsm, lsm6dso_params_t lsm_params) {
             break;
         case LSM6DSO_ACC_FS_4G:
             lsm->_private.acc_so = LSM6DSO_ACC_SO_4G;
+            lsm->_private.acc_x_off = 0.005f;
+            lsm->_private.acc_y_off = 0.019f;
+            lsm->_private.acc_z_off = 0.012f;
             break;
         case LSM6DSO_ACC_FS_8G:
             lsm->_private.acc_so = LSM6DSO_ACC_SO_8G;
@@ -200,7 +206,13 @@ esp_err_t lsm6dso_measure(lsm6dso_t *lsm) {
         lsm6dso_hwl_data_ready(lsm->i2c_lsm_handler, &data_ready, msg, sizeof(msg));
 
         if((data_ready.acc_ready) && (data_ready.gyro_ready)) {
-            ret = lsm6dso_read_gyro_and_acc(lsm->i2c_lsm_handler, &(lsm->temp), &(lsm->gyro), lsm->_private.gyro_so, lsm->_private.acc_unit, &(lsm->acc), lsm->_private.acc_so, lsm->_private.acc_unit, msg, sizeof(msg));
+            ret = lsm6dso_read_gyro_and_acc(
+                lsm->i2c_lsm_handler, &(lsm->temp),
+                &(lsm->gyro), lsm->_private.gyro_so, lsm->_private.gyro_unit,
+                &(lsm->acc), lsm->_private.acc_so, lsm->_private.acc_unit,
+                lsm->_private.acc_x_off, lsm->_private.acc_y_off, lsm->_private.acc_z_off,
+                msg, sizeof(msg)
+            );
         }
     } else {
         ESP_LOGE(

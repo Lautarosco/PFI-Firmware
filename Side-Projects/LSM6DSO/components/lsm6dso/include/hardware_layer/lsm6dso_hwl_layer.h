@@ -74,7 +74,7 @@ esp_err_t lsm6dso_hwl_dis_lpf1_gyro(i2c_master_dev_handle_t i2c_lsm_handler, cha
 esp_err_t lsm6dso_hwl_en_hpf_gyro(i2c_master_dev_handle_t i2c_lsm_handler, lsm6dso_hpf_gyro_t hpf_mode, char *msg, unsigned int msg_len);
 esp_err_t lsm6dso_hwl_dis_hpf_gyro(i2c_master_dev_handle_t i2c_lsm_handler, char *msg, unsigned int msg_len);
 esp_err_t lsm6dso_hwl_data_ready(i2c_master_dev_handle_t i2c_lsm_handler, lsm6dso_data_ready_t *data_ready, char *msg, unsigned int msg_len);
-esp_err_t lsm6dso_read_gyro_and_acc(i2c_master_dev_handle_t i2c_lsm_handler, float *temp, lsm6dso_gyro_t *gyro, float gyro_so, lsm6dso_gyro_unit_t gyro_unit, lsm6dso_acc_t *acc, float acc_so, lsm6dso_acc_unit_t acc_unit, char *msg, unsigned int msg_len);
+esp_err_t lsm6dso_read_gyro_and_acc(i2c_master_dev_handle_t i2c_lsm_handler, float *temp, lsm6dso_gyro_t *gyro, float gyro_so, lsm6dso_gyro_unit_t gyro_unit, lsm6dso_acc_t *acc, float acc_so, lsm6dso_acc_unit_t acc_unit, float acc_x_off, float acc_y_off, float acc_z_off, char *msg, unsigned int msg_len);
 esp_err_t lsm6dso_read_gyro(i2c_master_dev_handle_t i2c_lsm_handler, float *temp, lsm6dso_gyro_t *gyro, float gyro_so, lsm6dso_gyro_unit_t gyro_unit, char *msg, unsigned int msg_len);
 esp_err_t lsm6dso_read_acc(i2c_master_dev_handle_t i2c_lsm_handler, float *temp, lsm6dso_acc_t *acc, float acc_so, lsm6dso_acc_unit_t acc_unit, char *msg, unsigned int msg_len);
 esp_err_t lsm6dso_read_temp(i2c_master_dev_handle_t i2c_lsm_handler, float *temp, char *msg, unsigned int msg_len);

@@ -447,7 +447,9 @@ esp_err_t lsm6dso_hwl_data_ready(i2c_master_dev_handle_t i2c_lsm_handler, lsm6ds
 }
 
 esp_err_t lsm6dso_read_gyro_and_acc(i2c_master_dev_handle_t i2c_lsm_handler, float *temp, lsm6dso_gyro_t *gyro, float gyro_so,
-    lsm6dso_gyro_unit_t gyro_unit, lsm6dso_acc_t *acc, float acc_so, lsm6dso_acc_unit_t acc_unit, char *msg, unsigned int msg_len
+    lsm6dso_gyro_unit_t gyro_unit, lsm6dso_acc_t *acc, float acc_so, lsm6dso_acc_unit_t acc_unit,
+    float acc_x_off, float acc_y_off, float acc_z_off,
+    char *msg, unsigned int msg_len
 ) {
     uint8_t reg_addr = LSM6DSO_OUT_TEMP_L_REG;
     uint8_t out[14];
@@ -464,26 +466,27 @@ esp_err_t lsm6dso_read_gyro_and_acc(i2c_master_dev_handle_t i2c_lsm_handler, flo
         return ESP_FAIL;
     }
 
+    /* Update temperature value */
     *temp = LSM6DSO_TEMP_OFFSET + ((float) (((int16_t) LSM6DSO_CONCAT_BYTES(out[1], out[0])) / LSM6DSO_TSEN_C));
 
-    if(gyro_unit == LSM6DSO_GYRO_UNIT_DEG) {
-        gyro->x = (float) (((int16_t) LSM6DSO_CONCAT_BYTES(out[3], out[2])) * gyro_so);
-        gyro->y = (float) (((int16_t) LSM6DSO_CONCAT_BYTES(out[5], out[4])) * gyro_so);
-        gyro->z = (float) (((int16_t) LSM6DSO_CONCAT_BYTES(out[7], out[6])) * gyro_so);
-    } else {
-        gyro->x = (float) (((int16_t) LSM6DSO_CONCAT_BYTES(out[3], out[2])) * gyro_so * (PI_RAD / 180.0f));
-        gyro->y = (float) (((int16_t) LSM6DSO_CONCAT_BYTES(out[5], out[4])) * gyro_so * (PI_RAD / 180.0f));
-        gyro->z = (float) (((int16_t) LSM6DSO_CONCAT_BYTES(out[7], out[6])) * gyro_so * (PI_RAD / 180.0f));
+    /* Update gyroscope values */
+    gyro->x = (float) (((int16_t) LSM6DSO_CONCAT_BYTES(out[3], out[2])) * gyro_so);
+    gyro->y = (float) (((int16_t) LSM6DSO_CONCAT_BYTES(out[5], out[4])) * gyro_so);
+    gyro->z = (float) (((int16_t) LSM6DSO_CONCAT_BYTES(out[7], out[6])) * gyro_so);
+    if(gyro_unit == LSM6DSO_GYRO_UNIT_RAD) {
+        gyro->x *= (PI_RAD / 180.0f);
+        gyro->y *= (PI_RAD / 180.0f);
+        gyro->z *= (PI_RAD / 180.0f);
     }
 
-    if(acc_unit == LSM6DSO_ACC_UNIT_G) {
-        acc->x = (float) (((int16_t) LSM6DSO_CONCAT_BYTES(out[9], out[8])) * acc_so);
-        acc->y = (float) (((int16_t) LSM6DSO_CONCAT_BYTES(out[11], out[10])) * acc_so);
-        acc->z = (float) (((int16_t) LSM6DSO_CONCAT_BYTES(out[13], out[12])) * acc_so);
-    } else {
-        acc->x = (float) (((int16_t) LSM6DSO_CONCAT_BYTES(out[9], out[8])) * acc_so * GRAVITY);
-        acc->y = (float) (((int16_t) LSM6DSO_CONCAT_BYTES(out[11], out[10])) * acc_so * GRAVITY);
-        acc->z = (float) (((int16_t) LSM6DSO_CONCAT_BYTES(out[13], out[12])) * acc_so * GRAVITY);
+    /* Update accelerometer values */
+    acc->x = (float) ((((int16_t) LSM6DSO_CONCAT_BYTES(out[9], out[8])) * acc_so) - acc_x_off);
+    acc->y = (float) ((((int16_t) LSM6DSO_CONCAT_BYTES(out[11], out[10])) * acc_so) - acc_y_off);
+    acc->z = (float) ((((int16_t) LSM6DSO_CONCAT_BYTES(out[13], out[12])) * acc_so) - acc_z_off);
+    if(acc_unit == LSM6DSO_ACC_UNIT_MS2) {
+        acc->x *= GRAVITY;
+        acc->y *= GRAVITY;
+        acc->z *= GRAVITY;
     }
 
     return ESP_OK;

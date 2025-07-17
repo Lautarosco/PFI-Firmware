@@ -2,11 +2,14 @@
 #include <application_layer/lsm6dso_app_layer.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <freertos/timers.h>
+#include <string.h>
+#include <math.h>
 
 #define LSM6DSO_ADDR                    0x6B
 #define LSM6DSO_I2C_SCL_FREQ_HZ         100000
-#define GPIO_SDA                        21
-#define GPIO_SCL                        22
+#define GPIO_SDA                        GPIO_NUM_21
+#define GPIO_SCL                        GPIO_NUM_22
 
 /**
  * Notes:
@@ -16,6 +19,31 @@
  * 3. Gyroscope LPF2 cannot be configured by the user and it value is round ODR/3
  * 4. Gyroscope LPF1 can be enabled and configured
  */
+
+typedef struct angles {
+    float roll;
+    float pitch;
+    float yaw;
+} angles_t;
+
+esp_err_t convert_to_angles(angles_t *angles, float acc_x, float acc_y, float acc_z, float gyro_x, float gyro_y, float gyro_z) {
+    float dt = 1.0f / 104.0f;
+    float alpha = 0.95f;
+
+    /* Calculate roll and pitch with accelerometer measurements (trigonometry) */
+    float pitch_acc = atan2(acc_y, sqrt((acc_x * acc_x) + (acc_z * acc_z)));
+    float roll_acc  = atan2(-acc_x, sqrt((acc_y * acc_y) + (acc_z * acc_z)));
+
+
+    /* Update yaw with gyroscope measurements (integration) */
+    angles->yaw += gyro_z * dt;
+
+    /* Update roll and pitch by accelerometer trigonometric equations */
+    angles->pitch = alpha * (angles->pitch + gyro_x * dt) + (1 - alpha) * pitch_acc;
+    angles->roll  = alpha * (angles->roll  + gyro_y * dt) + (1 - alpha) * roll_acc;
+
+    return ESP_OK;
+}
 
 void app_main(void)
 {
@@ -83,17 +111,34 @@ void app_main(void)
     }
 
     ret = imu.init(&imu, imu_params);
+    angles_t angles;
+    memset(&angles, 0, sizeof(angles_t));
+    
+    // float avg = 0.0f;
+    // for(int i = 0; i < 100000; i++) {
+    //     imu.measure(&imu);
+    //     avg += imu.acc.z;
+    // }
+    // printf("Promedio: %f\n", avg / 100000.0f);
+    // return;
 
     while(1) {
         imu.measure(&imu);
+        convert_to_angles(&angles, imu.acc.x, imu.acc.y, imu.acc.z, imu.gyro.x, imu.gyro.y, imu.gyro.z);
+        
+        /* Print results */
+        // printf(
+        //     "Acc_x: %f m/s^2, Acc_y: %f m/s^2, Acc_z: %f m/s^2\n",
+        //     imu.acc.x, imu.acc.y, imu.acc.z
+        // );
+
         printf(
-            "Gyro_x: %f °/s, Gyro_y: %f °/s, Gyro_z: %f °/s, Acc_x: %f m/s^2, Acc_y: %f m/s^2, Acc_z: %f m/s^2, Temp: %f °C\n",
-            imu.gyro.x, imu.gyro.y, imu.gyro.z, imu.acc.x, imu.acc.y, imu.acc.z, imu.temp
+            "Roll: %f °, Pitch: %f °, Yaw: %f °\n",
+            angles.roll, angles.pitch, angles.yaw
         );
 
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
     
-
     return;
 }
