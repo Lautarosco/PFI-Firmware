@@ -1,9 +1,9 @@
-#ifndef DRONE_STRUCTS_H
-#define DRONE_STRUCTS_H
+#pragma once
 
 #include <drone_globals.h>
 #include "state_machine.h"
 #include <bmi160.h>
+#include "indicators.h"
 #include "application_layer/bmp390_app_layer.h"
 #include "application_layer/gnss_app_layer.h"
 #include <transmitter.h>
@@ -11,6 +11,7 @@
 #include <controllers.h>
 #include <mma.h>
 #include <state_machine.h>
+#include <string.h>
 
 #define FLASH_PARAMS 40 /* Total Drone parameters to be stored in flash memory */
 #define NVS_NAMESPACE "storage"
@@ -217,6 +218,32 @@ typedef struct drone_states {
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
+// TODO - Make a component for battery management
+/**
+ * @struct battery
+ * @brief Represents the state and measurements of a battery.
+ */
+typedef struct battery {
+    /* Battery level as a percentage (0.0 - 100.0). */
+    float level;
+
+    /* Battery voltage in volts */
+    float voltage;
+
+    /* Number of cells */
+    int cells;
+
+    /* Battery current (not implemented yet) */
+    // float current;
+
+    /* Battery temperature (not implemented yet) */
+    // float temperature;
+
+} battery_t;
+
+// Function declaration only - definition should be in a .c file
+void Battery( battery_t * battery );
+
 
 /** @brief Drone's components */
 typedef struct drone_components {
@@ -238,6 +265,12 @@ typedef struct drone_components {
 
     /* Mma component */
     mma_t mma;
+
+    /* Battery component */
+    battery_t battery;
+
+    /* Indicators */
+    indicators_t indicators;
 
     /* Controller component */
     pid_controller_t controllers[ 8 ];
@@ -431,6 +464,3 @@ typedef struct drone {
     drone_methods_t methods;
 
 } drone_t;
-
-
-#endif
