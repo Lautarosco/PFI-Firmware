@@ -33,6 +33,7 @@
 
 // Voltage Divider
 #define VOLTAGE_ADC_CH  ADC_CHANNEL_0  // GPIO36
+#define VOLTAGE_ADC_CH  ADC_CHANNEL_0  // GPIO36
 #define VOLTAGE_ADC_UNIT ADC_UNIT_1
 
 // Ultrasonic Sensor
