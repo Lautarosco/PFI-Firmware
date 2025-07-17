@@ -178,9 +178,63 @@ static void Kalman( drone_t * drone, float ts_ms ) {
  */
 static bool i2c_scan( void ) {
 
-    // TODO: Implement proper I2C scanning with new master bus API
-    ESP_LOGI(DRONE_TAG, "I2C scan not implemented with new API");
-    return true;
+    typedef struct {
+        char name[16];
+        uint8_t address;
+        bool found;
+    } i2c_device_info_t;
+
+    i2c_device_info_t i2c_devices[] = {
+        {"BMI160", 0x68, false},
+        // {"BMP390", 0x76, false},
+    };
+    const int num_devices = sizeof(i2c_devices) / sizeof(i2c_devices[0]);
+
+    i2c_master_bus_handle_t i2c_bus = NULL;
+    i2c_master_bus_config_t i2c_cfg = {
+        .clk_source = I2C_CLK_SRC_APB,
+        .i2c_port = I2C_NUM_0,
+        .scl_io_num = I2C_SCL_PIN,
+        .sda_io_num = I2C_SDA_PIN,
+        .glitch_ignore_cnt = 7,
+        .flags.enable_internal_pullup = true
+    };
+
+    if (i2c_new_master_bus(&i2c_cfg, &i2c_bus) != ESP_OK) {
+        ESP_LOGE(DRONE_TAG, "Failed to create I2C master bus");
+        return false;
+    }
+
+    bool found_any = false;
+    for (int i = 0; i < num_devices; ++i) {
+        i2c_device_config_t dev_cfg = {
+            .device_address = i2c_devices[i].address,
+            .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+            .scl_speed_hz = 100000,
+            .flags.disable_ack_check = false,
+            .scl_wait_us = 0
+        };
+        i2c_master_dev_handle_t dev_handle = NULL;
+        esp_err_t err = i2c_master_bus_add_device(i2c_bus, &dev_cfg, &dev_handle);
+        if (err == ESP_OK) {
+            // Try to read a single byte to check if device responds
+            uint8_t dummy = 0;
+            esp_err_t probe_err = i2c_master_transmit(dev_handle, NULL, 0, 100 / portTICK_PERIOD_MS);
+            if (probe_err == ESP_OK) {
+                ESP_LOGI(DRONE_TAG, "I2C device '%s' found at address 0x%02X", i2c_devices[i].name, i2c_devices[i].address);
+                i2c_devices[i].found = true;
+                found_any = true;
+            } else {
+                ESP_LOGW(DRONE_TAG, "No device at address 0x%02X (%s)", i2c_devices[i].address, i2c_devices[i].name);
+            }
+            i2c_master_bus_rm_device(dev_handle);
+        } else {
+            ESP_LOGW(DRONE_TAG, "No device at address 0x%02X (%s)", i2c_devices[i].address, i2c_devices[i].name);
+        }
+    }
+    i2c_del_master_bus(i2c_bus);
+
+    return found_any;
 }
 
 
@@ -284,7 +338,7 @@ static esp_err_t drone_init( drone_t * drone ) {
 
     #define I2C_BUS_FREQUENCY 100000
 
-        /* 3.b Set I2C BMP390 and BMI160 bus configs */
+    /* 3.b Set I2C BMP390 and BMI160 bus configs */
     i2c_device_config_t i2c_bmp_cfg = {
         .device_address          = BMP390_ADDR,
         .dev_addr_length         = I2C_ADDR_BIT_LEN_7,
@@ -573,19 +627,19 @@ void Drone( drone_t * drone ) {
     Gnss(&(drone->attributes.components.gnss));
 
     /* Check if all devices are connected to i2c bus */
-    if( !drone->methods.i2c_scan() ) {
-        bool found = false;
-        ESP_LOGI( DRONE_TAG, "Scanning i2c bus..." );
-        while( !found )
-        {
-            if( drone->methods.i2c_scan() ) {
-                ESP_LOGI( DRONE_TAG, "BMI160 found\n");
-                found = true;
-                break;
-            }
-
-            vTaskDelay( pdMS_TO_TICKS( 10 ) );
+    int retries = 3;
+    bool i2c_ok = false;
+    while (retries > 0){
+        if (drone->methods.i2c_scan()) {
+            retries = 0;
+            i2c_ok = true;
+        } else {
+            retries--;
         }
+        
+    }
+    if (!i2c_ok) {
+        ESP_LOGE(DRONE_TAG, "Failed to find all devices in the I2C bus.");
     }
     #endif
 
