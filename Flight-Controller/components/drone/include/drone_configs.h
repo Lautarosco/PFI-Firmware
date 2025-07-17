@@ -165,20 +165,20 @@ static drone_cfg_t DroneConfigs = {
         {
             .tag = ROLL_D,
 
-            .integral_limits = { .min = -100000.0f, .max = 100000.0f },
-            .pid_output_limits = { .min = -100000.0f, .max = 100000.0f }  // duty cycle ??
+            .integral_limits = { .min = -50.0f, .max = 50.0f },  // [!] may not be used, check
+            .pid_output_limits = { .min = -100.0f, .max = 100.0f }  // for detecting saturation
         },
         {
             .tag = PITCH_D,
             
-            .integral_limits = { .min = -100000.0f, .max = 100000.0f },
-            .pid_output_limits = { .min = -100000.0f, .max = 100000.0f }  // duty cycle ??
+            .integral_limits = { .min = -50.0f, .max = 50.0f },  // [!] may not be used, check
+            .pid_output_limits = { .min = -100.0f, .max = 100.0f }  // for detecting saturation
         },
         {
             .tag = YAW_D,
 
-            .integral_limits = { .min = 0.0f, .max = 0.0f },
-            .pid_output_limits = { .min = 0.0f, .max = 0.0f }
+            .integral_limits = { .min = -50.0f, .max = 50.0f },  // [!] may not be used, check
+            .pid_output_limits = { .min = -100.0f, .max = 100.0f }  // for detecting saturation
         }
     }
 };
