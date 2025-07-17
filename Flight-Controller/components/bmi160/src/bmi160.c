@@ -59,11 +59,6 @@ esp_err_t bmi_init( bmi160_t * self, int bmi_address,
     ESP_ERROR_CHECK( bmi160_write_byte( bmi_address, BMI160_GYRO_CONF,  gyro_freq ) );
     ESP_ERROR_CHECK( bmi160_write_byte( bmi_address, BMI160_GYRO_RANGE, gyro_range ) );
 
-    uint8_t error = 0;
-    ESP_ERROR_CHECK( bmi160_read_bytes( bmi_address, 0x02, &error, 1 ));
-    
-    printf("BMI160 Init Error: 0x%02X\n", error);
-
     /* Set initials offsets*/
     self->Gyro.offset.x = gyro_offset_x;
     self->Gyro.offset.y = gyro_offset_y;

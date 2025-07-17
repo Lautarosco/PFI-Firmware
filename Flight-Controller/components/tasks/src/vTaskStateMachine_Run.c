@@ -2,7 +2,7 @@
 #include <freertos/task.h>
 #include <esp_log.h>
 #include <string.h>
-#include <esp_timer.h>
+
 #include "tasks.h"
 
 #include "button_helper.h"
@@ -47,6 +47,12 @@ static void getEvent( sm_state_machine_t * state_machine, drone_t* drone ) {
             if (pressed(drone, EV_SQUARE)) {
                 printf("Propeller calibration finished\n");
                 state_machine->event = EV_ANY;
+                return;
+            }  // positive edge
+
+            if (pressed(drone, EV_PS)) {
+                printf("Reset from prop calibration\n");
+                state_machine->event = EV_PS;
                 return;
             }  // positive edge
             break;
@@ -124,17 +130,12 @@ void vTaskStateMachine_Run( void * pvParameters ) {
 
     while( 1 ) {
 
-        // int64_t start_time = esp_timer_get_time();
-
         /* Get occurred event */
         getEvent( &drone->attributes.state_machine, drone );
 
         /* Go to the next state and run it's respective function */
         StateMachine_RunIteration(drone);
-
-        vTaskDelay( pdMS_TO_TICKS( 1 ) );
-
-        // int64_t end_time = esp_timer_get_time();
-        // printf("State machine iteration took %lld us\n", (end_time - start_time));
+        
+        vTaskDelay( pdMS_TO_TICKS( 10 ) );
     }
 }

@@ -141,30 +141,43 @@ void VarsUpdateCmdFunc(drone_t * drone, char * arr[4]) {
         {.name = "roll/P",    .addr = &(drone->attributes.components.controllers[ROLL].gain.kp)},
         {.name = "roll/I",    .addr = &(drone->attributes.components.controllers[ROLL].gain.ki)},
         {.name = "roll/D",    .addr = &(drone->attributes.components.controllers[ROLL].gain.kd)},
+        {.name = "roll/KB",    .addr = &(drone->attributes.components.controllers[ROLL].gain.kb)},
+
 
         {.name = "roll_d/P",  .addr = &(drone->attributes.components.controllers[ROLL_D].gain.kp)},
         {.name = "roll_d/I",  .addr = &(drone->attributes.components.controllers[ROLL_D].gain.ki)},
         {.name = "roll_d/D",  .addr = &(drone->attributes.components.controllers[ROLL_D].gain.kd)},
+        {.name = "roll_d/KB", .addr = &(drone->attributes.components.controllers[ROLL_D].gain.kb)},
+
 
         {.name = "pitch/P",   .addr = &(drone->attributes.components.controllers[PITCH].gain.kp)},
         {.name = "pitch/I",   .addr = &(drone->attributes.components.controllers[PITCH].gain.ki)},
         {.name = "pitch/D",   .addr = &(drone->attributes.components.controllers[PITCH].gain.kd)},
+        {.name = "pitch/KB",  .addr = &(drone->attributes.components.controllers[PITCH].gain.kb)},
+
 
         {.name = "pitch_d/P", .addr = &(drone->attributes.components.controllers[PITCH_D].gain.kp)},
         {.name = "pitch_d/I", .addr = &(drone->attributes.components.controllers[PITCH_D].gain.ki)},
         {.name = "pitch_d/D", .addr = &(drone->attributes.components.controllers[PITCH_D].gain.kd)},
+        {.name = "pitch_d/KB",.addr = &(drone->attributes.components.controllers[PITCH_D].gain.kb)},
+
 
         {.name = "yaw/P",     .addr = &(drone->attributes.components.controllers[YAW].gain.kp)},
         {.name = "yaw/I",     .addr = &(drone->attributes.components.controllers[YAW].gain.ki)},
         {.name = "yaw/D",     .addr = &(drone->attributes.components.controllers[YAW].gain.kd)},
+        {.name = "yaw/KB",    .addr = &(drone->attributes.components.controllers[YAW].gain.kb)},
+
 
         {.name = "yaw_d/P",   .addr = &(drone->attributes.components.controllers[YAW_D].gain.kp)},
         {.name = "yaw_d/I",   .addr = &(drone->attributes.components.controllers[YAW_D].gain.ki)},
         {.name = "yaw_d/D",   .addr = &(drone->attributes.components.controllers[YAW_D].gain.kd)},
+        {.name = "yaw_d/KB",    .addr = &(drone->attributes.components.controllers[YAW_D].gain.kb)},
+
 
         {.name = "z/P",       .addr = &(drone->attributes.components.controllers[Z].gain.kp)},
         {.name = "z/I",       .addr = &(drone->attributes.components.controllers[Z].gain.ki)},
         {.name = "z/D",       .addr = &(drone->attributes.components.controllers[Z].gain.kd)},
+        {.name = "z/KB",       .addr = &(drone->attributes.components.controllers[Z].gain.kb)},
 
         {.name = "misc/0",    .addr = &(drone->attributes.global_variables.misc_floats[0])},        // amplitude
         {.name = "misc/1",    .addr = &(drone->attributes.global_variables.misc_floats[1])},        // period
