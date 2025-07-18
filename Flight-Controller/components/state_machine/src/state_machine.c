@@ -35,8 +35,9 @@ typedef struct state_function {
 
 void StIdleFunc( drone_t * drone ) {
 
-    // printf( "IDLE\r\n" );
-}
+    drone->attributes.components.indicators.power.state = LED_BLINKING_SLOW;
+    drone->attributes.components.indicators.gps.state = LED_BLINKING_SLOW;
+    drone->attributes.components.indicators.transmitter.state = LED_BLINKING_SLOW;}
 
 
 void StWaitingFunc( drone_t * drone ) {

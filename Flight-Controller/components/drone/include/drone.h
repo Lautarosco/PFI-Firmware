@@ -2,7 +2,6 @@
 
 #include <drone_configs.h>
 
-
 /**
  * @brief Make an instance of Drone Class
  * @param none

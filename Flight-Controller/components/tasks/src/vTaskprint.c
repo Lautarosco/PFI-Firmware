@@ -4,6 +4,7 @@
 #include "tasks.h"
 #include "driver/adc.h"
 #include "esp_adc_cal.h" // Add this for ADC calibration functions
+#include "driver/gpio.h"
 #include "drone.h"
 #include "string.h"
 
@@ -22,9 +23,10 @@ void vTaskprint( void * drone_ ) {
 
     while( 1 ) {
 
+        manage_indicators(drone);
+
         if( drone->attributes.init_ok) {
             print_to_serial(drone, buf, sizeof(buf));
-            manage_indicators(drone);
             read_battery_voltage(drone);
         }
 
@@ -67,12 +69,11 @@ float voltage_to_soc(float cell_voltage) {
 }
 
 esp_err_t manage_indicators(drone_t * drone) {
-    static TickType_t last_tick_power = 0, last_tick_gps = 0, last_tick_tx = 0;
-
-    TickType_t now = xTaskGetTickCount();
-
     #define BLINK_SLOW_PERIOD pdMS_TO_TICKS(500)
     #define BLINK_FAST_PERIOD pdMS_TO_TICKS(150)
+
+    static TickType_t last_tick[3] = {0, 0, 0}; // Track last toggle time per LED
+    TickType_t now = xTaskGetTickCount();
 
     led_t* leds[3] = {
         &drone->attributes.components.indicators.power,
@@ -80,9 +81,8 @@ esp_err_t manage_indicators(drone_t * drone) {
         &drone->attributes.components.indicators.transmitter
     };
 
-    TickType_t* last_ticks[3] = { &last_tick_power, &last_tick_gps, &last_tick_tx };
 
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 3; i++) {
         switch (leds[i]->state) {
             case LED_OFF:
                 gpio_set_level(leds[i]->gpio_pin, 0);
@@ -93,11 +93,13 @@ esp_err_t manage_indicators(drone_t * drone) {
             case LED_BLINKING_FAST:
             case LED_BLINKING_SLOW: {
                 TickType_t period = (leds[i]->state == LED_BLINKING_SLOW) ? BLINK_SLOW_PERIOD : BLINK_FAST_PERIOD;
-                if ((now - *(last_ticks[i])) >= period) {
+                
+                if ((now - last_tick[i]) >= period) {
                     int current_level = gpio_get_level(leds[i]->gpio_pin);
-                    int new_level = !current_level;
-                    gpio_set_level(leds[i]->gpio_pin, new_level);
-                    *(last_ticks[i]) = now;
+                    int next_level = !current_level;
+                    int result;
+                    result = gpio_set_level(leds[i]->gpio_pin, next_level);
+                    last_tick[i] = now;
                 }
                 break;
             }
@@ -105,7 +107,6 @@ esp_err_t manage_indicators(drone_t * drone) {
                 break;
         }
     }
-    // Implement indicator management logic here if needed
     return ESP_OK;
 }
 

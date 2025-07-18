@@ -3,6 +3,7 @@
 
 #include <drone_structs.h>
 #include "gpio_layout.h"
+#include "indicators.h"
 
 /**
  * @brief Drone Class generic configs

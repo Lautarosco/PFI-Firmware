@@ -7,9 +7,9 @@
 #define PWM4_PIN        GPIO_NUM_23
 
 // Onboard LEDs
-#define LED1_PIN        GPIO_NUM_12
-#define LED2_PIN        GPIO_NUM_13
-#define LED3_PIN        GPIO_NUM_14
+#define BLU_LED_PIN        GPIO_NUM_12
+#define GRE_LED_PIN        GPIO_NUM_13
+#define RED_LED_PIN        GPIO_NUM_14
 
 // Buzzer
 #define BUZZER_PIN      GPIO_NUM_15
@@ -32,7 +32,6 @@
 #define UART2_RX        GPIO_NUM_35
 
 // Voltage Divider
-#define VOLTAGE_ADC_CH  ADC_CHANNEL_0  // GPIO36
 #define VOLTAGE_ADC_CH  ADC_CHANNEL_0  // GPIO36
 #define VOLTAGE_ADC_UNIT ADC_UNIT_1
 

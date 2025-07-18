@@ -13,11 +13,6 @@ void StInitFunc( drone_t * drone ) {
 
     ESP_ERROR_CHECK( drone->methods.init( drone ) );
 
-    #if WEBSV_TX
-        /* Reset button */
-        drone->attributes.global_variables.tx_buttons.cross = false;
-    #endif
-
     // tomar ACC_AVG_NUM mediciones de acelerómetro y promediarlas
     float sum = 0;
     #define ACC_AVG_NUM 20.0
@@ -26,7 +21,7 @@ void StInitFunc( drone_t * drone ) {
         float roll_acc = atan2( drone->attributes.components.bmi.Acc.y, drone->attributes.components.bmi.Acc.z ) * ( 180.0f / M_PI );
         printf("Roll ACC: %.2f\n", roll_acc);
         sum += roll_acc;
-        vTaskDelay(pdMS_TO_TICKS(10)); // espera entre muestras
+        vTaskDelay(pdMS_TO_TICKS(1)); // espera entre muestras
     }
     printf("Sum: %.2f\n", sum);
     drone->attributes.states.roll = sum / ACC_AVG_NUM;
