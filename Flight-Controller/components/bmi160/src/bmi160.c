@@ -215,7 +215,7 @@ float acc_get_sensitivity(acc_t acc) {
 
     uint8_t reg_addr = BMI160_ACC_RANGE;
 
-    esp_err_t ret = i2c_master_transmit_receive(acc.i2c_bmi_handler, &reg_addr, sizeof(reg_addr), &accel_sensitivity_setting, sizeof(accel_sensitivity_setting), pdMS_TO_TICKS(100));
+    esp_err_t ret = i2c_master_transmit_receive(acc.i2c_bmi_handler, &reg_addr, sizeof(reg_addr), &accel_sensitivity_setting, sizeof(accel_sensitivity_setting), pdMS_TO_TICKS(500));
     if(ret != ESP_OK) {
         ESP_LOGE(TAG, "{Function %s in line %d}: Read to 0x%X register --> FAILED", __func__, __LINE__, reg_addr);
         return ESP_FAIL;

@@ -177,7 +177,6 @@ static void Kalman( drone_t * drone, float ts_ms ) {
  * @retval bool
  */
 static bool i2c_scan( void ) {
-
     typedef struct {
         char name[16];
         uint8_t address;
@@ -185,7 +184,7 @@ static bool i2c_scan( void ) {
     } i2c_device_info_t;
 
     i2c_device_info_t i2c_devices[] = {
-        {"BMI160", 0x68, false},
+        {"BMI160", BMI160_ADDR, false},
         // {"BMP390", 0x76, false},
     };
     const int num_devices = sizeof(i2c_devices) / sizeof(i2c_devices[0]);
@@ -199,6 +198,7 @@ static bool i2c_scan( void ) {
         .glitch_ignore_cnt = 7,
         .flags.enable_internal_pullup = true
     };
+
 
     if (i2c_new_master_bus(&i2c_cfg, &i2c_bus) != ESP_OK) {
         ESP_LOGE(DRONE_TAG, "Failed to create I2C master bus");
@@ -219,7 +219,7 @@ static bool i2c_scan( void ) {
         if (err == ESP_OK) {
             // Try to read a single byte to check if device responds
             uint8_t dummy = 0;
-            esp_err_t probe_err = i2c_master_transmit(dev_handle, NULL, 0, 100 / portTICK_PERIOD_MS);
+            esp_err_t probe_err = i2c_master_receive(dev_handle, &dummy, 1, 100 / portTICK_PERIOD_MS);
             if (probe_err == ESP_OK) {
                 ESP_LOGI(DRONE_TAG, "I2C device '%s' found at address 0x%02X", i2c_devices[i].name, i2c_devices[i].address);
                 i2c_devices[i].found = true;
@@ -233,6 +233,7 @@ static bool i2c_scan( void ) {
         }
     }
     i2c_del_master_bus(i2c_bus);
+
 
     return found_any;
 }
@@ -256,7 +257,7 @@ static void save_to_nvs( drone_t * drone ) {
 
             break;
         }
-
+        
         /* Continue updating NVS with Drone parameters */
         else {
             /* Store "i" parameter to NVS, according to drone_flash_params_t enum */
@@ -375,7 +376,7 @@ static esp_err_t drone_init( drone_t * drone ) {
 
     #define IGNORE_BMP 
 
-    #ifdef IGNORE_BMI
+    #ifndef IGNORE_BMP
     ret = i2c_master_bus_add_device(i2c_master_handler, &i2c_bmp_cfg, &i2c_bmp_handler);
     if(ret != ESP_OK) {
         return ret;
@@ -459,11 +460,12 @@ static esp_err_t drone_init( drone_t * drone ) {
         .dynModel = UBX_CFG_NAV5_DYNMODEL_PEDESTRIAN,
         .static_hold_threshold = GNSS_STATIC_HOLD_DEFAULT,
     };
-
+    #ifndef IGNORE_GPS
     drone->attributes.components.gnss.init( // TODO change with drone config handling refactor
         &( drone->attributes.components.gnss ),
         gnss_params
     ); 
+    #endif
 
     /* Initialize all Pwm objects */
     for( int i = 0; i < ( ( sizeof( drone->attributes.components.pwm ) ) / ( sizeof( drone->attributes.components.pwm[ 0 ] ) ) ); i++ ) {
@@ -640,6 +642,10 @@ void Drone( drone_t * drone ) {
     }
     if (!i2c_ok) {
         ESP_LOGE(DRONE_TAG, "Failed to find all devices in the I2C bus.");
+        while (1) {
+            drone->attributes.components.indicators.power.state = LED_BLINKING_FAST;
+            vTaskDelay(pdMS_TO_TICKS(1000));
+        }
     }
     #endif
 
@@ -664,31 +670,11 @@ void Drone( drone_t * drone ) {
         Pwm(&drone->attributes.components.pwm[ i ], i);
     }
     ESP_LOGI( DRONE_TAG, "PWM signals Init successful\n");
+
     /* Make an instance of Transmitter Class */
     Transmitter( &drone->attributes.components.Tx, &( drone->attributes.global_variables ) );
 
-
-    #if PLAYSTATION_TX & WEBSV_TX
-        ESP_LOGE( DRONE_TAG, "Multiple transmitters can't be used simmultaneously. See transmitter_structs.h header file" );
-        esp_restart();
-
-    /* Check if playstation joystick is used as transmitter */
-    #elif PLAYSTATION_TX
-        /* Initialize Transmitter object */
-        drone->attributes.components.Tx.init( drone->attributes.components.Tx, drone->attributes.config.esp_mac_addr );
-        
-    /* Check if HTTP server is used as transmitter */
-    #elif WEBSV_TX
-        /* Initialize Transmitter object */
-        drone->attributes.components.Tx.init( &(drone->attributes.components.Tx) );
-
-    #else
-        /* No transmitter selected */
-        ESP_LOGE( DRONE_TAG, "No transmitter selected. See transmitter_structs.h header file" );
-        esp_restart();
-
-    #endif
-    ESP_LOGI( DRONE_TAG, "Transmitter object initialized\n" );
+    drone->attributes.components.Tx.methods.init( &drone->attributes.components.Tx, drone->attributes.config.esp_mac_addr );
 
     /* =============== START Global variables assignment =============== */
 

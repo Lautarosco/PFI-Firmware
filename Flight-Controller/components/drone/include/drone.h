@@ -2,6 +2,9 @@
 
 #include <drone_configs.h>
 
+#define IGNORE_GPS
+
+
 /**
  * @brief Make an instance of Drone Class
  * @param none

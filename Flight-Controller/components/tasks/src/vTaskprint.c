@@ -24,7 +24,6 @@ void vTaskprint( void * drone_ ) {
     while( 1 ) {
 
         manage_indicators(drone);
-
         if( drone->attributes.init_ok) {
             print_to_serial(drone, buf, sizeof(buf));
             read_battery_voltage(drone);
@@ -126,6 +125,7 @@ esp_err_t manage_indicators(drone_t * drone) {
 esp_err_t print_to_serial(drone_t * drone, char* buff, size_t buff_size){
     
     // Dynamic
+    memset(buff, 0, buff_size);
     snprintf(buff, buff_size,
         "printer:roll,%.2f|roll_d,%.2f|roll_sp,%.2f|roll_d_sp,%.2f|"
         "pitch,%.2f|pitch_d,%.2f|pitch_sp,%.2f|pitch_d_sp,%.2f|"
@@ -133,11 +133,11 @@ esp_err_t print_to_serial(drone_t * drone, char* buff, size_t buff_size){
         "height,%.2f|height_sp,%.2f|"
         "dc1,%.2f|dc2,%.2f|dc3,%.2f|dc4,%.2f|"
         "gyro_x,%.2f|gyro_y,%.2f|gyro_z,%.2f|"
-        "mma_in_roll,%.2f|mma_in_pitch,%.2f|mma_in_yaw,%.2f|"
+        "mma_in_roll,%.2f|mma_in_pitch,%.2f|mma_in_yaw,%.2f"
         "\n"  // end of dynamic values
         "static:roll/P,%.2f|roll/I,%.2f|roll/D,%.2f|roll/KB,%.2f|"
         "roll_d/P,%.2f|roll_d/I,%.2f|roll_d/D,%.2f|roll/KB,%.2f|"
-        "pitch/P,%.2f|pitch/I,%.2f|pitch/D,%.2froll/KB,%.2f||"
+        "pitch/P,%.2f|pitch/I,%.2f|pitch/D,%.2f|roll/KB,%.2f|"
         "pitch_d/P,%.2f|pitch_d/I,%.2f|pitch_d/D,%.2f|roll/KB,%.2f|"
         "yaw/P,%.2f|yaw/I,%.2f|yaw/D,%.2f|roll/KB,%.2f|"
         "yaw_d/P,%.2f|yaw_d/I,%.2f|yaw_d/D,%.2f|roll/KB,%.2f|"
@@ -194,7 +194,15 @@ esp_err_t print_to_serial(drone_t * drone, char* buff, size_t buff_size){
         // state machine current state
         StateMachine_GetStateName(drone->attributes.state_machine.curr_state)
     );
-    printf("%s", buff);
+    if (drone->attributes.components.Tx.bluetooth_connection.is_connected) {
+        drone->attributes.components.Tx.methods.send_bt_data(
+            &drone->attributes.components.Tx,
+            buff,
+            strlen(buff)
+        );
+    } else {
+        printf("%s", buff);
+    }
     
     
     fflush(stdout);  // check

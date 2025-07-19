@@ -15,8 +15,8 @@
 #define BUZZER_PIN      GPIO_NUM_15
 
 // I2C Pins
-#define I2C_SDA_PIN     GPIO_NUM_21
-#define I2C_SCL_PIN     GPIO_NUM_22
+#define I2C_SDA_PIN     GPIO_NUM_22
+#define I2C_SCL_PIN     GPIO_NUM_21
 
 // SPI Pins
 #define SPI_MOSI_PIN    GPIO_NUM_32
