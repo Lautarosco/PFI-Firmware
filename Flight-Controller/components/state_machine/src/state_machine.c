@@ -34,11 +34,8 @@ typedef struct state_function {
 /* Idle and Waiting Functions*/
 
 void StIdleFunc( drone_t * drone ) {
-
-    drone->attributes.components.indicators.power.state = LED_BLINKING_SLOW;
-    drone->attributes.components.indicators.gps.state = LED_BLINKING_SLOW;
-    drone->attributes.components.indicators.transmitter.state = LED_BLINKING_SLOW;}
-
+    // printf( "IDLE\r\n" );
+}
 
 void StWaitingFunc( drone_t * drone ) {
 
@@ -74,6 +71,7 @@ void StateMachine_Init( sm_state_machine_t * state_machine ) {
 }
 
 void StateMachine_RunIteration(drone_t * drone) {
+    char *task_name = pcTaskGetName(NULL);
 
     sm_state_t prev_state = drone->attributes.state_machine.curr_state;
 
@@ -91,7 +89,7 @@ void StateMachine_RunIteration(drone_t * drone) {
 
                 /* Log transition if state changed */
                 if (drone->attributes.state_machine.curr_state != prev_state) {
-                    ESP_LOGI(STATE_MACHINE_TAG, "Transition: %s -> %s on event %s",
+                    ESP_LOGI(task_name, "Transition: %s -> %s on event %s",
                         StateMachine_GetStateName(prev_state),
                         StateMachine_GetStateName(drone->attributes.state_machine.curr_state),
                         StateMachine_GetEventName(drone->attributes.state_machine.event));

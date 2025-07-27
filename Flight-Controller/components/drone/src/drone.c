@@ -564,7 +564,6 @@ static void UpdateStates( drone_t * drone, float ts ) {
 }
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
 void Drone( drone_t * drone ) {
 
     ESP_LOGI( DRONE_TAG, "Making an instance of Drone Class..." );
@@ -649,11 +648,29 @@ void Drone( drone_t * drone ) {
     }
     #endif
 
-    /* Initialize Battery */
+    /* Make an instance of PrintManager*/
+    PrintManager(&(drone->attributes.print_manager));
+
+    extern print_output_t serial_output;
+    extern print_output_t bluetooth_output;
+
+    drone->attributes.print_manager.methods.register_output(
+        &(drone->attributes.print_manager),
+        &serial_output
+    );
+    
+    drone->attributes.print_manager.methods.enable_output(
+        &(drone->attributes.print_manager),
+        "Serial"
+    );
+
+    drone->attributes.print_manager.methods.set_as_system_output(&(drone->attributes.print_manager));
+
+    /* Make an instance of Battery */
     Battery(&(drone->attributes.components.battery));
 
-    /* Initialize Indicators */
-    Indicators(&(drone->attributes.components.indicators));
+    /* Make an instance of Indicators */
+    Indicators(&(drone->attributes.components.indicators), 5000);
 
     /* Make an instance of Mma Class */
 
@@ -675,6 +692,18 @@ void Drone( drone_t * drone ) {
     Transmitter( &drone->attributes.components.Tx, &( drone->attributes.global_variables ) );
 
     drone->attributes.components.Tx.methods.init( &drone->attributes.components.Tx, drone->attributes.config.esp_mac_addr );
+
+    bluetooth_output.context = &drone->attributes.components.Tx;
+
+    drone->attributes.print_manager.methods.register_output(
+        &(drone->attributes.print_manager),
+        &bluetooth_output
+    );
+
+    drone->attributes.print_manager.methods.enable_output(
+        &(drone->attributes.print_manager),
+        "Bluetooth"
+    );
 
     /* =============== START Global variables assignment =============== */
 

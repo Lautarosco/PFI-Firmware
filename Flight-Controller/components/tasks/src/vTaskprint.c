@@ -11,6 +11,8 @@
 esp_err_t print_to_serial(drone_t * drone, char* buff, size_t buff_size);
 esp_err_t read_battery_voltage(drone_t * drone);
 esp_err_t manage_indicators(drone_t * drone);
+esp_err_t decide_indicator_state(drone_t * drone);
+
 float voltage_to_soc(float cell_voltage);
 
 
@@ -24,6 +26,7 @@ void vTaskprint( void * drone_ ) {
     while( 1 ) {
 
         manage_indicators(drone);
+        decide_indicator_state(drone);
         if( drone->attributes.init_ok) {
             print_to_serial(drone, buf, sizeof(buf));
             read_battery_voltage(drone);
@@ -67,17 +70,100 @@ float voltage_to_soc(float cell_voltage) {
     else return 0.0f;  // Below 3.30V/cell
 }
 
-esp_err_t manage_indicators(drone_t * drone) {
+
+static void reset_all_led_cycles(indicators_t* indicators, TickType_t now) {
+    led_t* leds[3] = {
+        &indicators->power,
+        &indicators->gps,
+        &indicators->transmitter
+    };
+    
+    for (int i = 0; i < 3; i++) {
+        if (leds[i]->state == LED_BLINKING_PROFILE) {
+            // Reset each LED's internal state for new cycle
+            leds[i]->_internal.current_blink = 0;
+            leds[i]->_internal.is_on = false;
+            leds[i]->_internal.blink_sequence_done = false;
+            leds[i]->_internal.last_toggle_time = now;
+            gpio_set_level(leds[i]->gpio_pin, 0);
+        }
+    }
+}
+
+static void handle_blink_profile(led_t* led, TickType_t now, TickType_t cycle_start) {
+    blink_profile_t* profile = &led->profile;
+    
+    // If we've completed our blink sequence, stay off until next cycle
+    if (led->_internal.blink_sequence_done) {
+        gpio_set_level(led->gpio_pin, 0);
+        return;
+    }
+    
+    // Convert milliseconds to ticks
+    TickType_t on_time_ticks = pdMS_TO_TICKS(profile->on_time_ms);
+    TickType_t off_time_ticks = pdMS_TO_TICKS(profile->off_time_ms);
+    
+    // Handle blink sequence
+    TickType_t time_since_toggle = now - led->_internal.last_toggle_time;
+    
+    if (led->_internal.is_on) {
+        // LED is currently ON, check if we should turn it OFF
+        if (time_since_toggle >= on_time_ticks) {
+            gpio_set_level(led->gpio_pin, 0);
+            led->_internal.is_on = false;
+            led->_internal.last_toggle_time = now;
+            led->_internal.current_blink++;
+            
+            // Check if we've completed all blinks
+            if (led->_internal.current_blink >= profile->blink_count) {
+                led->_internal.blink_sequence_done = true;
+            }
+        }
+    } else {
+        // LED is currently OFF, check if we should turn it ON (for next blink)
+        if (led->_internal.current_blink < profile->blink_count && 
+            time_since_toggle >= off_time_ticks) {
+            gpio_set_level(led->gpio_pin, 1);
+            led->_internal.is_on = true;
+            led->_internal.last_toggle_time = now;
+        }
+    }
+}
+
+static void handle_simple_blink(led_t* led, TickType_t now, int led_index) {
     #define BLINK_SLOW_PERIOD pdMS_TO_TICKS(500)
     #define BLINK_FAST_PERIOD pdMS_TO_TICKS(150)
+    
+    static TickType_t last_tick[3] = {0, 0, 0};
+    
+    TickType_t period = (led->state == LED_BLINKING_SLOW) ? BLINK_SLOW_PERIOD : BLINK_FAST_PERIOD;
+    
+    if ((now - last_tick[led_index]) >= period) {
+        int current_level = gpio_get_level(led->gpio_pin);
+        int next_level = !current_level;
+        gpio_set_level(led->gpio_pin, next_level);
+        last_tick[led_index] = now;
+    }
+}
 
-    static TickType_t last_tick[3] = {0, 0, 0}; // Track last toggle time per LED
+
+
+esp_err_t manage_indicators(drone_t * drone) {
     TickType_t now = xTaskGetTickCount();
-
+    indicators_t* indicators = &drone->attributes.components.indicators;
+    
+    // Check if we need to start a new cycle (shared across all LEDs)
+    TickType_t cycle_period_ticks = pdMS_TO_TICKS(indicators->led_timing.cycle_period_ms);
+    if ((now - indicators->led_timing.cycle_start_time) >= cycle_period_ticks) {
+        // Start new synchronized cycle for all LEDs
+        indicators->led_timing.cycle_start_time = now;
+        reset_all_led_cycles(indicators, now);
+    }
+    
     led_t* leds[3] = {
-        &drone->attributes.components.indicators.power,
-        &drone->attributes.components.indicators.gps,
-        &drone->attributes.components.indicators.transmitter
+        &indicators->power,
+        &indicators->gps,
+        &indicators->transmitter
     };
 
 
@@ -86,22 +172,20 @@ esp_err_t manage_indicators(drone_t * drone) {
             case LED_OFF:
                 gpio_set_level(leds[i]->gpio_pin, 0);
                 break;
+                
             case LED_ON:
                 gpio_set_level(leds[i]->gpio_pin, 1);
                 break;
-            case LED_BLINKING_FAST:
-            case LED_BLINKING_SLOW: {
-                TickType_t period = (leds[i]->state == LED_BLINKING_SLOW) ? BLINK_SLOW_PERIOD : BLINK_FAST_PERIOD;
                 
-                if ((now - last_tick[i]) >= period) {
-                    int current_level = gpio_get_level(leds[i]->gpio_pin);
-                    int next_level = !current_level;
-                    int result;
-                    result = gpio_set_level(leds[i]->gpio_pin, next_level);
-                    last_tick[i] = now;
-                }
+            case LED_BLINKING_FAST:
+            case LED_BLINKING_SLOW:
+                handle_simple_blink(leds[i], now, i);
                 break;
-            }
+                
+            case LED_BLINKING_PROFILE:
+                handle_blink_profile(leds[i], now, indicators->led_timing.cycle_start_time);
+                break;
+                
             default:
                 break;
         }
@@ -109,6 +193,41 @@ esp_err_t manage_indicators(drone_t * drone) {
     return ESP_OK;
 }
 
+esp_err_t decide_indicator_state(drone_t* drone) {
+    if (drone->attributes.state_machine.curr_state == ST_IDLE) {
+        static bool done = false;
+        if (!done) {
+            blink_profile_t idle_profile = {
+                .off_time_ms = 500,
+                .on_time_ms = 2000,
+                .blink_count = 2
+            };
+
+            drone->attributes.components.indicators.create_profile(
+                &drone->attributes.components.indicators,
+                2,
+                2000,
+                500,
+                &idle_profile
+            );
+
+            drone->attributes.components.indicators.gps.set_profile(
+                &drone->attributes.components.indicators.gps,
+                idle_profile
+            );
+            drone->attributes.components.indicators.power.set_profile(
+                &drone->attributes.components.indicators.power,
+                idle_profile
+            );
+            drone->attributes.components.indicators.transmitter.set_profile(
+                &drone->attributes.components.indicators.transmitter,
+                idle_profile
+            );
+            done = true;
+        }
+    }
+    return ESP_OK;
+}
 
 
 /**
@@ -194,15 +313,17 @@ esp_err_t print_to_serial(drone_t * drone, char* buff, size_t buff_size){
         // state machine current state
         StateMachine_GetStateName(drone->attributes.state_machine.curr_state)
     );
-    if (drone->attributes.components.Tx.bluetooth_connection.is_connected) {
-        drone->attributes.components.Tx.methods.send_bt_data(
-            &drone->attributes.components.Tx,
-            buff,
-            strlen(buff)
-        );
-    } else {
-        printf("%s", buff);
-    }
+    printf("%s", buff);
+    
+    // if (drone->attributes.components.Tx.bluetooth_connection.is_connected) {
+    //     drone->attributes.components.Tx.methods.send_bt_data(
+    //         &drone->attributes.components.Tx,
+    //         buff,
+    //         strlen(buff)
+    //     );
+    // } else {
+    //     printf("%s", buff);
+    // }
     
     
     fflush(stdout);  // check

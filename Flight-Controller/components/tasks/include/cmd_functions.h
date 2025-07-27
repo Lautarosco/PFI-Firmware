@@ -4,17 +4,17 @@
 /* Enum containing index of a cmd frame */
 typedef enum cmd_index {
 
-    /* Command */
+    /* X,_,_,_ */
     CMD_INDEX,
 
-    /* State */
-    STATE_INDEX,
+    /* _,X,_,_*/
+    ARG1,
 
-    /* Variable */
-    VAR_INDEX,
+    /* _,_,X,_ */
+    ARG2,
 
-    /* New value */
-    VALUE_INDEX
+    /* _,_,_,X */
+    ARG3
 
 } cmd_index_t;
 
@@ -72,5 +72,17 @@ void NvsStoreCmdFunc(drone_t * drone, char * arr[4]);
  * 
  */
 void SpUpdateCmdFunc(drone_t * drone, char * arr[4]);
+
+/**
+ * @brief Emulate a transmitter button action
+ * 
+ * @param drone: Pointer to drone object
+ * @param arr: Array containing processed data from received cmd
+ * 
+ * @return none
+ * 
+ */
+void TxCmdFunc(drone_t * drone, char * arr[ 4 ]);
+
 
 #endif

@@ -535,6 +535,7 @@ static void spp_event_handler( esp_spp_cb_event_t event, esp_spp_cb_param_t * pa
                 GlobalSerialData->len = 0;
 
                 /* Data received, hence state = 1 */
+
                 GlobalSerialData->state = true;
                 for (int i = 0; i < param->data_ind.len; i++) {
 
@@ -548,6 +549,7 @@ static void spp_event_handler( esp_spp_cb_event_t event, esp_spp_cb_param_t * pa
                         GlobalSerialData->len++;
                     }
                 }
+
             }
 
             else {

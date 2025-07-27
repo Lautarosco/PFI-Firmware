@@ -20,17 +20,20 @@ typedef struct cmd_function {
 
 } cmd_function_t;
 
-static cmd_function_t cmd_function_array[] = {
+static cmd_function_t cmd_function_array[] = {  // TODO: adapt this to allow multiple number of arguments (not just 4 that must be passed as cmd,,,)
 
     {.cmd_name = "pid gains",   .func = &PidGainsCmdFunc},
     {.cmd_name = "pid actions", .func = &PidActionsCmdFunc},
     {.cmd_name = "var update",  .func = &VarsUpdateCmdFunc},
     {.cmd_name = "sp update",  .func = &SpUpdateCmdFunc},
-    {.cmd_name = "nvs_store", .func = &NvsStoreCmdFunc }
+    {.cmd_name = "nvs_store", .func = &NvsStoreCmdFunc },
+    {.cmd_name = "tx", .func = TxCmdFunc}
 };
 
 
 void vTaskParseCommand( void * pvParameters ) {
+
+    char *task_name = pcTaskGetName(NULL);
 
     /* Cast parameter into Drone object */
     drone_t * drone = ( drone_t * ) pvParameters;
@@ -66,8 +69,7 @@ void vTaskParseCommand( void * pvParameters ) {
             for( int i = 0; i < drone->attributes.global_variables.serial_data.len; i++ ) {
 
                 /**
-                 * Frame's format: <pid,state,@,value>
-                 * where '@' could be 'p | i | d | b'
+                 * Frame's format: <cmd,arg1,arg2,arg3>
                  * 
                  * i.e, <pid/roll/p/10> which means
                  * 
@@ -91,7 +93,7 @@ void vTaskParseCommand( void * pvParameters ) {
                     else {
 
                         err = true;
-                        ESP_LOGE( "TASK3", "Frame must start with '<' character. See function %s in line %d", __func__, __LINE__ );
+                        ESP_LOGE( task_name, "Frame must start with '<' character. See function %s in line %d", __func__, __LINE__ );
                     }
                 }
 
@@ -129,7 +131,7 @@ void vTaskParseCommand( void * pvParameters ) {
             /* Errors check */
             if( !eof ) {
 
-                ESP_LOGE( "TASK3", "Frame must end with '>' character. See function %s in line %d", __func__, __LINE__ );
+                ESP_LOGE( task_name, "Frame must end with '>' character. See function %s in line %d", __func__, __LINE__ );
                 continue;
             }
 
@@ -142,22 +144,25 @@ void vTaskParseCommand( void * pvParameters ) {
 
             /* Loop through the cmd function array */
             for( int i = 0; i < ( ( sizeof( cmd_function_array ) ) / ( sizeof( cmd_function_array[ 0 ] ) ) ); i++ ) {
-                printf("%s\n", ptrArr[ CMD_INDEX ]);
                 /* Check if recevied command matches listed commands in the array */
                 if( !strcmp( ptrArr[ CMD_INDEX ], cmd_function_array[ i ].cmd_name ) ) {
-
                     printf("%s\n", cmd_function_array[ i ].cmd_name);
                     cmd_function_array[ i ].func( drone, ptrArr );
                     found = true;
                 }
             }
 
+            // reset serial data
+            memset(&drone->attributes.global_variables.serial_data, 0, sizeof(drone->attributes.global_variables.serial_data));
+            
             /* Check if received cmd was not found in cmds array */
             if( !found ) {
 
-                ESP_LOGW( "TASK3", "Command not found.\n[ Details ] See func: %s, in line %d", __func__, __LINE__ );
+                ESP_LOGW( task_name, "Command not found.\n[ Details ] See func: %s, in line %d", __func__, __LINE__ );
             }
+
         }
+
 
         vTaskDelay( pdMS_TO_TICKS( 1000 ) );
     }

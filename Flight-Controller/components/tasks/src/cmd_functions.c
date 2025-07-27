@@ -188,8 +188,8 @@ void VarsUpdateCmdFunc(drone_t * drone, char * arr[4]) {
     bool found = false;
     for(int i = 0; general_vars[i].name != NULL; i++) {
         
-        if(!strcmp(arr[VAR_INDEX], general_vars[i].name)) {
-            *( float * ) general_vars[i].addr = (float) atof(arr[VALUE_INDEX]);
+        if(!strcmp(arr[ARG2], general_vars[i].name)) {
+            *( float * ) general_vars[i].addr = (float) atof(arr[ARG3]);
             found = true;
             return;
         }
@@ -197,7 +197,7 @@ void VarsUpdateCmdFunc(drone_t * drone, char * arr[4]) {
 
     if(!found) {
 
-        ESP_LOGW("TASK3", "%s in line %d --> ValueError: '%s' not found", __func__, __LINE__, arr[VAR_INDEX]);
+        ESP_LOGW("TASK3", "%s in line %d --> ValueError: '%s' not found", __func__, __LINE__, arr[ARG2]);
     }
 }
 
@@ -205,8 +205,8 @@ void VarsUpdateCmdFunc(drone_t * drone, char * arr[4]) {
 void SpUpdateCmdFunc( drone_t * drone, char * arr[ 4 ] ) {
 
     /* Get index ( states enum ) of received state */
-    int index = GetStateIndex( arr[ STATE_INDEX ] );
-
+    int index = GetStateIndex( arr[ ARG1 ] );
+ 
     /* Check if received state is valid */
     if( PID_INDEX_CHECK( index, sizeof( drone->attributes.components.controllers ) / ( sizeof( drone->attributes.components.controllers[ 0 ] ) ), __func__, __LINE__ ) ) {
 
@@ -228,25 +228,19 @@ void SpUpdateCmdFunc( drone_t * drone, char * arr[ 4 ] ) {
 
         bool found = false;
 
-        /* Get state index */
-        int ret = GetStateIndex(arr[STATE_INDEX]);
-
-        /* If valid state */
-        if (ret != -1) {
-            for (int i = 0; sp_arr[i].ptr != NULL; i++)
-            {
-                if (sp_arr[i].state_index == ret) {
-                    *(sp_arr[i].ptr) = atof(arr[VALUE_INDEX]);
-                    found = true;
-                }
+        for (int i = 0; sp_arr[i].ptr != NULL; i++)
+        {
+            if (sp_arr[i].state_index == index) {
+                *(sp_arr[i].ptr) = atof(arr[ARG2]);
+                found = true;
                 break;
             }
-                
         }
+                
 
         if( !found ) {
 
-            ESP_LOGE( "TASK3", "Drone's <%s> state not found. See func %s, in line %d", arr[STATE_INDEX], __func__, __LINE__ );
+            ESP_LOGE( "TASK3", "Drone's <%s> state not found. See func %s, in line %d", arr[ARG1], __func__, __LINE__ );
         }
     }
 }
@@ -255,7 +249,7 @@ void SpUpdateCmdFunc( drone_t * drone, char * arr[ 4 ] ) {
 void PidGainsCmdFunc( drone_t * drone, char * arr[ 4 ] ) {
 
     /* Get index ( states enum ) of received state */
-    int index = GetStateIndex( arr[ STATE_INDEX ] );
+    int index = GetStateIndex( arr[ ARG1 ] );
 
     /* Check if received state is valid */
     if( PID_INDEX_CHECK( index, sizeof( drone->attributes.components.controllers ) / ( sizeof( drone->attributes.components.controllers[ 0 ] ) ), __func__, __LINE__ ) ) {
@@ -275,9 +269,9 @@ void PidGainsCmdFunc( drone_t * drone, char * arr[ 4 ] ) {
 
         for( int i = 0; vars_arr[ i ].name != NULL; i++ ) {
 
-            if( !strcmp( arr[ VAR_INDEX ], vars_arr[ i ].name ) ) {
+            if( !strcmp( arr[ ARG2 ], vars_arr[ i ].name ) ) {
 
-                *( float * ) vars_arr[ i ].addr = ( float ) atof( arr[ VALUE_INDEX ] );
+                *( float * ) vars_arr[ i ].addr = ( float ) atof( arr[ ARG3 ] );
                 found = true;
             }
         }
@@ -325,7 +319,7 @@ static pid_action_function_t pid_actions_array[] = {
 void PidActionsCmdFunc( drone_t * drone, char * arr[ 4 ] ) {
 
     /* Get index ( states enum ) of received state */
-    int index = GetStateIndex( arr[ STATE_INDEX ] );
+    int index = GetStateIndex( arr[ ARG1 ] );
 
     bool found = false;
 
@@ -334,7 +328,7 @@ void PidActionsCmdFunc( drone_t * drone, char * arr[ 4 ] ) {
 
         for( int i = 0; i < ( ( sizeof( pid_actions_array ) ) / ( sizeof( pid_actions_array[ 0 ] ) ) ); i++ ) {
 
-            if( !strcmp( pid_actions_array[ i ].action_name, arr[ VALUE_INDEX ] ) ){
+            if( !strcmp( pid_actions_array[ i ].action_name, arr[ ARG3 ] ) ){
 
                 pid_actions_array[ i ].pid_setterFunc( &(drone->attributes.components.controllers[ index ]), pid_actions_array[ i ].actionFunc );
                 found = true;
@@ -347,4 +341,73 @@ void PidActionsCmdFunc( drone_t * drone, char * arr[ 4 ] ) {
             ESP_LOGW( "TASK3", "PID action name was not found.\n[ Details ] See func %s, in line %d", __func__, __LINE__ );
         }
     }
+}
+
+const char * TXCMD_TAG= "[TX_CMD_FUNC]";  // TODO: standarize TAGs in this task
+
+void TxCmdFunc(drone_t * drone, char * arr[ 4 ]) {
+
+    // Reset serial_data flag
+    drone->attributes.global_variables.serial_data.state = false;
+
+    /* Declared in drone.c source file */
+    extern tx_buttons_t * GlobalTxButtons;
+
+    typedef struct tx_btns {
+            char * btn_name;
+            bool * tx_btn_ptr;
+        } tx_btns_t;
+
+        tx_btns_t tx_btns_arr[] = {
+            {.btn_name = "cross",    .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.cross)},
+            {.btn_name = "triangle", .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.triangle)},
+            {.btn_name = "square",   .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.square)},
+            {.btn_name = "circle",   .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.circle)},
+            {.btn_name = "up",       .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.up)},
+            {.btn_name = "down",     .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.down)},
+            {.btn_name = "left",     .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.left)},
+            {.btn_name = "right",    .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.right)},
+            {.btn_name = "l1",       .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.l1)},
+            {.btn_name = "l2",       .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.l2)},
+            {.btn_name = "r1",       .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.r1)},
+            {.btn_name = "r2",       .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.r2)},
+            {.btn_name = "start",    .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.start)},
+            {.btn_name = "reset",    .tx_btn_ptr = &(drone->attributes.global_variables.tx_buttons.ps)}
+        };
+
+        bool found = false;
+        /* If any button was pressed */
+        if( !strcmp( arr[ARG2], "press" ) ) {
+            for (int i = 0; i < ((sizeof(tx_btns_arr)) / (sizeof(tx_btns_arr[0]))); i++)
+            {
+                if(!strcmp(arr[ARG1], tx_btns_arr[i].btn_name)) {
+                    (*tx_btns_arr[i].tx_btn_ptr) = true;
+                    // printf("<%s> button was pressed\n", tx_btns_arr[i].btn_name);
+                    found = true;
+                    break;
+                }
+            }
+        } else if (!strcmp(arr[ARG2], "release")) {
+            for (int i = 0; i < ((sizeof(tx_btns_arr)) / (sizeof(tx_btns_arr[0]))); i++)
+            {
+                if(!strcmp(arr[ARG1], tx_btns_arr[i].btn_name)) {
+                    (*tx_btns_arr[i].tx_btn_ptr) = false;
+                    // printf("<%s> button was released\n", tx_btns_arr[i].btn_name);
+                    found = true;
+                    break;
+                }
+            }
+        } else {
+            ESP_LOGE(TXCMD_TAG, "Action must be press/release. See function %s in line %d.", __func__, __LINE__);
+            return;
+        }
+
+        if (!found) {
+            printf("Buttons must be: <");
+            for (int i = 0; i < ((sizeof(tx_btns_arr)) / (sizeof(tx_btns_arr[0]))); i++) {
+                printf("%s/", tx_btns_arr[i].btn_name);
+            }
+            printf(">\n");
+        }
+
 }

@@ -1,4 +1,5 @@
 #pragma once
+#include <string.h>
 
 #include <drone_globals.h>
 #include "state_machine.h"
@@ -11,7 +12,7 @@
 #include <controllers.h>
 #include <mma.h>
 #include <state_machine.h>
-#include <string.h>
+#include "print_manager.h"
 
 #define FLASH_PARAMS 40 /* Total Drone parameters to be stored in flash memory */
 #define NVS_NAMESPACE "storage"
@@ -407,6 +408,9 @@ typedef struct drone_attributes {
 
     /* Drone's configuration parameters */
     drone_cfg_t config;
+
+    /* Drone's print manager */
+    print_manager_t print_manager;
 
     /* Array of Drone parameters stored in flash memory */
     void * flash_params_arr[ FLASH_PARAMS ];

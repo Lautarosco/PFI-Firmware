@@ -1,5 +1,4 @@
-#ifndef STRUCT_QUADCOPTER_CONTROLLER
-#define STRUCT_QUADCOPTER_CONTROLLER
+#pragma once
 
 #include <math.h>
 #include <stdbool.h>
@@ -187,6 +186,3 @@ typedef struct pid_controller {
     void ( * PidSetActionD )( pid_controller_t * pid, float ( * dFunc )( pid_controller_t * pid, float error ) );
 
 } pid_controller_t;
-
-
-#endif
