@@ -8,6 +8,7 @@
 #define LSM6DSO_ODR_GYRO_DEFAULT                LSM6DSO_ODR_G_12P5_HZ
 #define LSM6DSO_FS_GYRO_DEFAULT                 LSM6DSO_FS_GYRO_250_DPS
 #define LSM6DSO_FS_GYRO_UNIT_DEFAULT            LSM6DSO_GYRO_UNIT_DEG
+#define LSM6DSO_FS_ACC_UNIT_DEFAULT             LSM6DSO_ACC_UNIT_G
 
 typedef struct lsm6dso_gyro_params {
     lsm6dso_odr_gyro_t odr;

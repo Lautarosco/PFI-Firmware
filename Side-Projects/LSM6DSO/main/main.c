@@ -10,6 +10,7 @@
 #define LSM6DSO_I2C_SCL_FREQ_HZ         100000
 #define GPIO_SDA                        GPIO_NUM_21
 #define GPIO_SCL                        GPIO_NUM_22
+#define RAD_TO_DEG                      180.0f / M_PI
 
 /**
  * Notes:
@@ -30,17 +31,15 @@ esp_err_t convert_to_angles(angles_t *angles, float acc_x, float acc_y, float ac
     float dt = 1.0f / 104.0f;
     float alpha = 0.95f;
 
-    /* Calculate roll and pitch with accelerometer measurements (trigonometry) */
-    float pitch_acc = atan2(acc_y, sqrt((acc_x * acc_x) + (acc_z * acc_z)));
-    float roll_acc  = atan2(-acc_x, sqrt((acc_y * acc_y) + (acc_z * acc_z)));
+    float acc_roll = atan2f(acc_y, acc_z) * RAD_TO_DEG;
+    float acc_pitch = atan2f(-acc_x, sqrt((acc_y * acc_y) + (acc_z * acc_z))) * RAD_TO_DEG;
+    
+    float gyro_roll = angles->roll + (gyro_y * dt);
+    float gyro_pitch = angles->pitch + (gyro_x * dt);
 
-
-    /* Update yaw with gyroscope measurements (integration) */
+    angles->roll = (alpha * gyro_roll) + ((1 - alpha) * acc_roll);
+    angles->pitch = (alpha * gyro_pitch) + ((1 - alpha) * acc_pitch);
     angles->yaw += gyro_z * dt;
-
-    /* Update roll and pitch by accelerometer trigonometric equations */
-    angles->pitch = alpha * (angles->pitch + gyro_x * dt) + (1 - alpha) * pitch_acc;
-    angles->roll  = alpha * (angles->roll  + gyro_y * dt) + (1 - alpha) * roll_acc;
 
     return ESP_OK;
 }
@@ -90,12 +89,13 @@ void app_main(void)
             .fs = LSM6DSO_ACC_FS_4G,
             .odr = LSM6DSO_ACC_ODR_104_HZ,
             .lpf2_en = LSM6DSO_ACC_LPF2_DISABLE,
-            .unit = LSM6DSO_ACC_UNIT_MS2
+            .unit = LSM6DSO_FS_ACC_UNIT_DEFAULT
         },
         .gyro = {
             .fs = LSM6DSO_FS_GYRO_250_DPS,
             .odr = LSM6DSO_ODR_GYRO_104_HZ,
-            .lpf1_en = LSM6DSO_GYRO_LPF1_DISABLE,
+            .lpf1_en = LSM6DSO_GYRO_LPF1_ENABLE,
+            .lpf1_mode = LSM6DSO_GYRO_LPF1_7,
             .hpf_en = LSM6DSO_GYRO_HPF_DISABLE,
             .unit = LSM6DSO_FS_GYRO_UNIT_DEFAULT
         }
@@ -113,24 +113,12 @@ void app_main(void)
     ret = imu.init(&imu, imu_params);
     angles_t angles;
     memset(&angles, 0, sizeof(angles_t));
-    
-    // float avg = 0.0f;
-    // for(int i = 0; i < 100000; i++) {
-    //     imu.measure(&imu);
-    //     avg += imu.acc.z;
-    // }
-    // printf("Promedio: %f\n", avg / 100000.0f);
-    // return;
+
+    float roll = 0.0f;
 
     while(1) {
         imu.measure(&imu);
         convert_to_angles(&angles, imu.acc.x, imu.acc.y, imu.acc.z, imu.gyro.x, imu.gyro.y, imu.gyro.z);
-        
-        /* Print results */
-        // printf(
-        //     "Acc_x: %f m/s^2, Acc_y: %f m/s^2, Acc_z: %f m/s^2\n",
-        //     imu.acc.x, imu.acc.y, imu.acc.z
-        // );
 
         printf(
             "Roll: %f °, Pitch: %f °, Yaw: %f °\n",
