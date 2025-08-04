@@ -18,7 +18,6 @@ static const char *TAG = "BMI160";
 esp_err_t Bmi160(bmi160_t* bmi) {
     memset(bmi, 0, sizeof(bmi160_t));
 
-    // Function pointers assignment
     bmi->init                 = bmi_init;
     bmi->measure              = bmi160_measure;
     bmi->foc                  = bmi160_foc;
@@ -104,15 +103,8 @@ esp_err_t bmi_init(bmi160_t *bmi, i2c_master_dev_handle_t *i2c_bmi_handler,
         return ESP_FAIL;
     }
 
-    // /* Initialize Acelerometer */
-    // ESP_ERROR_CHECK( bmi160_write_byte( bmi->i2c.address, BMI160_CMD_REG,   acc_mode ) );
-    // ESP_ERROR_CHECK( bmi160_write_byte( bmi->i2c.address, BMI160_ACC_CONF,  acc_freq ) );
-    // ESP_ERROR_CHECK( bmi160_write_byte( bmi->i2c.address, BMI160_ACC_RANGE, acc_range ) );
-    
-    // /* Initialize Gyroscope */
-    // ESP_ERROR_CHECK( bmi160_write_byte( bmi->i2c.address, BMI160_CMD_REG,   gyro_mode ) );
-    // ESP_ERROR_CHECK( bmi160_write_byte( bmi->i2c.address, BMI160_GYRO_CONF,  gyro_freq ) );
-    // ESP_ERROR_CHECK( bmi160_write_byte( bmi->i2c.address, BMI160_GYRO_RANGE, gyro_range ) );
+    bmi->Acc.sensitivity = bmi->Acc.get_sensitivity(bmi->Acc);
+    bmi->Gyro.sensitivity = bmi->Gyro.get_sensitivity(bmi->Gyro);
 
     /* Set initials offsets*/
     bmi->Gyro.offset.x = gyro_offset_x;
@@ -132,14 +124,12 @@ esp_err_t bmi160_measure(bmi160_t* bmi) {
     uint8_t reg_addr = BMI160_GYRO_REGISTER;
 
     // Read accelerometer, gyroscope, and magnetometer data
-    esp_err_t ret = i2c_master_transmit_receive(bmi->i2c_bmi_handler, &reg_addr, sizeof(reg_addr), sensor_data, sizeof(sensor_data), pdMS_TO_TICKS(100));
+    esp_err_t ret = i2c_master_transmit_receive(bmi->i2c_bmi_handler, &reg_addr, sizeof(reg_addr), sensor_data, sizeof(sensor_data), pdMS_TO_TICKS(150));
     if(ret != ESP_OK) {
         ESP_LOGE(TAG, "{Function %s in line %d}: Read to 0x%X register --> FAILED", __func__, __LINE__, reg_addr);
         return ESP_FAIL;
     }
     // bmi160_read_bytes(bmi->i2c.address, BMI160_GYRO_REGISTER, sensor_data, 12);
-
-    // Parse and calibrate data from sensors
 
     gyro_x = (int16_t)((sensor_data[1] << 8) | sensor_data[0]) - bmi->Gyro.offset.x;
     gyro_y = (int16_t)((sensor_data[3] << 8) | sensor_data[2]) - bmi->Gyro.offset.y;
@@ -149,18 +139,13 @@ esp_err_t bmi160_measure(bmi160_t* bmi) {
     accel_y = (int16_t)((sensor_data[9] << 8) | sensor_data[8]) - bmi->Acc.offset.y;
     accel_z = (int16_t)((sensor_data[11] << 8) | sensor_data[10]) - bmi->Acc.offset.z;
 
+    float accel_x_g = accel_x * bmi->Acc.sensitivity;
+    float accel_y_g = accel_y * bmi->Acc.sensitivity;
+    float accel_z_g = accel_z * bmi->Acc.sensitivity;
 
-    // Convert raw data to logical values with units
-    float acc_sensitivity = (bmi->Acc.get_sensitivity) (bmi->Acc);
-    float gyro_sensitivity = (bmi->Gyro.get_sensitivity) (bmi->Gyro);
-
-    float accel_x_g = accel_x * acc_sensitivity;
-    float accel_y_g = accel_y * acc_sensitivity;
-    float accel_z_g = accel_z * acc_sensitivity;
-
-    float gyro_x_dps = gyro_x * gyro_sensitivity;
-    float gyro_y_dps = gyro_y * gyro_sensitivity;
-    float gyro_z_dps = gyro_z * gyro_sensitivity;
+    float gyro_x_dps = gyro_x * bmi->Gyro.sensitivity;
+    float gyro_y_dps = gyro_y * bmi->Gyro.sensitivity;
+    float gyro_z_dps = gyro_z * bmi->Gyro.sensitivity;
 
     // Accelerometer
     bmi->Acc.x = accel_x_g;
@@ -189,7 +174,6 @@ esp_err_t bmi160_measure(bmi160_t* bmi) {
 }
 
 
-// Sensor Methods
 esp_err_t acc_set_range(acc_t* acc, uint8_t fs_sel) {
     if (fs_sel > 3) {
         return ESP_ERR_INVALID_ARG;
@@ -240,7 +224,6 @@ float acc_get_sensitivity(acc_t acc) {
 
 
 void print_binary(unsigned int num) {
-    // Size of an unsigned int in bits
     int bits = sizeof(num) * 8;
     int leading_zero = 1; // Flag to skip leading zeros
 
@@ -259,14 +242,13 @@ void print_binary(unsigned int num) {
         }
     }
 
-    // If the number is 0, we need to print "0"
     if (leading_zero) {
         printf("0");
     }
 }
 
 
-esp_err_t gyro_set_range(gyro_t* gyro, uint8_t fs_sel){
+esp_err_t gyro_set_range(gyro_t* gyro, uint8_t fs_sel) {
     if (fs_sel > 3) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -282,12 +264,12 @@ esp_err_t gyro_set_range(gyro_t* gyro, uint8_t fs_sel){
     return ret;
 
 }
-float gyro_get_sensitivity(gyro_t gyro){
+float gyro_get_sensitivity(gyro_t gyro) {
     uint8_t gyro_sensitivity_setting;
 
     uint8_t reg_addr = BMI160_GYRO_RANGE;
 
-    esp_err_t ret = i2c_master_transmit_receive(gyro.i2c_bmi_handler, &reg_addr, sizeof(reg_addr), &gyro_sensitivity_setting, sizeof(gyro_sensitivity_setting), pdMS_TO_TICKS(100));
+    esp_err_t ret = i2c_master_transmit_receive(gyro.i2c_bmi_handler, &reg_addr, sizeof(reg_addr), &gyro_sensitivity_setting, sizeof(gyro_sensitivity_setting), pdMS_TO_TICKS(150));
     if(ret != ESP_OK) {
         ESP_LOGE(TAG, "{Function %s in line %d}: Read to 0x%X register --> FAILED", __func__, __LINE__, reg_addr);
         return ESP_FAIL;
@@ -399,8 +381,8 @@ esp_err_t bmi160_foc(bmi160_t* bmi){
 
     // handle sign extension for 10-bit values (two's complement)
     if (prev_gyro_x & 0x0200) prev_gyro_x |= 0xFC00;  // Sign-extend if negative
-    if (prev_gyro_y & 0x0200) prev_gyro_y |= 0xFC00;  // Sign-extend if negative
-    if (prev_gyro_z & 0x0200) prev_gyro_z |= 0xFC00;  // Sign-extend if negative
+    if (prev_gyro_y & 0x0200) prev_gyro_y |= 0xFC00;
+    if (prev_gyro_z & 0x0200) prev_gyro_z |= 0xFC00;
 
     float prev_gyro_x_dps = prev_gyro_x * 0.061;
     float prev_gyro_y_dps = prev_gyro_y * 0.061;
@@ -470,8 +452,8 @@ esp_err_t bmi160_foc(bmi160_t* bmi){
 
     // Handle sign extension for 10-bit values (two's complement)
     if (gyro_x & 0x0200) gyro_x |= 0xFC00;  // Sign-extend if negative
-    if (gyro_y & 0x0200) gyro_y |= 0xFC00;  // Sign-extend if negative
-    if (gyro_z & 0x0200) gyro_z |= 0xFC00;  // Sign-extend if negative
+    if (gyro_y & 0x0200) gyro_y |= 0xFC00;
+    if (gyro_z & 0x0200) gyro_z |= 0xFC00;
 
     float gyro_x_dps = gyro_x * 0.061;
     float gyro_y_dps = gyro_y * 0.061;

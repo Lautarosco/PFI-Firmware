@@ -15,7 +15,7 @@ void vTaskDroneMeasure( void * pvParameters ) {
 
         if (drone->attributes.init_ok) {
             /* Measure attitude and update bmi sensor internal registers with respective values */
-            drone->attributes.components.bmi.measure( &( drone->attributes.components.bmi ) );
+            esp_err_t bmi_ret = drone->attributes.components.bmi.measure( &( drone->attributes.components.bmi ) );
 
             #define IGNORE_BMP 
             #ifndef IGNORE_BMP
@@ -23,7 +23,9 @@ void vTaskDroneMeasure( void * pvParameters ) {
             #endif
 
             /* Update drone states */
-            drone->methods.update_states( drone, 10 );
+            if (bmi_ret == ESP_OK) {
+                drone->methods.update_states( drone, 10 );
+            }
 
             // TODO: Make these parameters
             float MAX_ROLL = 10.0f;  // Maximum roll angle in degrees
@@ -107,10 +109,9 @@ void vTaskDroneMeasure( void * pvParameters ) {
 
 
             int l_stick_y = drone->attributes.global_variables.tx_buttons.left_stick.y;
-            
+            // Map l_stick_y from -100 to 100 to 0 to 100
+            drone->attributes.sp.z = (l_stick_y + 100) / 2;
 
-
-            drone->attributes.sp.z = 0;
         
         }
         vTaskDelay( pdMS_TO_TICKS( 10 ) );

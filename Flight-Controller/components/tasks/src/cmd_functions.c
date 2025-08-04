@@ -181,6 +181,7 @@ void VarsUpdateCmdFunc(drone_t * drone, char * arr[4]) {
 
         {.name = "misc/0",    .addr = &(drone->attributes.global_variables.misc_floats[0])},        // amplitude
         {.name = "misc/1",    .addr = &(drone->attributes.global_variables.misc_floats[1])},        // period
+        {.name = "misc/2",    .addr = &(drone->attributes.global_variables.misc_floats[2])},        // period
 
         {.name = NULL,        .addr = NULL}
     };

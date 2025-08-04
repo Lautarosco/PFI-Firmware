@@ -261,6 +261,7 @@ esp_err_t print_to_serial(drone_t * drone, char* buff, size_t buff_size){
         "yaw/P,%.2f|yaw/I,%.2f|yaw/D,%.2f|roll/KB,%.2f|"
         "yaw_d/P,%.2f|yaw_d/I,%.2f|yaw_d/D,%.2f|roll/KB,%.2f|"
         "ema_roll,%.2f|ema_pitch,%.2f|ema_yaw,%.2f|"
+        "misc/0,%.2f|misc/1,%.2f|misc/2,%.2f|misc/3,%.2f|"
         "state,%s\n",
 
         // dynamic state
@@ -309,6 +310,12 @@ esp_err_t print_to_serial(drone_t * drone, char* buff, size_t buff_size){
         drone->attributes.config.IIR_coeff_roll_dot,
         drone->attributes.config.IIR_coeff_pitch_dot,
         drone->attributes.config.IIR_coeff_yaw_dot,
+
+        // Misc. variables
+        drone->attributes.global_variables.misc_floats[0],  // T
+        drone->attributes.global_variables.misc_floats[1],  // Amplitude
+        drone->attributes.global_variables.misc_floats[2],  // Z_Sim
+        drone->attributes.global_variables.misc_floats[3],  //
 
         // state machine current state
         StateMachine_GetStateName(drone->attributes.state_machine.curr_state)

@@ -515,7 +515,7 @@ static void spp_event_handler( esp_spp_cb_event_t event, esp_spp_cb_param_t * pa
                 param->srv_open.rem_bda[ 0 ], param->srv_open.rem_bda[ 1 ], param->srv_open.rem_bda[ 2 ],
                 param->srv_open.rem_bda[ 3 ], param->srv_open.rem_bda[ 4 ], param->srv_open.rem_bda[ 5 ]
             );
-                active_transmitter->bluetooth_connection.spp_handle = param->srv_open.handle;  // <-- THIS LINE
+                active_transmitter->bluetooth_connection.spp_handle = param->srv_open.handle;
                 active_transmitter->bluetooth_connection.is_connected = true;
             break;
 

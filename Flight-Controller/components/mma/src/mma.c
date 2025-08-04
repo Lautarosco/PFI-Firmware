@@ -2,10 +2,12 @@
 #include <string.h>
 #include <mma.h>
 #include <esp_log.h>
+#include <drone.h>
 
-#define U_MAX         1         /* Maximum controller value */
-#define U_MIN         0         /* Minimum controller value */
-#define W_MAX         850.43    /* Maximum angular velocity in rad/s */
+#define U_MAX         100   /* Maximum controller value */
+#define U_MIN         -100  /* Minimum controller value */
+#define W_MAX         1047  /* Step 10 of prop. cal. in rad/s */
+#define W_MIN         240   /* Step 2 of prop. cal. in rad/s */
 
 const char * MMA_TAG = "MMA";
 
@@ -44,18 +46,22 @@ static float saturate(float input, float min, float max ) {
  * @param dc_max: Maximum duty cycle
  * @return float duty cycle
  */
-static float u2pwm(float u, float dc_min, float dc_max ) {
+static float u2pwm( mma_t * mma, float u_z, float u, float dc_min, float dc_max ) {
 
-    float Gu = ( U_MAX - U_MIN ) / ( W_MAX );
-    float u_n = u * Gu; /* Normalized controller action */
+    float base_dc = dc_min + ((dc_max - dc_min) * u_z / 100.0f);
+    
+    float correction_scale = (dc_max - dc_min) / 200.0f;  // Scale for +/-100 correction range, TODO: Check if it works fine when upper band saturing
+    float final_dc = base_dc + (u * correction_scale);
+    #ifndef container_of
+    #define container_of(ptr, type, member) \
+        ((type *)((char *)(ptr) - offsetof(type, member)))
+    #endif
 
-    float m = 0;
-    float b = 0;
-
-    m = ( dc_max - dc_min ) / ( U_MAX - U_MIN );
-    b = dc_min - ( m * U_MIN );
-
-    return saturate(( m * u_n ) + b, dc_min, dc_max);
+    // simulate z?
+    drone_t *drone = container_of(mma, drone_t, attributes.components.mma);
+    float z_sim = drone->attributes.global_variables.misc_floats[2];
+    
+    return saturate(final_dc + z_sim, dc_min, dc_max);
 }
 
 
@@ -70,11 +76,16 @@ static float u2pwm(float u, float dc_min, float dc_max ) {
  * @retval none
  */
 static void compute_obj( mma_t * mma, float dc_min, float dc_max ) {
+    float base_thrust = mma->input[C_Z];
     
-    mma->output[ U1 ] = u2pwm( mma->input[ C_Z ] + ( ( 0.5f ) * (   mma->input[ C_ROLL ] + mma->input[ C_PITCH ] + mma->input[ C_YAW ] ) ), dc_min, dc_max );
-    mma->output[ U2 ] = u2pwm( mma->input[ C_Z ] + ( ( 0.5f ) * ( - mma->input[ C_ROLL ] + mma->input[ C_PITCH ] - mma->input[ C_YAW ] ) ), dc_min, dc_max );
-    mma->output[ U3 ] = u2pwm( mma->input[ C_Z ] + ( ( 0.5f ) * ( - mma->input[ C_ROLL ] - mma->input[ C_PITCH ] + mma->input[ C_YAW ] ) ), dc_min, dc_max );
-    mma->output[ U4 ] = u2pwm( mma->input[ C_Z ] + ( ( 0.5f ) * (   mma->input[ C_ROLL ] - mma->input[ C_PITCH ] - mma->input[ C_YAW ] ) ), dc_min, dc_max );
+    float roll_correction = mma->input[C_ROLL];
+    float pitch_correction = mma->input[C_PITCH]; 
+    float yaw_correction = mma->input[C_YAW];
+    
+    mma->output[U1] = u2pwm(mma, base_thrust, 0.5f * (pitch_correction + yaw_correction), dc_min, dc_max);
+    mma->output[U2] = u2pwm(mma, base_thrust, 0.5f * (-roll_correction + pitch_correction - yaw_correction), dc_min, dc_max);
+    mma->output[U3] = u2pwm(mma, base_thrust, 0.5f * (-roll_correction - pitch_correction + yaw_correction), dc_min, dc_max);
+    mma->output[U4] = u2pwm(mma, base_thrust, 0.5f * (roll_correction - pitch_correction - yaw_correction), dc_min, dc_max);
 }
 
 

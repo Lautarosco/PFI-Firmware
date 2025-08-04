@@ -337,7 +337,7 @@ static esp_err_t drone_init( drone_t * drone ) {
     i2c_master_dev_handle_t i2c_bmp_handler = NULL;         /* I2C BMP390 bus handler */
     i2c_master_dev_handle_t i2c_bmi_handler = NULL;         /* I2C BMI160 bus handler */
 
-    #define I2C_BUS_FREQUENCY 100000
+    #define I2C_BUS_FREQUENCY 400000
 
     /* 3.b Set I2C BMP390 and BMI160 bus configs */
     i2c_device_config_t i2c_bmp_cfg = {

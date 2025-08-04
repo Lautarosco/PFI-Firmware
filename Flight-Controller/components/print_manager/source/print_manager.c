@@ -79,7 +79,7 @@ esp_err_t print_manager_write(print_manager_t* manager, const char* data, size_t
         if (manager->outputs[i].enabled) {
             esp_err_t ret = manager->outputs[i].write(data, len, manager->outputs[i].context);
             if (ret != ESP_OK) {
-                result = ret;  // Keep last error
+                result = ret;
             }
         }
     }

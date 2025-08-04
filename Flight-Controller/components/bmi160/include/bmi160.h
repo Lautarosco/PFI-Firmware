@@ -42,6 +42,8 @@ typedef struct accelerometer {
     float y;
     float z;
 
+    float sensitivity;
+
     // i2c_params_t i2c;
     i2c_master_dev_handle_t i2c_bmi_handler;            /* BMI160 I2C bus handler */
 
@@ -58,6 +60,8 @@ typedef struct gyroscope {
     float x;
     float y;
     float z;
+
+    float sensitivity;
 
     // i2c_params_t i2c;
     i2c_master_dev_handle_t i2c_bmi_handler;            /* BMI160 I2C bus handler */
