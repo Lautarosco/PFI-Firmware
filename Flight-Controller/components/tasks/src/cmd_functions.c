@@ -141,12 +141,14 @@ void VarsUpdateCmdFunc(drone_t * drone, char * arr[4]) {
         {.name = "roll/P",    .addr = &(drone->attributes.components.controllers[ROLL].gain.kp)},
         {.name = "roll/I",    .addr = &(drone->attributes.components.controllers[ROLL].gain.ki)},
         {.name = "roll/D",    .addr = &(drone->attributes.components.controllers[ROLL].gain.kd)},
+        {.name = "roll/D_Alpha",    .addr = &(drone->attributes.components.controllers[ROLL].derivative_lpf.alpha)},
         {.name = "roll/KB",    .addr = &(drone->attributes.components.controllers[ROLL].gain.kb)},
 
 
         {.name = "roll_d/P",  .addr = &(drone->attributes.components.controllers[ROLL_D].gain.kp)},
         {.name = "roll_d/I",  .addr = &(drone->attributes.components.controllers[ROLL_D].gain.ki)},
         {.name = "roll_d/D",  .addr = &(drone->attributes.components.controllers[ROLL_D].gain.kd)},
+        {.name = "roll_d/D_Alpha",    .addr = &(drone->attributes.components.controllers[ROLL_D].derivative_lpf.alpha)},  // TODO: hacerlo para todos
         {.name = "roll_d/KB", .addr = &(drone->attributes.components.controllers[ROLL_D].gain.kb)},
 
 
@@ -261,7 +263,7 @@ void PidGainsCmdFunc( drone_t * drone, char * arr[ 4 ] ) {
             { .name = "i",   .addr = &( drone->attributes.components.controllers[ index ].gain.ki ) },
             { .name = "d",   .addr = &( drone->attributes.components.controllers[ index ].gain.kd ) },
             { .name = "b",   .addr = &( drone->attributes.components.controllers[ index ].gain.kb ) },
-            { .name = "tau", .addr = &( drone->attributes.components.controllers[ index ].derivative_lpf.tau_s ) },
+            { .name = "D_alpha", .addr = &( drone->attributes.components.controllers[ index ].derivative_lpf.alpha ) },
             { .name = NULL,  .addr = NULL },
         
         };
@@ -329,10 +331,11 @@ void PidActionsCmdFunc( drone_t * drone, char * arr[ 4 ] ) {
 
         for( int i = 0; i < ( ( sizeof( pid_actions_array ) ) / ( sizeof( pid_actions_array[ 0 ] ) ) ); i++ ) {
 
-            if( !strcmp( pid_actions_array[ i ].action_name, arr[ ARG3 ] ) ){
+            if( !strcmp( pid_actions_array[ i ].action_name, arr[ ARG2 ] ) ){
 
                 pid_actions_array[ i ].pid_setterFunc( &(drone->attributes.components.controllers[ index ]), pid_actions_array[ i ].actionFunc );
                 found = true;
+                printf("PID Action %s changed to %s\n", arr[ARG1], arr[ARG2]);
             }
         }
 

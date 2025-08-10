@@ -24,7 +24,7 @@ void vTaskDroneMeasure( void * pvParameters ) {
 
             /* Update drone states */
             if (bmi_ret == ESP_OK) {
-                drone->methods.update_states( drone, 10 );
+                drone->methods.update_states( drone, drone->attributes.ts_ms );
             }
 
             // TODO: Make these parameters
@@ -44,10 +44,10 @@ void vTaskDroneMeasure( void * pvParameters ) {
             float time_sec = (float)xTaskGetTickCount() / configTICK_RATE_HZ;
             if (T > 0) {
                 omega = 2.0f * M_PI / T;
-                drone->attributes.sp.roll = AMPLITUDE * sinf(omega * time_sec);
+                drone->attributes.sp.roll_dot = AMPLITUDE * sinf(omega * time_sec);
             } else {
                 // If T is zero or negative, use the joystick value directly
-                drone->attributes.sp.roll = FirstOrderIIR((r_stick_x / 100.0f) * MAX_ROLL, drone->attributes.sp.roll, 0.010, 0.8);
+                drone->attributes.sp.roll = FirstOrderIIR((r_stick_x / 100.0f) * MAX_ROLL, drone->attributes.sp.roll, drone->attributes.ts_ms/1000.0, 0.8);
                 // drone->attributes.sp.roll = (r_stick_x / 100.0f) * MAX_ROLL;
             }
 
@@ -101,7 +101,7 @@ void vTaskDroneMeasure( void * pvParameters ) {
             #else
                 if (r_stick_y > 100) r_stick_y = 100;
                 if (r_stick_y < -100) r_stick_y = -100;
-                drone->attributes.sp.pitch = FirstOrderIIR((r_stick_y / 100.0f) * MAX_PITCH, drone->attributes.sp.pitch, 0.010, 0.8);
+                drone->attributes.sp.pitch = FirstOrderIIR((r_stick_y / 100.0f) * MAX_PITCH, drone->attributes.sp.pitch, drone->attributes.ts_ms/1000.0, 0.8);
                 // drone->attributes.sp.pitch = (r_stick_y / 100.0f) * MAX_PITCH;
             #endif
 
@@ -109,12 +109,14 @@ void vTaskDroneMeasure( void * pvParameters ) {
 
 
             int l_stick_y = drone->attributes.global_variables.tx_buttons.left_stick.y;
-            // Map l_stick_y from -100 to 100 to 0 to 100
-            drone->attributes.sp.z = (l_stick_y + 100) / 2;
+
+            if (l_stick_y > 80) l_stick_y = 80;
+            if (l_stick_y < 20) l_stick_y = 20;
+            drone->attributes.sp.z = (l_stick_y);
 
         
         }
-        vTaskDelay( pdMS_TO_TICKS( 10 ) );
+        vTaskDelay( pdMS_TO_TICKS( drone->attributes.ts_ms ) );
 
     }
 }

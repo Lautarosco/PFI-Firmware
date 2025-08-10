@@ -252,7 +252,8 @@ esp_err_t print_to_serial(drone_t * drone, char* buff, size_t buff_size){
         "height,%.2f|height_sp,%.2f|"
         "dc1,%.2f|dc2,%.2f|dc3,%.2f|dc4,%.2f|"
         "gyro_x,%.2f|gyro_y,%.2f|gyro_z,%.2f|"
-        "mma_in_roll,%.2f|mma_in_pitch,%.2f|mma_in_yaw,%.2f"
+        "mma_in_roll,%.2f|mma_in_pitch,%.2f|mma_in_yaw,%.2f|"
+        "R_X,%d|R_Y,%d|L_X,%d|L_Y,%d"
         "\n"  // end of dynamic values
         "static:roll/P,%.2f|roll/I,%.2f|roll/D,%.2f|roll/KB,%.2f|"
         "roll_d/P,%.2f|roll_d/I,%.2f|roll_d/D,%.2f|roll/KB,%.2f|"
@@ -272,7 +273,10 @@ esp_err_t print_to_serial(drone_t * drone, char* buff, size_t buff_size){
         drone->attributes.components.pwm[0].get_pwm_dc(&drone->attributes.components.pwm[0])*1000, drone->attributes.components.pwm[1].get_pwm_dc(&drone->attributes.components.pwm[1])*1000, drone->attributes.components.pwm[2].get_pwm_dc(&drone->attributes.components.pwm[2])*1000, drone->attributes.components.pwm[3].get_pwm_dc(&drone->attributes.components.pwm[3])*1000,
         drone->attributes.components.bmi.Gyro.x, drone->attributes.components.bmi.Gyro.y, drone->attributes.components.bmi.Gyro.z,
         drone->attributes.components.mma.input[C_ROLL], drone->attributes.components.mma.input[C_PITCH], drone->attributes.components.mma.input[C_YAW],
-
+        drone->attributes.global_variables.tx_buttons.right_stick.x,
+        drone->attributes.global_variables.tx_buttons.right_stick.y,
+        drone->attributes.global_variables.tx_buttons.left_stick.x,
+        drone->attributes.global_variables.tx_buttons.left_stick.y,
         // roll gains
         drone->attributes.components.controllers[ROLL].gain.kp,
         drone->attributes.components.controllers[ROLL].gain.ki,

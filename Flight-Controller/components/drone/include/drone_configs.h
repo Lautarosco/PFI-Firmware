@@ -34,10 +34,10 @@ static drone_cfg_t DroneConfigs = {
             .sda     = I2C_SDA_PIN,
         },
         .acc_mode    = BMI160_CMD_ACC_NORMAL_MODE,
-        .acc_freq    = BMI160_ACC_CONF_100HZ_NORMAL,
+        .acc_freq    = BMI160_ACC_CONF_800HZ_OSR2,
         .acc_range   = BMI160_ACC_RANGE_4G,
         .gyro_mode   = BMI160_CMD_GYRO_NORMAL_MODE,
-        .gyro_freq   = BMI160_GYRO_CONF_100HZ_NORMAL,
+        .gyro_freq   = BMI160_GYRO_CONF_800HZ_OSR4,
         .gyro_range  = BMI160_GYRO_RANGE_250DPS,
         .gyro_offset = {
             .x = 0,
@@ -167,19 +167,19 @@ static drone_cfg_t DroneConfigs = {
             .tag = ROLL_D,
 
             .integral_limits = { .min = -30.0f, .max = 30.0f },
-            .pid_output_limits = { .min = -10000.0f, .max = 10000.0f }  // duty cycle ??
+            .pid_output_limits = { .min = -100.0f, .max = 100.0f }  // duty cycle ??
         },
         {
             .tag = PITCH_D,
 
             .integral_limits = { .min = -30.0f, .max = 30.0f },
-            .pid_output_limits = { .min = -10000.0f, .max = 10000.0f }  // duty cycle ??
+            .pid_output_limits = { .min = -100.0f, .max = 100.0f }  // duty cycle ??
         },
         {
             .tag = YAW_D,
 
             .integral_limits = { .min = 0.0f, .max = 0.0f },
-            .pid_output_limits = { .min = 0.0f, .max = 0.0f }
+            .pid_output_limits = { .min = -100.0f, .max = 100.0f }
         }
     }
 };

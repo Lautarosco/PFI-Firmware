@@ -45,15 +45,6 @@
  * SOFTWARE.
  */
 
-let StickStatus =
-{
-    xPosition: 0,
-    yPosition: 0,
-    x: 0,
-    y: 0,
-    cardinalDirection: "C"
-};
-
 /**
  * @desc Principal object that draw a joystick, you only need to initialize the object and suggest the HTML container
  * @costructor
@@ -72,6 +63,14 @@ let StickStatus =
  */
 var JoyStick = (function(container, parameters, callback)
 {
+    var StickStatus = {
+        xPosition: 0,
+        yPosition: 0,
+        x: 0,
+        y: 0,
+        cardinalDirection: "C"
+    };
+    
     parameters = parameters || {};
     var title = (typeof parameters.title === "undefined" ? "joystick" : parameters.title),
         width = (typeof parameters.width === "undefined" ? 0 : parameters.width),
@@ -176,53 +175,64 @@ var JoyStick = (function(container, parameters, callback)
      * @desc Events for manage touch
      */
     let touchId = null;
-    function onTouchStart(event)
-    {
+
+    function onTouchStart(event) {
         pressed = 1;
         touchId = event.targetTouches[0].identifier;
     }
 
-    function onTouchMove(event)
-    {
-        if(pressed === 1 && event.targetTouches[0].target === canvas)
-        {
-            movedX = event.targetTouches[0].pageX;
-            movedY = event.targetTouches[0].pageY;
-            // Manage offset
-            if(canvas.offsetParent.tagName.toUpperCase() === "BODY")
-            {
-                movedX -= canvas.offsetLeft;
-                movedY -= canvas.offsetTop;
+    function onTouchMove(event) {
+        if(pressed === 1) {
+            let relevantTouch = null;
+            for(let i = 0; i < event.targetTouches.length; i++) {
+                if(event.targetTouches[i].identifier === touchId) {
+                    relevantTouch = event.targetTouches[i];
+                    break;
+                }
             }
-            else
-            {
-                movedX -= canvas.offsetParent.offsetLeft;
-                movedY -= canvas.offsetParent.offsetTop;
-            }
-            // Delete canvas
-            context.clearRect(0, 0, canvas.width, canvas.height);
-            // Redraw object
-            drawExternal();
-            drawInternal();
+            
+            if(!relevantTouch) return;
+            
+            movedX = relevantTouch.pageX;
+            movedY = relevantTouch.pageY;
+                // Manage offset
+                if (canvas.offsetParent.tagName.toUpperCase() === "BODY") {
+                    movedX -= canvas.offsetLeft;
+                    movedY -= canvas.offsetTop;
+                } else {
+                    movedX -= canvas.offsetParent.offsetLeft;
+                    movedY -= canvas.offsetParent.offsetTop;
+                }
+                // Delete canvas
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                // Redraw object
+                drawExternal();
+                drawInternal();
 
-            // Set attribute of callback
-            StickStatus.xPosition = movedX;
-            StickStatus.yPosition = movedY;
-            StickStatus.x = (100*((movedX - centerX)/maxMoveStick)).toFixed();
-            StickStatus.y = ((100*((movedY - centerY)/maxMoveStick))*-1).toFixed();
-            StickStatus.cardinalDirection = getCardinalDirection();
-            callback(StickStatus);
-        }
+                // Set attribute of callback
+                StickStatus.xPosition = movedX;
+                StickStatus.yPosition = movedY;
+                StickStatus.x = (100 * ((movedX - centerX) / maxMoveStick)).toFixed();
+                StickStatus.y = ((100 * ((movedY - centerY) / maxMoveStick)) * -1).toFixed();
+                StickStatus.cardinalDirection = getCardinalDirection();
+                callback(StickStatus);
+            }
     }
 
-    function onTouchEnd(event)
-    {
-        if (event.changedTouches[0].identifier !== touchId) return;
+    function onTouchEnd(event) {
+        let relevantTouch = null;
+        for(let i = 0; i < event.changedTouches.length; i++) {
+            if(event.changedTouches[i].identifier === touchId) {
+                relevantTouch = event.changedTouches[i];
+                break;
+            }
+        }
+        
+        if(!relevantTouch) return;
 
         pressed = 0;
         // If required reset position store variable
-        if(autoReturnToCenter)
-        {
+        if (autoReturnToCenter) {
             movedX = centerX;
             movedY = centerY;
         }
@@ -235,8 +245,8 @@ var JoyStick = (function(container, parameters, callback)
         // Set attribute of callback
         StickStatus.xPosition = movedX;
         StickStatus.yPosition = movedY;
-        StickStatus.x = (100*((movedX - centerX)/maxMoveStick)).toFixed();
-        StickStatus.y = ((100*((movedY - centerY)/maxMoveStick))*-1).toFixed();
+        StickStatus.x = (100 * ((movedX - centerX) / maxMoveStick)).toFixed();
+        StickStatus.y = ((100 * ((movedY - centerY) / maxMoveStick)) * -1).toFixed();
         StickStatus.cardinalDirection = getCardinalDirection();
         callback(StickStatus);
     }

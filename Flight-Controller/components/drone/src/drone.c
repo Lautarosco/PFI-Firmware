@@ -388,6 +388,7 @@ static esp_err_t drone_init( drone_t * drone ) {
         return ret;
     }
 
+    drone->attributes.ts_ms = 1;   /* Overall sampling time of 1 millisecond */
 
     /* Initialize Bmi160 object */
     ESP_ERROR_CHECK( drone->attributes.components.bmi.init(
@@ -481,7 +482,7 @@ static esp_err_t drone_init( drone_t * drone ) {
         drone->attributes.components.controllers[ i ].init(
             &drone->attributes.components.controllers[ i ],
             i,
-            10.0f,
+            drone->attributes.ts_ms,
             1.0f,
             emtpy_gains,
             drone->attributes.config.pid_cfgs[ i ].integral_limits,
@@ -569,6 +570,7 @@ void Drone( drone_t * drone ) {
     ESP_LOGI( DRONE_TAG, "Making an instance of Drone Class..." );
 
     memset( drone, 0, sizeof( drone_t ) );
+    drone->attributes.ts_ms = 1;
     drone->attributes.init_ok = false;
     
     /* Set Drone Class generic configs */
@@ -679,7 +681,7 @@ void Drone( drone_t * drone ) {
 
     /* Make an instance of Pid Class for all controllers */
     for(int i = 0; i < ( ( sizeof( drone->attributes.components.controllers ) ) / ( sizeof( drone->attributes.components.controllers[ 0 ] ) ) ); i++) {
-        Pid( &drone->attributes.components.controllers[ i ], P_Basic, I_BackCalc, D_Basic );
+        Pid( &drone->attributes.components.controllers[ i ], P_Basic, I_Clamping, D_LPF );
     }
     ESP_LOGI( DRONE_TAG, "PID controllers Init successful\n");
     /* Make an instance of Pwm Class for all pwm signals */

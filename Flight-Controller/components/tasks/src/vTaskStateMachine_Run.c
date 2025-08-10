@@ -136,6 +136,6 @@ void vTaskStateMachine_Run( void * pvParameters ) {
         /* Go to the next state and run it's respective function */
         StateMachine_RunIteration(drone);
         
-        vTaskDelay( pdMS_TO_TICKS( 10 ) );
+        vTaskDelay( pdMS_TO_TICKS( drone->attributes.ts_ms ) );
     }
 }

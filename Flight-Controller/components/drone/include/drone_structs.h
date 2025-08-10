@@ -418,6 +418,9 @@ typedef struct drone_attributes {
     /* Drone's init flag */
     bool init_ok;
 
+    /* Sampling time in milliseconds */
+    unsigned int ts_ms;
+
     /* State machine of Drone Class */
     sm_state_machine_t state_machine;
     bool request_state_transition;

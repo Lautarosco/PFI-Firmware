@@ -202,11 +202,8 @@ float D_LPF( pid_controller_t * obj, float error ) {
 
     float derivative = ( error - obj->prev_error ) / obj->ts_ms;
 
-    /* Low Pass Filter coefficient */
-    float a = obj->ts_ms / ( obj->ts_ms + obj->derivative_lpf.tau_s );
-
     /* Filtered value = ( ( 1 - α ) * New input ) + ( α * Previous output )*/
-    obj->derivative_lpf.out = ( ( 1 - a ) * derivative ) + ( a * obj->derivative_lpf.out );
+    obj->derivative_lpf.out = ( ( 1 - obj->derivative_lpf.alpha ) * derivative ) + ( obj->derivative_lpf.alpha * obj->derivative_lpf.out );
 
     return obj->gain.kd * derivative;
 }
@@ -250,7 +247,7 @@ bool set_pid_gain(pid_gain_t *controller_gains, const char label[], float new_va
  * @param cfg: Controller configs
  * @retval none
  */
-static void pid_init( pid_controller_t * obj, states_t tag, float ts_ms, float tau_s, pid_gain_t pid_gains, pid_limits_t integral_limits, pid_limits_t pid_limits ) {
+static void pid_init( pid_controller_t * obj, states_t tag, float ts_ms, float alpha, pid_gain_t pid_gains, pid_limits_t integral_limits, pid_limits_t pid_limits ) {
 
     ESP_LOGI( CONTROLLER_TAG, "Initializing Pid object..." );
 

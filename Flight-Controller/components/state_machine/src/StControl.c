@@ -28,7 +28,9 @@ void StControlFunc( drone_t * drone ) {
         drone->attributes.sp.roll
     );
     
-    drone->attributes.sp.roll_dot = CRoll;
+    if (drone->attributes.global_variables.misc_floats[0] <= 0) {
+        drone->attributes.sp.roll_dot = CRoll;
+    };
 
     float CRolld = drone->attributes.components.controllers[ ROLL_D ].pidUpdate(
         &drone->attributes.components.controllers[ ROLL_D ],

@@ -82,7 +82,7 @@ static void compute_obj( mma_t * mma, float dc_min, float dc_max ) {
     float pitch_correction = mma->input[C_PITCH]; 
     float yaw_correction = mma->input[C_YAW];
     
-    mma->output[U1] = u2pwm(mma, base_thrust, 0.5f * (pitch_correction + yaw_correction), dc_min, dc_max);
+    mma->output[U1] = u2pwm(mma, base_thrust, 0.5f * (roll_correction + pitch_correction + yaw_correction), dc_min, dc_max);
     mma->output[U2] = u2pwm(mma, base_thrust, 0.5f * (-roll_correction + pitch_correction - yaw_correction), dc_min, dc_max);
     mma->output[U3] = u2pwm(mma, base_thrust, 0.5f * (-roll_correction - pitch_correction + yaw_correction), dc_min, dc_max);
     mma->output[U4] = u2pwm(mma, base_thrust, 0.5f * (roll_correction - pitch_correction - yaw_correction), dc_min, dc_max);
