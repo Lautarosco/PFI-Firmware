@@ -20,6 +20,14 @@ void Pid( pid_controller_t* controller, ControllerFunction* pFunc, ControllerFun
 float P_Basic( pid_controller_t * obj, float error );
 
 /**
+ * @brief Quadratic Proportional Action Function
+ * @param obj: Address of Pid object
+ * @param error: Error
+ * @retval result of Basic Proportional Action Function
+ */
+float P_Quadratic( pid_controller_t * obj, float error );
+
+/**
  * @brief Basic Integral Action Function
  * @param obj: Address of Pid object
  * @param error: Error

@@ -251,18 +251,21 @@ esp_err_t print_to_serial(drone_t * drone, char* buff, size_t buff_size){
         "yaw,%.2f|yaw_d,%.2f|yaw_sp,%.2f|yaw_d_sp,%.2f|"
         "height,%.2f|height_sp,%.2f|"
         "dc1,%.2f|dc2,%.2f|dc3,%.2f|dc4,%.2f|"
+        "acc_x,%.2f|acc_y,%.2f|acc_z,%.2f|"
         "gyro_x,%.2f|gyro_y,%.2f|gyro_z,%.2f|"
         "mma_in_roll,%.2f|mma_in_pitch,%.2f|mma_in_yaw,%.2f|"
-        "R_X,%d|R_Y,%d|L_X,%d|L_Y,%d"
+        "R_X,%d|R_Y,%d|L_X,%d|L_Y,%d|"
+        "roll_acc_f,%.2f"
         "\n"  // end of dynamic values
-        "static:roll/P,%.2f|roll/I,%.2f|roll/D,%.2f|roll/KB,%.2f|"
-        "roll_d/P,%.2f|roll_d/I,%.2f|roll_d/D,%.2f|roll/KB,%.2f|"
+        "static:roll/P,%.2f|roll/I,%.2f|roll/D,%.2f|roll/KB,%.2f|roll/D_IIR,%.2f|"
+        "roll_d/P,%.2f|roll_d/I,%.2f|roll_d/D,%.2f|roll_d/KB,%.2f|roll_d/D_IIR,%.2f|"
         "pitch/P,%.2f|pitch/I,%.2f|pitch/D,%.2f|roll/KB,%.2f|"
         "pitch_d/P,%.2f|pitch_d/I,%.2f|pitch_d/D,%.2f|roll/KB,%.2f|"
         "yaw/P,%.2f|yaw/I,%.2f|yaw/D,%.2f|roll/KB,%.2f|"
         "yaw_d/P,%.2f|yaw_d/I,%.2f|yaw_d/D,%.2f|roll/KB,%.2f|"
         "ema_roll,%.2f|ema_pitch,%.2f|ema_yaw,%.2f|"
         "misc/0,%.2f|misc/1,%.2f|misc/2,%.2f|misc/3,%.2f|"
+        "sm_cycle,%lld|measure_cycle,%lld|"
         "state,%s\n",
 
         // dynamic state
@@ -271,22 +274,28 @@ esp_err_t print_to_serial(drone_t * drone, char* buff, size_t buff_size){
         drone->attributes.states.yaw, drone->attributes.states.yaw_dot, drone->attributes.sp.yaw, drone->attributes.sp.yaw_dot,
         drone->attributes.states.z, drone->attributes.sp.z,
         drone->attributes.components.pwm[0].get_pwm_dc(&drone->attributes.components.pwm[0])*1000, drone->attributes.components.pwm[1].get_pwm_dc(&drone->attributes.components.pwm[1])*1000, drone->attributes.components.pwm[2].get_pwm_dc(&drone->attributes.components.pwm[2])*1000, drone->attributes.components.pwm[3].get_pwm_dc(&drone->attributes.components.pwm[3])*1000,
+        drone->attributes.components.bmi.Acc.x, drone->attributes.components.bmi.Acc.y, drone->attributes.components.bmi.Acc.z,
         drone->attributes.components.bmi.Gyro.x, drone->attributes.components.bmi.Gyro.y, drone->attributes.components.bmi.Gyro.z,
         drone->attributes.components.mma.input[C_ROLL], drone->attributes.components.mma.input[C_PITCH], drone->attributes.components.mma.input[C_YAW],
         drone->attributes.global_variables.tx_buttons.right_stick.x,
         drone->attributes.global_variables.tx_buttons.right_stick.y,
         drone->attributes.global_variables.tx_buttons.left_stick.x,
         drone->attributes.global_variables.tx_buttons.left_stick.y,
+        drone->attributes.global_variables.misc_floats[4],  // ROLL_WITH_ACC_FILTERED
+
+        // START of static variables
         // roll gains
         drone->attributes.components.controllers[ROLL].gain.kp,
         drone->attributes.components.controllers[ROLL].gain.ki,
         drone->attributes.components.controllers[ROLL].gain.kd,
         drone->attributes.components.controllers[ROLL].gain.kb,
+        drone->attributes.components.controllers[ROLL].derivative_lpf.alpha,
 
         drone->attributes.components.controllers[ROLL_D].gain.kp,
         drone->attributes.components.controllers[ROLL_D].gain.ki,
         drone->attributes.components.controllers[ROLL_D].gain.kd,
         drone->attributes.components.controllers[ROLL_D].gain.kb,
+        drone->attributes.components.controllers[ROLL_D].derivative_lpf.alpha,
 
         // pitch gains
         drone->attributes.components.controllers[PITCH].gain.kp,
@@ -319,7 +328,11 @@ esp_err_t print_to_serial(drone_t * drone, char* buff, size_t buff_size){
         drone->attributes.global_variables.misc_floats[0],  // T
         drone->attributes.global_variables.misc_floats[1],  // Amplitude
         drone->attributes.global_variables.misc_floats[2],  // Z_Sim
-        drone->attributes.global_variables.misc_floats[3],  //
+        drone->attributes.global_variables.misc_floats[3],  // ACC_FILTER_COEFF
+
+        // Cycle time
+        drone->attributes.sm_cycle_time,
+        drone->attributes.measure_cycle_time,
 
         // state machine current state
         StateMachine_GetStateName(drone->attributes.state_machine.curr_state)

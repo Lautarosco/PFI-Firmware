@@ -425,7 +425,8 @@ typedef struct drone_attributes {
     sm_state_machine_t state_machine;
     bool request_state_transition;
     sm_event_t requested_transition_event;
-
+    int64_t sm_cycle_time;
+    int64_t measure_cycle_time;
 
 } drone_attributes_t;
 

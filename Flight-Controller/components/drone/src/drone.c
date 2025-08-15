@@ -524,6 +524,10 @@ float wrapAngle360(float angle) {
  * @param ts: Sampling time in milliseconds
  * @retval none
  */
+float acc_x_filtered = 0;
+float acc_y_filtered = 0;
+float acc_z_filtered = 0;
+float roll_filtered = 0;
 static void UpdateStates( drone_t * drone, float ts ) {
 
     if( !drone->attributes.init_ok ) {
@@ -533,10 +537,15 @@ static void UpdateStates( drone_t * drone, float ts ) {
     }
 
     else {
-
         float acc_x = drone->attributes.components.bmi.Acc.x;
         float acc_y = drone->attributes.components.bmi.Acc.y;
         float acc_z = drone->attributes.components.bmi.Acc.z;
+
+        float acc_filter_coeff = drone->attributes.global_variables.misc_floats[3];
+        acc_x_filtered = FirstOrderIIR(drone->attributes.components.bmi.Acc.x, acc_x_filtered, ts / 1000.0f, acc_filter_coeff);
+        acc_y_filtered = FirstOrderIIR(drone->attributes.components.bmi.Acc.y, acc_y_filtered, ts / 1000.0f, acc_filter_coeff);
+        acc_z_filtered = FirstOrderIIR(drone->attributes.components.bmi.Acc.z, acc_z_filtered, ts / 1000.0f, acc_filter_coeff);
+
 
         float gyro_x = FirstOrderIIR( drone->attributes.components.bmi.Gyro.x, drone->attributes.states.roll_dot, ts / 1000.0f, drone->attributes.config.IIR_coeff_roll_dot );
         float gyro_y = FirstOrderIIR( drone->attributes.components.bmi.Gyro.y, drone->attributes.states.pitch_dot, ts / 1000.0f, drone->attributes.config.IIR_coeff_pitch_dot );
@@ -551,7 +560,13 @@ static void UpdateStates( drone_t * drone, float ts ) {
         float ALPHA = 0.95f;  // TODO: make this a parameter 
 
         float roll_acc = atan2( acc_y, acc_z ) * ( 180.0f / M_PI );
-        float roll_gyro = drone->attributes.states.roll + ( gyro_x * ( ts / 1000.0f ) );        
+        float roll_acc_filtered = atan2( acc_y_filtered, acc_z_filtered ) * ( 180.0f / M_PI );
+
+        float roll_gyro = drone->attributes.states.roll + ( gyro_x * ( ts / 1000.0f ) );
+
+        roll_filtered = (1-ALPHA)*roll_acc_filtered + ALPHA*roll_gyro;
+        drone->attributes.global_variables.misc_floats[4] = roll_filtered;
+
         drone->attributes.states.roll = (1-ALPHA)*roll_acc + ALPHA*roll_gyro;
 
         float pitch_acc = atan2(acc_x, sqrt(acc_y*acc_y + acc_z*acc_z)) * (180.0f / M_PI);

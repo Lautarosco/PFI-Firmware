@@ -1,5 +1,6 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <esp_timer.h>
 #include <esp_log.h>
 #include <math.h>
 
@@ -12,6 +13,7 @@ void vTaskDroneMeasure( void * pvParameters ) {
     drone_t * drone = ( drone_t * ) pvParameters;
 
     while( 1 ) {
+        int64_t loop_start_time = esp_timer_get_time();
 
         if (drone->attributes.init_ok) {
             /* Measure attitude and update bmi sensor internal registers with respective values */
@@ -117,6 +119,10 @@ void vTaskDroneMeasure( void * pvParameters ) {
         
         }
         vTaskDelay( pdMS_TO_TICKS( drone->attributes.ts_ms ) );
+
+        int64_t loop_end_time = esp_timer_get_time();
+        int64_t loop_duration = loop_end_time - loop_start_time;
+        drone->attributes.measure_cycle_time = loop_duration;
 
     }
 }

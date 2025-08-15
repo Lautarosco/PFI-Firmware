@@ -85,6 +85,15 @@ float P_Basic( pid_controller_t * obj, float error ) {
     return obj->gain.kp * error;
 }
 
+float P_Quadratic( pid_controller_t * obj, float error ) {
+    /* Linear range */
+    if((error >= -1) && (error <= 1)) {
+        return obj->gain.kp * error;
+    }
+
+    /* Quadratic range */
+    return obj->gain.kp * error * error * (error >= 0 ? 1 : -1);
+}
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
@@ -115,6 +124,26 @@ float I_Clamping( pid_controller_t * obj, float error ) {
 
     /* Compute controller output */
     float u = pAction + iAction + dAction;
+
+    /* Clamping conditions */
+    /* 1. 0 --> u is not saturated | 1 --> u is saturated */
+    bool u_saturated = (u >= obj->pid_out_limits.max) || (u <= obj->pid_out_limits.min);
+
+    /* 2. 0 --> u and error have the same sign | 1 --> u and error have different sign */
+    
+    bool u_positive = (u>0);
+    bool error_positive = (error>0);
+    bool same_sign = u_positive == error_positive;
+
+    if(u_saturated && same_sign) {
+        return 0.0f;
+    }
+
+    obj->integrator += error * obj->ts_ms;  /* Update integrator */
+
+    return obj->gain.ki * obj->integrator;
+
+
 
     /* Check for positive saturation */
     if( u > obj->pid_out_limits.max ) {
