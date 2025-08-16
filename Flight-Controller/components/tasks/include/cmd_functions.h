@@ -25,14 +25,6 @@ typedef enum cmd_index {
 typedef struct drone drone_t;   /* Forward declaration to avoid header inclusion */
 
 /**
- * @brief Update PID controller gains
- * @param pwm: Address of Drone object
- * @param arr: Array containing processed data from cmd received
- * @retval none
- */
-void PidGainsCmdFunc( drone_t * pwm, char * arr[ 4 ] );
-
-/**
  * @brief Update PID controller actions function
  * @param pwm: Address of Drone object
  * @param arr: Array containing processed data from cmd received

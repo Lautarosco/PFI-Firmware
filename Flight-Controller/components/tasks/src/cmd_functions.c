@@ -138,18 +138,18 @@ void VarsUpdateCmdFunc(drone_t * drone, char * arr[4]) {
         {.name = "ema_pitch", .addr = &(drone->attributes.config.IIR_coeff_pitch_dot)},
         {.name = "ema_yaw",   .addr = &(drone->attributes.config.IIR_coeff_yaw_dot)},
 
-        {.name = "roll/P",    .addr = &(drone->attributes.components.controllers[ROLL].gain.kp)},
-        {.name = "roll/I",    .addr = &(drone->attributes.components.controllers[ROLL].gain.ki)},
-        {.name = "roll/D",    .addr = &(drone->attributes.components.controllers[ROLL].gain.kd)},
-        {.name = "roll/D_Alpha",    .addr = &(drone->attributes.components.controllers[ROLL].derivative_lpf.alpha)},
-        {.name = "roll/KB",    .addr = &(drone->attributes.components.controllers[ROLL].gain.kb)},
+        {.name = "roll/P",       .addr = &(drone->attributes.components.controllers[ROLL].gain.kp)},
+        {.name = "roll/I",       .addr = &(drone->attributes.components.controllers[ROLL].gain.ki)},
+        {.name = "roll/D",       .addr = &(drone->attributes.components.controllers[ROLL].gain.kd)},
+        {.name = "roll/D_IIR", .addr = &(drone->attributes.components.controllers[ROLL].derivative_lpf.alpha)},
+        {.name = "roll/KB",      .addr = &(drone->attributes.components.controllers[ROLL].gain.kb)},
 
 
-        {.name = "roll_d/P",  .addr = &(drone->attributes.components.controllers[ROLL_D].gain.kp)},
-        {.name = "roll_d/I",  .addr = &(drone->attributes.components.controllers[ROLL_D].gain.ki)},
-        {.name = "roll_d/D",  .addr = &(drone->attributes.components.controllers[ROLL_D].gain.kd)},
-        {.name = "roll_d/D_Alpha",    .addr = &(drone->attributes.components.controllers[ROLL_D].derivative_lpf.alpha)},  // TODO: hacerlo para todos
-        {.name = "roll_d/KB", .addr = &(drone->attributes.components.controllers[ROLL_D].gain.kb)},
+        {.name = "roll_d/P",       .addr = &(drone->attributes.components.controllers[ROLL_D].gain.kp)},
+        {.name = "roll_d/I",       .addr = &(drone->attributes.components.controllers[ROLL_D].gain.ki)},
+        {.name = "roll_d/D",       .addr = &(drone->attributes.components.controllers[ROLL_D].gain.kd)},
+        {.name = "roll_d/D_IIR", .addr = &(drone->attributes.components.controllers[ROLL_D].derivative_lpf.alpha)},  // TODO: hacerlo para todos
+        {.name = "roll_d/KB",      .addr = &(drone->attributes.components.controllers[ROLL_D].gain.kb)},
 
 
         {.name = "pitch/P",   .addr = &(drone->attributes.components.controllers[PITCH].gain.kp)},
@@ -249,44 +249,6 @@ void SpUpdateCmdFunc( drone_t * drone, char * arr[ 4 ] ) {
         if( !found ) {
 
             ESP_LOGE( "TASK3", "Drone's <%s> state not found. See func %s, in line %d", arr[ARG1], __func__, __LINE__ );
-        }
-    }
-}
-
-
-void PidGainsCmdFunc( drone_t * drone, char * arr[ 4 ] ) {
-
-    /* Get index ( states enum ) of received state */
-    int index = GetStateIndex( arr[ ARG1 ] );
-
-    /* Check if received state is valid */
-    if( PID_INDEX_CHECK( index, sizeof( drone->attributes.components.controllers ) / ( sizeof( drone->attributes.components.controllers[ 0 ] ) ), __func__, __LINE__ ) ) {
-
-        vars_update_t vars_arr[] = {
-
-            { .name = "p",   .addr = &( drone->attributes.components.controllers[ index ].gain.kp ) },
-            { .name = "i",   .addr = &( drone->attributes.components.controllers[ index ].gain.ki ) },
-            { .name = "d",   .addr = &( drone->attributes.components.controllers[ index ].gain.kd ) },
-            { .name = "b",   .addr = &( drone->attributes.components.controllers[ index ].gain.kb ) },
-            { .name = "D_alpha", .addr = &( drone->attributes.components.controllers[ index ].derivative_lpf.alpha ) },
-            { .name = NULL,  .addr = NULL },
-        
-        };
-
-        bool found = false;
-
-        for( int i = 0; vars_arr[ i ].name != NULL; i++ ) {
-
-            if( !strcmp( arr[ ARG2 ], vars_arr[ i ].name ) ) {
-
-                *( float * ) vars_arr[ i ].addr = ( float ) atof( arr[ ARG3 ] );
-                found = true;
-            }
-        }
-
-        if( !found ) {
-
-            ESP_LOGW( "TASK3", "Drone's variable name was not found.\n[ Details ] See func %s, in line %d", __func__, __LINE__ );
         }
     }
 }

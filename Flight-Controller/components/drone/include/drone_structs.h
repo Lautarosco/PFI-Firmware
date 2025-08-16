@@ -13,6 +13,7 @@
 #include <mma.h>
 #include <state_machine.h>
 #include "print_manager.h"
+#include <application_layer/lsm6dso_app_layer.h>
 
 #define FLASH_PARAMS 40 /* Total Drone parameters to be stored in flash memory */
 #define NVS_NAMESPACE "storage"
@@ -251,6 +252,9 @@ typedef struct drone_components {
     
     /* bmi160 component  */
     bmi160_t bmi;
+
+    /* LSM6DSO component */
+    lsm6dso_t imu;
 
     /* bmp390 component */
     bmp390_t bmp;

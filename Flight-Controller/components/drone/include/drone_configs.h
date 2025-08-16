@@ -2,6 +2,7 @@
 #define DRONE_CONFIGS_H
 
 #include <drone_structs.h>
+#include <sensors_address.h>
 #include "gpio_layout.h"
 #include "indicators.h"
 

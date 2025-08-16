@@ -336,6 +336,7 @@ static esp_err_t drone_init( drone_t * drone ) {
 
     i2c_master_dev_handle_t i2c_bmp_handler = NULL;         /* I2C BMP390 bus handler */
     i2c_master_dev_handle_t i2c_bmi_handler = NULL;         /* I2C BMI160 bus handler */
+    i2c_master_dev_handle_t i2c_imu_handler = NULL;         /* I2C LSM6DSO bus handler */
 
     #define I2C_BUS_FREQUENCY 400000
 
@@ -347,6 +348,14 @@ static esp_err_t drone_init( drone_t * drone ) {
         .flags.disable_ack_check = false,
         .scl_wait_us             = BMP390_IF_CONF_I2C_WDT_SEL_1250US
     };
+    
+    i2c_device_config_t i2c_imu_cfg = {
+        .device_address          = LSM6DSO_ADDR,
+        .dev_addr_length         = I2C_ADDR_BIT_LEN_7,
+        .scl_speed_hz            = I2C_BUS_FREQUENCY,
+        .flags.disable_ack_check = false,
+        .scl_wait_us             = 0
+    };
 
     i2c_device_config_t i2c_bmi_cfg = {
         .device_address          = BMI160_ADDR,
@@ -354,6 +363,25 @@ static esp_err_t drone_init( drone_t * drone ) {
         .scl_speed_hz            = I2C_BUS_FREQUENCY,
         .flags.disable_ack_check = false,
         .scl_wait_us             = BMP390_IF_CONF_I2C_WDT_SEL_1250US
+    };
+
+    lsm6dso_params_t imu_params = {
+        .i2c_lsm_handler = &i2c_imu_handler,
+        .acc = {
+            .fs = LSM6DSO_ACC_FS_4G,
+            .odr = LSM6DSO_ACC_ODR_833_HZ,
+            .lpf2_en = LSM6DSO_ACC_LPF2_DISABLE,
+            .unit = LSM6DSO_FS_ACC_UNIT_DEFAULT
+        },
+        .gyro = {
+            .fs = LSM6DSO_FS_GYRO_250_DPS,
+            .odr = LSM6DSO_ODR_GYRO_833_HZ,
+            .lpf1_en = LSM6DSO_GYRO_LPF1_ENABLE,
+            .lpf1_mode = LSM6DSO_GYRO_LPF1_7,
+            .hpf_en = LSM6DSO_GYRO_HPF_DISABLE,
+            .unit = LSM6DSO_FS_GYRO_UNIT_DEFAULT,
+            .offset_samples = 10000
+        }
     };
 
     bmp390_configs_t bmp_configs = {  // TODO change with drone config handling refactor
@@ -383,12 +411,20 @@ static esp_err_t drone_init( drone_t * drone ) {
     }
     #endif
 
+    ret = i2c_master_bus_add_device(i2c_master_handler, &i2c_imu_cfg, &i2c_imu_handler);
+    if(ret != ESP_OK) {
+        return ret;
+    }
+
     ret = i2c_master_bus_add_device(i2c_master_handler, &i2c_bmi_cfg, &i2c_bmi_handler);
     if(ret != ESP_OK) {
         return ret;
     }
 
     drone->attributes.ts_ms = 1;   /* Overall sampling time of 1 millisecond */
+
+    /* Initialize LSM6DSO object */
+    drone->attributes.components.imu.init(&(drone->attributes.components.imu), imu_params);
 
     /* Initialize Bmi160 object */
     ESP_ERROR_CHECK( drone->attributes.components.bmi.init(
@@ -537,19 +573,19 @@ static void UpdateStates( drone_t * drone, float ts ) {
     }
 
     else {
-        float acc_x = drone->attributes.components.bmi.Acc.x;
-        float acc_y = drone->attributes.components.bmi.Acc.y;
-        float acc_z = drone->attributes.components.bmi.Acc.z;
+        float acc_x = drone->attributes.components.imu.acc.x;
+        float acc_y = drone->attributes.components.imu.acc.y;
+        float acc_z = drone->attributes.components.imu.acc.z;
 
         float acc_filter_coeff = drone->attributes.global_variables.misc_floats[3];
-        acc_x_filtered = FirstOrderIIR(drone->attributes.components.bmi.Acc.x, acc_x_filtered, ts / 1000.0f, acc_filter_coeff);
-        acc_y_filtered = FirstOrderIIR(drone->attributes.components.bmi.Acc.y, acc_y_filtered, ts / 1000.0f, acc_filter_coeff);
-        acc_z_filtered = FirstOrderIIR(drone->attributes.components.bmi.Acc.z, acc_z_filtered, ts / 1000.0f, acc_filter_coeff);
+        acc_x_filtered = FirstOrderIIR(drone->attributes.components.imu.acc.x, acc_x_filtered, ts / 1000.0f, acc_filter_coeff);
+        acc_y_filtered = FirstOrderIIR(drone->attributes.components.imu.acc.y, acc_y_filtered, ts / 1000.0f, acc_filter_coeff);
+        acc_z_filtered = FirstOrderIIR(drone->attributes.components.imu.acc.z, acc_z_filtered, ts / 1000.0f, acc_filter_coeff);
 
 
-        float gyro_x = FirstOrderIIR( drone->attributes.components.bmi.Gyro.x, drone->attributes.states.roll_dot, ts / 1000.0f, drone->attributes.config.IIR_coeff_roll_dot );
-        float gyro_y = FirstOrderIIR( drone->attributes.components.bmi.Gyro.y, drone->attributes.states.pitch_dot, ts / 1000.0f, drone->attributes.config.IIR_coeff_pitch_dot );
-        float gyro_z = FirstOrderIIR( drone->attributes.components.bmi.Gyro.z*2, drone->attributes.states.yaw_dot, ts / 1000.0f, drone->attributes.config.IIR_coeff_yaw_dot );
+        float gyro_x = FirstOrderIIR( drone->attributes.components.imu.gyro.x, drone->attributes.states.roll_dot, ts / 1000.0f, drone->attributes.config.IIR_coeff_roll_dot );
+        float gyro_y = FirstOrderIIR( drone->attributes.components.imu.gyro.y, drone->attributes.states.pitch_dot, ts / 1000.0f, drone->attributes.config.IIR_coeff_pitch_dot );
+        float gyro_z = FirstOrderIIR( drone->attributes.components.imu.gyro.z*2, drone->attributes.states.yaw_dot, ts / 1000.0f, drone->attributes.config.IIR_coeff_yaw_dot );
 
         /* Apply first order IIR filter to gyroscope data */
         drone->attributes.states.roll_dot = gyro_x;
@@ -575,7 +611,7 @@ static void UpdateStates( drone_t * drone, float ts ) {
 
         drone->attributes.states.yaw = wrapAngle360(drone->attributes.states.yaw + (gyro_z * (ts / 1000.0f) ));
 
-        drone->attributes.states.z_dot = drone->attributes.states.z_dot + ts*drone->attributes.components.bmi.Acc.z;
+        drone->attributes.states.z_dot = drone->attributes.states.z_dot + ts*drone->attributes.components.imu.acc.z;
     }
 }
 
@@ -639,6 +675,8 @@ void Drone( drone_t * drone ) {
     Bmi160(&(drone->attributes.components.bmi));
 
     ESP_LOGI( DRONE_TAG, "BMI160 Init successful\n");
+
+    Lsm6dso(&(drone->attributes.components.imu));
 
     Bmp390(&(drone->attributes.components.bmp));
 

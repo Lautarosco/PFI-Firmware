@@ -226,14 +226,13 @@ float D_Basic( pid_controller_t * obj, float error ) {
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
-
+#include "drone.h"
 float D_LPF( pid_controller_t * obj, float error ) {
 
     float derivative = ( error - obj->prev_error ) / obj->ts_ms;
 
     /* Filtered value = ( ( 1 - α ) * New input ) + ( α * Previous output )*/
-    obj->derivative_lpf.out = ( ( 1 - obj->derivative_lpf.alpha ) * derivative ) + ( obj->derivative_lpf.alpha * obj->derivative_lpf.out );
-
+    obj->derivative_lpf.out = FirstOrderIIR(derivative, obj->derivative_lpf.out, obj->ts_ms*0.001, obj->derivative_lpf.alpha);
     return obj->gain.kd * derivative;
 }
 

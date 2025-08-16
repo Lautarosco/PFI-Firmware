@@ -22,7 +22,6 @@ typedef struct cmd_function {
 
 static cmd_function_t cmd_function_array[] = {  // TODO: adapt this to allow multiple number of arguments (not just 4 that must be passed as cmd,,,)
 
-    {.cmd_name = "pid gains",   .func = &PidGainsCmdFunc},
     {.cmd_name = "pid actions", .func = &PidActionsCmdFunc},
     {.cmd_name = "var update",  .func = &VarsUpdateCmdFunc},
     {.cmd_name = "sp update",  .func = &SpUpdateCmdFunc},

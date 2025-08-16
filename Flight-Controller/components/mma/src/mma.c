@@ -56,12 +56,8 @@ static float u2pwm( mma_t * mma, float u_z, float u, float dc_min, float dc_max 
     #define container_of(ptr, type, member) \
         ((type *)((char *)(ptr) - offsetof(type, member)))
     #endif
-
-    // simulate z?
-    drone_t *drone = container_of(mma, drone_t, attributes.components.mma);
-    float z_sim = drone->attributes.global_variables.misc_floats[2];
     
-    return saturate(final_dc + z_sim, dc_min, dc_max);
+    return saturate(final_dc, dc_min, dc_max);
 }
 
 
