@@ -15,176 +15,19 @@
 #include "print_manager.h"
 #include <application_layer/lsm6dso_app_layer.h>
 
-#define FLASH_PARAMS 40 /* Total Drone parameters to be stored in flash memory */
+#define MAX_FLASH_PARAMS 60 /* Total Drone parameters to be stored in flash memory */
 #define NVS_NAMESPACE "storage"
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
-/** @brief Drone parameters stored and updated from flash memory */
-typedef enum drone_flash_params {
-
-    /* Gyro offset x */
-    GYRO_OFFSET_X,
-
-    /* Gyro offset y */
-    GYRO_OFFSET_Y,
-
-    /* Gyro offset z */
-    GYRO_OFFSET_Z,
-
-    /* Roll Kp gain */
-    PID_ROLL_KP,
-
-    /* Roll Ki gain */
-    PID_ROLL_KI,
-
-    /* Roll Kd gain */
-    PID_ROLL_KD,
-
-    /* Roll KB gain */
-    PID_ROLL_KB,
-
-    /* Roll_d Kp gain */
-    PID_ROLL_D_KP,
-
-    /* Roll_d Ki gain */
-    PID_ROLL_D_KI,
-
-    /* Roll_d Kd gain */
-    PID_ROLL_D_KD,
-
-    /* Roll_d KB gain */
-    PID_ROLL_D_KB,
-
-    /* Roll_d IIR filter coefficient */
-    ROLL_D_IIR_COEFF,
-
-    /* Pitch Kp gain */
-    PID_PITCH_KP,
-
-    /* Pitch Ki gain */
-    PID_PITCH_KI,
-
-    /* Pitch Kd gain */
-    PID_PITCH_KD,
-
-    /* Pitch KB gain */
-    PID_PITCH_KB,
-
-    /* Pitch_d Kp gain */
-    PID_PITCH_D_KP,
-
-    /* Pitch_d Ki gain */
-    PID_PITCH_D_KI,
-
-    /* Pitch_d Kd gain */
-    PID_PITCH_D_KD,
-
-    /* Pitch_d KB gain */
-    PID_PITCH_D_KB,
-
-    /* Pitch_d IIR filter coefficient */
-    PITCH_D_IIR_COEFF,
-
-    /* Yaw Kp gain */
-    PID_YAW_KP,
-
-    /* Yaw Ki gain */
-    PID_YAW_KI,
-
-    /* Yaw Kd gain */
-    PID_YAW_KD,
-
-    /* Yaw KB gain */
-    PID_YAW_KB,
-
-    /* Yaw_d Kp gain */
-    PID_YAW_D_KP,
-
-    /* Yaw_d Ki gain */
-    PID_YAW_D_KI,
-
-    /* Yaw_d Kd gain */
-    PID_YAW_D_KD,
-
-    /* Yaw_d KB gain */
-    PID_YAW_D_KB,
-
-    /* Yaw_d IIR filter coefficient */
-    YAW_D_IIR_COEFF,
-
-    /* Z Kp gain */
-    PID_Z_KP,
-
-    /* Z Ki gain */
-    PID_Z_KI,
-
-    /* Z Kd gain */
-    PID_Z_KD,
-
-    /* Z KB gain */
-    PID_Z_KB,
-
-    /* Z_d Kp gain */
-    PID_Z_D_KP,
-
-    /* Z_d Ki gain */
-    PID_Z_D_KI,
-
-    /* Z_d Kd gain */
-    PID_Z_D_KD,
-
-    /* Z_d KB gain */
-    PID_Z_D_KB,
-
-    /* Z_d IIR filter coefficient */
-    Z_D_IIR_COEFF,
-
-} drone_flash_params_t;
-
-static const char* key_names[] = {
-    "gyro_offset_x",      // GYRO_OFFSET_X = 0
-    "gyro_offset_y",      // GYRO_OFFSET_Y = 1
-    "gyro_offset_z",      // GYRO_OFFSET_Z = 2
-    "pid_roll_kp",        // PID_ROLL_KP = 3
-    "pid_roll_ki",        // PID_ROLL_KI = 4
-    "pid_roll_kd",        // PID_ROLL_KD = 5
-    "pid_roll_kb",        // PID_ROLL_KB = 6
-    "pid_roll_d_kp",      // PID_ROLL_D_KP = 7
-    "pid_roll_d_ki",      // PID_ROLL_D_KI = 8
-    "pid_roll_d_kd",      // PID_ROLL_D_KD = 9
-    "pid_roll_d_kb",      // PID_ROLL_D_KB = 10
-    "gyro_x_ema",         // ROLL_D_IIR_COEFF = 11
-    "pid_pitch_kp",       // PID_PITCH_KP = 12
-    "pid_pitch_ki",       // PID_PITCH_KI = 13
-    "pid_pitch_kd",       // PID_PITCH_KD = 14
-    "pid_pitch_kb",       // PID_PITCH_KB = 15
-    "pid_pitch_d_kp",     // PID_PITCH_D_KP = 16
-    "pid_pitch_d_ki",     // PID_PITCH_D_KI = 17
-    "pid_pitch_d_kd",     // PID_PITCH_D_KD = 18
-    "pid_pitch_d_kb",     // PID_PITCH_D_KB = 19
-    "gyro_y_ema",         // PITCH_D_IIR_COEFF = 20
-    "pid_yaw_kp",         // PID_YAW_KP = 21
-    "pid_yaw_ki",         // PID_YAW_KI = 22
-    "pid_yaw_kd",         // PID_YAW_KD = 23
-    "pid_yaw_kb",         // PID_YAW_KB = 24
-    "pid_yaw_d_kp",       // PID_YAW_D_KP = 25
-    "pid_yaw_d_ki",       // PID_YAW_D_KI = 26
-    "pid_yaw_d_kd",       // PID_YAW_D_KD = 27
-    "pid_yaw_d_kb",       // PID_YAW_D_KB = 28
-    "gyro_z_ema",         // YAW_D_IIR_COEFF = 29
-    "pid_z_kp",           // PID_Z_KP = 30
-    "pid_z_ki",           // PID_Z_KI = 31
-    "pid_z_kd",           // PID_Z_KD = 32
-    "pid_z_kb",           // PID_Z_KB = 33
-    "pid_z_d_kp",         // PID_Z_D_KP = 34
-    "pid_z_d_ki",         // PID_Z_D_KI = 35
-    "pid_z_d_kd",         // PID_Z_D_KD = 36
-    "pid_z_d_kb",         // PID_Z_D_KB = 37
-    "z_d_iir_coeff"       // Z_D_IIR_COEFF = 38
-};
+typedef struct {
+    const char* name;
+    void* ptr;
+    size_t size;
+    bool save_to_flash;
+} drone_parameter_t;
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
@@ -417,7 +260,7 @@ typedef struct drone_attributes {
     print_manager_t print_manager;
 
     /* Array of Drone parameters stored in flash memory */
-    void * flash_params_arr[ FLASH_PARAMS ];
+    drone_parameter_t* flash_params_arr;
 
     /* Drone's init flag */
     bool init_ok;

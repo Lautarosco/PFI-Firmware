@@ -33,56 +33,101 @@ pid_gain_t *GlobalZ_dGains;             /** @brief Pointer to Z_d controller gai
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
+static drone_parameter_t drone_params_array[MAX_FLASH_PARAMS];
 
+esp_err_t get_drone_params(drone_t* drone) {
+    int idx = 0;  // Parameter index counter
+    
+    // Gyro offsets
+    // drone_params_array[idx++] = (drone_parameter_t){"gyro_offset_x", &drone->attributes.components.bmi.Gyro.offset.x, sizeof(float), true};
+    // drone_params_array[idx++] = (drone_parameter_t){"gyro_offset_y", &drone->attributes.components.bmi.Gyro.offset.y, sizeof(float), true};
+    // drone_params_array[idx++] = (drone_parameter_t){"gyro_offset_z", &drone->attributes.components.bmi.Gyro.offset.z, sizeof(float), true};
+    
+    // IIR filter coefficients  
+    drone_params_array[idx++] = (drone_parameter_t){"gyro_x_ema", &drone->attributes.config.IIR_coeff_roll_dot, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"gyro_y_ema", &drone->attributes.config.IIR_coeff_pitch_dot, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"gyro_z_ema", &drone->attributes.config.IIR_coeff_yaw_dot, sizeof(float), true};
+    
+    // Roll PID parameters
+    drone_params_array[idx++] = (drone_parameter_t){"roll/P", &drone->attributes.components.controllers[ROLL].gain.kp, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"roll/I", &drone->attributes.components.controllers[ROLL].gain.ki, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"roll/D", &drone->attributes.components.controllers[ROLL].gain.kd, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"roll/KB", &drone->attributes.components.controllers[ROLL].gain.kb, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"roll/D_IIR", &drone->attributes.components.controllers[ROLL].derivative_lpf.alpha, sizeof(float), true};
+    
+    // Roll_D PID parameters
+    drone_params_array[idx++] = (drone_parameter_t){"roll_d/P", &drone->attributes.components.controllers[ROLL_D].gain.kp, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"roll_d/I", &drone->attributes.components.controllers[ROLL_D].gain.ki, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"roll_d/D", &drone->attributes.components.controllers[ROLL_D].gain.kd, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"roll_d/KB", &drone->attributes.components.controllers[ROLL_D].gain.kb, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"roll_d/D_IIR", &drone->attributes.components.controllers[ROLL_D].derivative_lpf.alpha, sizeof(float), true};
+    
+    // Pitch PID parameters
+    drone_params_array[idx++] = (drone_parameter_t){"pitch/P", &drone->attributes.components.controllers[PITCH].gain.kp, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"pitch/I", &drone->attributes.components.controllers[PITCH].gain.ki, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"pitch/D", &drone->attributes.components.controllers[PITCH].gain.kd, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"pitch/KB", &drone->attributes.components.controllers[PITCH].gain.kb, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"pitch/D_IIR", &drone->attributes.components.controllers[PITCH].derivative_lpf.alpha, sizeof(float), true};
+    
+    // Pitch_D PID parameters
+    drone_params_array[idx++] = (drone_parameter_t){"pitch_d/P", &drone->attributes.components.controllers[PITCH_D].gain.kp, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"pitch_d/I", &drone->attributes.components.controllers[PITCH_D].gain.ki, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"pitch_d/D", &drone->attributes.components.controllers[PITCH_D].gain.kd, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"pitch_d/KB", &drone->attributes.components.controllers[PITCH_D].gain.kb, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"pitch_d/D_IIR", &drone->attributes.components.controllers[PITCH_D].derivative_lpf.alpha, sizeof(float), true};
+    
+    // Yaw PID parameters
+    drone_params_array[idx++] = (drone_parameter_t){"yaw/P", &drone->attributes.components.controllers[YAW].gain.kp, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"yaw/I", &drone->attributes.components.controllers[YAW].gain.ki, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"yaw/D", &drone->attributes.components.controllers[YAW].gain.kd, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"yaw/KB", &drone->attributes.components.controllers[YAW].gain.kb, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"yaw/D_IIR", &drone->attributes.components.controllers[YAW].derivative_lpf.alpha, sizeof(float), true};
+    
+    // Yaw_D PID parameters
+    drone_params_array[idx++] = (drone_parameter_t){"yaw_d/P", &drone->attributes.components.controllers[YAW_D].gain.kp, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"yaw_d/I", &drone->attributes.components.controllers[YAW_D].gain.ki, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"yaw_d/D", &drone->attributes.components.controllers[YAW_D].gain.kd, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"yaw_d/KB", &drone->attributes.components.controllers[YAW_D].gain.kb, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"yaw_d/D_IIR", &drone->attributes.components.controllers[YAW_D].derivative_lpf.alpha, sizeof(float), true};
+    
+    // Z PID parameters  
+    drone_params_array[idx++] = (drone_parameter_t){"z/P", &drone->attributes.components.controllers[Z].gain.kp, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"z/I", &drone->attributes.components.controllers[Z].gain.ki, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"z/D", &drone->attributes.components.controllers[Z].gain.kd, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"z/KB", &drone->attributes.components.controllers[Z].gain.kb, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"z/D_IIR", &drone->attributes.components.controllers[Z].derivative_lpf.alpha, sizeof(float), true};
+    
+    // Z_D PID parameters
+    drone_params_array[idx++] = (drone_parameter_t){"z_d/P", &drone->attributes.components.controllers[Z_D].gain.kp, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"z_d/I", &drone->attributes.components.controllers[Z_D].gain.ki, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"z_d/D", &drone->attributes.components.controllers[Z_D].gain.kd, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"z_d/KB", &drone->attributes.components.controllers[Z_D].gain.kb, sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"z_d/D_IIR", &drone->attributes.components.controllers[Z_D].derivative_lpf.alpha, sizeof(float), true};
 
-/** @details Private structs */
+    // Misc. Floats
+    drone_params_array[idx++] = (drone_parameter_t){"misc/0", &drone->attributes.global_variables.misc_floats[0], sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"misc/1", &drone->attributes.global_variables.misc_floats[1], sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"misc/2", &drone->attributes.global_variables.misc_floats[2], sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"misc/3", &drone->attributes.global_variables.misc_floats[3], sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"misc/4", &drone->attributes.global_variables.misc_floats[4], sizeof(float), false};
+    drone_params_array[idx++] = (drone_parameter_t){"misc/5", &drone->attributes.global_variables.misc_floats[5], sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"misc/6", &drone->attributes.global_variables.misc_floats[6], sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"misc/7", &drone->attributes.global_variables.misc_floats[7], sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"misc/8", &drone->attributes.global_variables.misc_floats[8], sizeof(float), true};
+    drone_params_array[idx++] = (drone_parameter_t){"misc/9", &drone->attributes.global_variables.misc_floats[9], sizeof(float), true};
 
-/**
- * @brief Details of a csv row
- * @param var_name: Variable name
- * @param var_type: Variable type
- * @param var_value: Vaiable value
- */
-typedef struct csv_row {
+    // Mark remaining slots as empty (null name indicates end)
+    for (int i = idx; i < MAX_FLASH_PARAMS; i++) {
+        drone_params_array[i] = (drone_parameter_t){NULL, NULL, 0, false};
+    }
 
-    /* Variable name */
-    char * var_name;
+    // Copy the array to the drone's flash_params_arr
+    drone->attributes.flash_params_arr = drone_params_array;
 
-    /* Variable type */
-    char * var_type;
-
-    /* Vaiable value */
-    float var_value;
-
-} csv_row_t;
-
+    return ESP_OK;
+}
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
-/* Private functions declaration */
-
-/**
- * @brief Write data to NVS of MCU
- * @param namespace: Label of the data
- * @param key_param: Name of the parameter
- * @param value: Data to be written
- * @param size: Size of data
- * @retval ESP_OK if success - ESP_ERROR
- */
-esp_err_t __write_to_flash( const char* namespace, drone_flash_params_t key_param, const void* value, size_t size );
-
-/**
- * @brief Read data from NVS of MCU
- * @param namespace: Label of the data
- * @param key_param: Name of the parameter
- * @param value: Variable to stored read data
- * @param size: Size of data
- * @retval ESP_OK if success - ESP_ERROR
- */
-esp_err_t __read_from_flash( const char* namespace, drone_flash_params_t key_param, void* value, size_t size );
-
-/* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
 
 static drone_cfg_t GetDroneConfigs( void ) {
 
@@ -125,51 +170,6 @@ float FirstOrderIIR( float in, float out, float ts_s, float alpha ) {
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
-
-/**
- * @brief Kalman filter for drone's attitude
- * @param drone: Address of drone object
- * @param ts_ms: Sampling time in milliseconds
- * @retval none
- */
-static void Kalman( drone_t * drone, float ts_ms ) {
-    /* -------------------------------------------------------------------------------- */
-
-
-    /* Prediction step */
-
-    /* Convert sampling time to seconds */
-    float ts_s = ts_ms / 1000.0f;
-
-    /* Use Gyroscope as mathematical model of IMU sensor */
-    float estimated_roll = drone->attributes.states.roll + ( ts_s * drone->attributes.components.bmi.Gyro.x );
-
-    /* Predict uncertainty of estimation */
-    float estimated_P = drone->attributes.config.roll.P + drone->attributes.config.roll.Q;
-
-
-    /* -------------------------------------------------------------------------------- */
-
-
-    /* Update step */
-
-    /* Update Kalman gain */
-    float roll_K = estimated_P / ( estimated_P + drone->attributes.config.roll.R );
-
-    /* Use Accelerometer as sensor readings of IMU */
-    float roll_sensor = atan2( drone->attributes.components.bmi.Acc.y, drone->attributes.components.bmi.Acc.z ) * ( 180.0f / M_PI );
-
-    /* Update states */
-    drone->attributes.states.roll = estimated_roll + ( roll_K * ( roll_sensor - estimated_roll ) );
-
-    /* Update P uncertainty */
-    drone->attributes.config.roll.P = ( ( 1 - roll_K ) * estimated_P + drone->attributes.config.roll.Q );
-}
-
-
-/* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
 
 /**
  * @brief Seek devices in I2C bus
@@ -250,31 +250,33 @@ static bool i2c_scan( void ) {
 static void save_to_nvs( drone_t * drone ) {
 
     /* Loop through all flash parameters */
-    for( int i = 0; i < FLASH_PARAMS; i++ ) {
+    for( int i = 0; i < MAX_FLASH_PARAMS; i++ ) {
 
         /* If parameter direction if NULL, then all parameters have been saved */
-        if( drone->attributes.flash_params_arr[ i ] == NULL ) {
+        if( drone->attributes.flash_params_arr[ i ].ptr == NULL ) {
 
             break;
         }
         
         /* Continue updating NVS with Drone parameters */
-        else {
+        else if (drone->attributes.flash_params_arr[i].save_to_flash) {
             /* Store "i" parameter to NVS, according to drone_flash_params_t enum */
-            esp_err_t err = __write_to_flash( NVS_NAMESPACE, i, drone->attributes.flash_params_arr[ i ], sizeof( *(float*)drone->attributes.flash_params_arr[ i ] ) );
+            esp_err_t err = __write_to_flash( NVS_NAMESPACE, drone->attributes.flash_params_arr[i].name, drone->attributes.flash_params_arr[ i ].ptr, drone->attributes.flash_params_arr[ i ].size );
             if (err == ESP_OK) {
-            ESP_LOGI( DRONE_TAG, "Saved %s: %.2f", GetKeyName( i ), *(float*) (drone->attributes.flash_params_arr[i]) );
+            ESP_LOGI( DRONE_TAG, "Saved %s: %.2f", drone->attributes.flash_params_arr[i].name, *(float*) (drone->attributes.flash_params_arr[i].ptr) );
             } else {
-            ESP_LOGE( DRONE_TAG, "Failed to save %s (err: %s)", GetKeyName( i ), esp_err_to_name(err) );
+            ESP_LOGE( DRONE_TAG, "Failed to save %s (err: %s)", drone->attributes.flash_params_arr[i].name, esp_err_to_name(err) );
             }
 
             float check_value = 0.0f;
-            if (__read_from_flash(NVS_NAMESPACE, i, &check_value, sizeof(check_value)) == ESP_OK) {
-                ESP_LOGI(DRONE_TAG, "Checked %s from flash: %.2f", GetKeyName(i), check_value);
+            if (__read_from_flash(NVS_NAMESPACE, drone->attributes.flash_params_arr[i].name, &check_value, sizeof(check_value)) == ESP_OK) {
+                ESP_LOGI(DRONE_TAG, "Checked %s from flash: %.2f", drone->attributes.flash_params_arr[i].name, check_value);
             } else {
-                ESP_LOGW(DRONE_TAG, "Could not read back %s from flash", GetKeyName(i));
+                ESP_LOGW(DRONE_TAG, "Could not read back %s from flash", drone->attributes.flash_params_arr[i].name);
             }
 
+        } else {
+            ESP_LOGI(DRONE_TAG, "Skipping variable %s on save.\n", drone->attributes.flash_params_arr[i].name);
         }
     }
 }
@@ -288,22 +290,27 @@ static void read_from_nvs( drone_t * drone ) {
 
     float read_var = 0.0f;
 
-    for( int i = 0; i < FLASH_PARAMS; i++ ) {
+    for( int i = 0; i < MAX_FLASH_PARAMS; i++ ) {
 
         /* If parameter direction if NULL, then all parameters have been read */
-        if( drone->attributes.flash_params_arr[ i ] == NULL ) {
+        if( drone->attributes.flash_params_arr[ i ].ptr == NULL ) {
 
             break;
         }
 
+        if (!drone->attributes.flash_params_arr[i].save_to_flash) {
+            ESP_LOGI(DRONE_TAG, "Skipping variable %s on read.\n", drone->attributes.flash_params_arr[i].name);
+            continue;
+        }
+
         /* Continue reading NVS */
         else {
-        esp_err_t err = __read_from_flash(NVS_NAMESPACE, i, &read_var, sizeof(read_var));
+        esp_err_t err = __read_from_flash(NVS_NAMESPACE, drone->attributes.flash_params_arr[i].name, &read_var, sizeof(read_var));
         if (err != ESP_OK) {
-            ESP_LOGE(DRONE_TAG, "Error leyendo flash para %s: %s", GetKeyName(i), esp_err_to_name(err));
+            ESP_LOGE(DRONE_TAG, "Error leyendo flash para %s: %s", drone->attributes.flash_params_arr[i].name, esp_err_to_name(err));
         } else {
-            *(float*)(drone->attributes.flash_params_arr[i]) = read_var;
-            ESP_LOGI(DRONE_TAG, "Updated %s: %.2f", GetKeyName(i), read_var);
+            *(float*)(drone->attributes.flash_params_arr[i].ptr) = read_var;
+            ESP_LOGI(DRONE_TAG, "Updated %s: %.2f", drone->attributes.flash_params_arr[i].name, read_var);
         }
         }
     }
@@ -795,55 +802,10 @@ void Drone( drone_t * drone ) {
     /* =============== END Global variables assignment =============== */
 
     /* Initialize flash variable pointers to NULL */
-    for( int i = 0; i < FLASH_PARAMS; i++ ) {
-
-        drone->attributes.flash_params_arr[ i ] = NULL;
-    };
-
-    /* Variables stored in NVS memory */
-    drone->attributes.flash_params_arr[ GYRO_OFFSET_X ] = &( drone->attributes.components.bmi.Gyro.offset.x );
-    drone->attributes.flash_params_arr[ GYRO_OFFSET_Y ] = &( drone->attributes.components.bmi.Gyro.offset.y );
-    drone->attributes.flash_params_arr[ GYRO_OFFSET_Z ] = &( drone->attributes.components.bmi.Gyro.offset.z );
-
-    drone->attributes.flash_params_arr[ PID_ROLL_KP ]   = &( drone->attributes.components.controllers[ ROLL ].gain.kp );
-    drone->attributes.flash_params_arr[ PID_ROLL_KI ]   = &( drone->attributes.components.controllers[ ROLL ].gain.ki );
-    drone->attributes.flash_params_arr[ PID_ROLL_KD ]   = &( drone->attributes.components.controllers[ ROLL ].gain.kd );
-    drone->attributes.flash_params_arr[ PID_ROLL_KB ]   = &( drone->attributes.components.controllers[ ROLL ].gain.kb );
-    drone->attributes.flash_params_arr[ PID_ROLL_D_KP ] = &( drone->attributes.components.controllers[ ROLL_D ].gain.kp );
-    drone->attributes.flash_params_arr[ PID_ROLL_D_KI ] = &( drone->attributes.components.controllers[ ROLL_D ].gain.ki );
-    drone->attributes.flash_params_arr[ PID_ROLL_D_KD ] = &( drone->attributes.components.controllers[ ROLL_D ].gain.kd );
-    drone->attributes.flash_params_arr[ PID_ROLL_D_KB ] = &( drone->attributes.components.controllers[ ROLL_D ].gain.kb );
-    drone->attributes.flash_params_arr[ ROLL_D_IIR_COEFF] = &( drone->attributes.config.IIR_coeff_roll_dot );
-
-    drone->attributes.flash_params_arr[ PID_PITCH_KP ]  = &( drone->attributes.components.controllers[ PITCH ].gain.kp );
-    drone->attributes.flash_params_arr[ PID_PITCH_KI ]  = &( drone->attributes.components.controllers[ PITCH ].gain.ki );
-    drone->attributes.flash_params_arr[ PID_PITCH_KD ]  = &( drone->attributes.components.controllers[ PITCH ].gain.kd );
-    drone->attributes.flash_params_arr[ PID_PITCH_KB ]  = &( drone->attributes.components.controllers[ PITCH ].gain.kb );
-    drone->attributes.flash_params_arr[ PID_PITCH_D_KP ]= &( drone->attributes.components.controllers[ PITCH_D ].gain.kp );
-    drone->attributes.flash_params_arr[ PID_PITCH_D_KI ]= &( drone->attributes.components.controllers[ PITCH_D ].gain.ki );
-    drone->attributes.flash_params_arr[ PID_PITCH_D_KD ]= &( drone->attributes.components.controllers[ PITCH_D ].gain.kd );
-    drone->attributes.flash_params_arr[ PID_PITCH_D_KB ]= &( drone->attributes.components.controllers[ PITCH_D ].gain.kb );
-    drone->attributes.flash_params_arr[ PITCH_D_IIR_COEFF] = &( drone->attributes.config.IIR_coeff_pitch_dot );
-
-    drone->attributes.flash_params_arr[ PID_YAW_KP ]    = &( drone->attributes.components.controllers[ YAW ].gain.kp );
-    drone->attributes.flash_params_arr[ PID_YAW_KI ]    = &( drone->attributes.components.controllers[ YAW ].gain.ki );
-    drone->attributes.flash_params_arr[ PID_YAW_KD ]    = &( drone->attributes.components.controllers[ YAW ].gain.kd );
-    drone->attributes.flash_params_arr[ PID_YAW_KB ]    = &( drone->attributes.components.controllers[ YAW ].gain.kb );
-    drone->attributes.flash_params_arr[ PID_YAW_D_KP ]  = &( drone->attributes.components.controllers[ YAW_D ].gain.kp );
-    drone->attributes.flash_params_arr[ PID_YAW_D_KI ]  = &( drone->attributes.components.controllers[ YAW_D ].gain.ki );
-    drone->attributes.flash_params_arr[ PID_YAW_D_KD ]  = &( drone->attributes.components.controllers[ YAW_D ].gain.kd );
-    drone->attributes.flash_params_arr[ PID_YAW_D_KB ]  = &( drone->attributes.components.controllers[ YAW_D ].gain.kb );
-    drone->attributes.flash_params_arr[ YAW_D_IIR_COEFF] = &( drone->attributes.config.IIR_coeff_yaw_dot );
-
-    drone->attributes.flash_params_arr[ PID_Z_KP ]      = &( drone->attributes.components.controllers[ Z ].gain.kp );
-    drone->attributes.flash_params_arr[ PID_Z_KI ]      = &( drone->attributes.components.controllers[ Z ].gain.ki );
-    drone->attributes.flash_params_arr[ PID_Z_KD ]      = &( drone->attributes.components.controllers[ Z ].gain.kd );
-    drone->attributes.flash_params_arr[ PID_Z_KB ]      = &( drone->attributes.components.controllers[ Z ].gain.kb );
-    // drone->attributes.flash_params_arr[ PID_Z_D_KP ]    = &( drone->attributes.components.controllers[ Z_D ].gain.kp );
-    // drone->attributes.flash_params_arr[ PID_Z_D_KI ]    = &( drone->attributes.components.controllers[ Z_D ].gain.ki );
-    // drone->attributes.flash_params_arr[ PID_Z_D_KD ]    = &( drone->attributes.components.controllers[ Z_D ].gain.kd );
-    // drone->attributes.flash_params_arr[ PID_Z_D_KB ]    = &( drone->attributes.components.controllers[ Z_D ].gain.kb );
-
+    ret = get_drone_params(drone);
+    if (ret != ESP_OK) {
+        ESP_LOGE("Drone", "Error with params");
+    }
     /* Blink MCU internal LED to indicate Transmitter object is ready to receive commands */
     gpio_set_level( GPIO_NUM_2, false );
     vTaskDelay( pdMS_TO_TICKS( 1000 ) );

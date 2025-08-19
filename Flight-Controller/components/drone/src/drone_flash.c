@@ -1,10 +1,15 @@
 #include <drone_flash.h>
 #include <string.h>
+#include <stdio.h>
+
+#include <nvs_flash.h>
+#include <nvs.h>
+#include <esp_err.h>
+
 /* Function implementations */
 
-esp_err_t __write_to_flash( const char* namespace, drone_flash_params_t key_param, const void* value, size_t size ) {
+esp_err_t __write_to_flash( const char* namespace, const char* param_key, const void* value, size_t size ) {
 
-    const char * key = GetKeyName( key_param );
     nvs_handle_t handle;
     esp_err_t ret = nvs_open( namespace, NVS_READWRITE, &handle );
     if ( ret != ESP_OK ) {
@@ -13,7 +18,7 @@ esp_err_t __write_to_flash( const char* namespace, drone_flash_params_t key_para
         return ret;
     }
 
-    ret = nvs_set_blob( handle, key, value, size );
+    ret = nvs_set_blob( handle, param_key, value, size );
     if ( ret != ESP_OK ) {
 
         printf( "Error ( %s ) writing data to NVS!\n", esp_err_to_name( ret ) );
@@ -31,9 +36,8 @@ esp_err_t __write_to_flash( const char* namespace, drone_flash_params_t key_para
     return ret;
 }
 
-esp_err_t __read_from_flash( const char* namespace, drone_flash_params_t key_param, void* value, size_t size ) {
+esp_err_t __read_from_flash( const char* namespace, const char* param_key, void* value, size_t size ) {
 
-    const char * key = GetKeyName( key_param );
     nvs_handle_t handle;
     esp_err_t ret = nvs_open( namespace, NVS_READWRITE, &handle );
     if ( ret != ESP_OK ) {
@@ -43,9 +47,9 @@ esp_err_t __read_from_flash( const char* namespace, drone_flash_params_t key_par
     }
 
     size_t required_size = size;
-    ret = nvs_get_blob( handle, key, value, &required_size );
+    ret = nvs_get_blob( handle, param_key, value, &required_size );
     if ( ret == ESP_ERR_NVS_NOT_FOUND ) {
-        printf( "Key '%s' not found in NVS. Initializing with default value.\n", key );
+        printf( "Key '%s' not found in NVS. Initializing with default value.\n", param_key );
         memset(value, 0, size); // Set value to zero or provide your own default
     } else if ( ret != ESP_OK ) {
         printf( "Error ( %s ) reading data from NVS!\n", esp_err_to_name( ret ) );
@@ -60,11 +64,3 @@ esp_err_t __read_from_flash( const char* namespace, drone_flash_params_t key_par
     * @retval The corresponding key name as a string, or "NOT FOUND" if the key is not recognized
 */
 
-const char * GetKeyName( drone_flash_params_t key ) {
-
-    int num_keys = sizeof(key_names) / sizeof(key_names[0]);
-    if (key >= 0 && key < num_keys) {
-        return key_names[key];
-    }
-    return "NOT FOUND";
-}

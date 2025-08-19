@@ -15,13 +15,16 @@ esp_err_t decide_indicator_state(drone_t * drone);
 
 float voltage_to_soc(float cell_voltage);
 
+// Helper function to build dynamic static parameters string
+static int build_static_params_string(drone_t* drone, char* buffer, size_t buffer_size);
+
 
 void vTaskprint( void * drone_ ) {
 
     drone_t* drone = ( drone_t * ) drone_;
 
 
-    static char buf[1024];
+    static char buf[2048];
 
     while( 1 ) {
 
@@ -231,6 +234,58 @@ esp_err_t decide_indicator_state(drone_t* drone) {
 
 
 /**
+ * @brief Build dynamic static parameters string from flash_params_arr
+ * @param drone: Drone object pointer
+ * @param buffer: Buffer to write the static parameters
+ * @param buffer_size: Maximum buffer size
+ * @retval Number of characters written
+ */
+static int build_static_params_string(drone_t* drone, char* buffer, size_t buffer_size) {
+    int written = 0;
+    
+    written = snprintf(buffer, buffer_size, "static:");
+    
+    if (drone->attributes.flash_params_arr != NULL) {
+        for (int i = 0; i < MAX_FLASH_PARAMS && drone->attributes.flash_params_arr[i].name != NULL; i++) {
+            drone_parameter_t* param = &drone->attributes.flash_params_arr[i];
+            
+            if (param->ptr != NULL) {
+                
+                if (written >= buffer_size - 50) {
+                    printf("WARNING: Static params buffer full at param %d\n", i);
+                    break;
+                }
+                
+                if (param->size == sizeof(float)) {
+                    float* value = (float*)param->ptr;
+                    written += snprintf(buffer + written, buffer_size - written, 
+                                       "%s,%.2f|", param->name, *value);
+                } 
+                else if (param->size == sizeof(int)) {
+                    int* value = (int*)param->ptr;
+                    written += snprintf(buffer + written, buffer_size - written,
+                                       "%s,%d|", param->name, *value);
+                }
+                else if (param->size == sizeof(double)) {
+                    double* value = (double*)param->ptr;
+                    written += snprintf(buffer + written, buffer_size - written,
+                                       "%s,%.2f|", param->name, *value);
+                }
+            }
+        }
+    }
+    
+    written += snprintf(buffer + written, buffer_size - written,
+                       "sm_cycle,%lld|measure_cycle,%lld|state,%s\n",
+                       drone->attributes.sm_cycle_time,
+                       drone->attributes.measure_cycle_time,
+                       StateMachine_GetStateName(drone->attributes.state_machine.curr_state));
+    
+    return written;
+}
+
+
+/**
  * @brief Variable format: <printer:var,%.2f\n>
  * @details Used for sending variables such as drone states, pid values, etc.
  * @example i.e, <printer:roll,%f>  This will send roll values to plotter app
@@ -245,7 +300,9 @@ esp_err_t print_to_serial(drone_t * drone, char* buff, size_t buff_size){
     
     // Dynamic
     memset(buff, 0, buff_size);
-    snprintf(buff, buff_size,
+    
+    // Step 1: Write dynamic part
+    int dynamic_written = snprintf(buff, buff_size,
         "printer:roll,%.2f|roll_d,%.2f|roll_sp,%.2f|roll_d_sp,%.2f|"
         "pitch,%.2f|pitch_d,%.2f|pitch_sp,%.2f|pitch_d_sp,%.2f|"
         "yaw,%.2f|yaw_d,%.2f|yaw_sp,%.2f|yaw_d_sp,%.2f|"
@@ -257,25 +314,17 @@ esp_err_t print_to_serial(drone_t * drone, char* buff, size_t buff_size){
         "lsm_gyro_x,%.2f|lsm_gyro_y,%.2f|lsm_gyro_z,%.2f|"
         "mma_in_roll,%.2f|mma_in_pitch,%.2f|mma_in_yaw,%.2f|"
         "R_X,%d|R_Y,%d|L_X,%d|L_Y,%d|"
-        "roll_acc_f,%.2f"
-        "\n"  // end of dynamic values
-        "static:roll/P,%.2f|roll/I,%.2f|roll/D,%.2f|roll/KB,%.2f|roll/D_IIR,%.2f|"
-        "roll_d/P,%.2f|roll_d/I,%.2f|roll_d/D,%.2f|roll_d/KB,%.2f|roll_d/D_IIR,%.2f|"
-        "pitch/P,%.2f|pitch/I,%.2f|pitch/D,%.2f|roll/KB,%.2f|"
-        "pitch_d/P,%.2f|pitch_d/I,%.2f|pitch_d/D,%.2f|roll/KB,%.2f|"
-        "yaw/P,%.2f|yaw/I,%.2f|yaw/D,%.2f|roll/KB,%.2f|"
-        "yaw_d/P,%.2f|yaw_d/I,%.2f|yaw_d/D,%.2f|roll/KB,%.2f|"
-        "ema_roll,%.2f|ema_pitch,%.2f|ema_yaw,%.2f|"
-        "misc/0,%.2f|misc/1,%.2f|misc/2,%.2f|misc/3,%.2f|"
-        "sm_cycle,%lld|measure_cycle,%lld|"
-        "state,%s\n",
+        "roll_acc_f,%.2f\n",  // end of dynamic values
 
-        // dynamic state
+        // dynamic state values
         drone->attributes.states.roll, drone->attributes.states.roll_dot, drone->attributes.sp.roll, drone->attributes.sp.roll_dot,
         drone->attributes.states.pitch, drone->attributes.states.pitch_dot, drone->attributes.sp.pitch, drone->attributes.sp.pitch_dot,
         drone->attributes.states.yaw, drone->attributes.states.yaw_dot, drone->attributes.sp.yaw, drone->attributes.sp.yaw_dot,
         drone->attributes.states.z, drone->attributes.sp.z,
-        drone->attributes.components.pwm[0].get_pwm_dc(&drone->attributes.components.pwm[0])*1000, drone->attributes.components.pwm[1].get_pwm_dc(&drone->attributes.components.pwm[1])*1000, drone->attributes.components.pwm[2].get_pwm_dc(&drone->attributes.components.pwm[2])*1000, drone->attributes.components.pwm[3].get_pwm_dc(&drone->attributes.components.pwm[3])*1000,
+        drone->attributes.components.pwm[0].get_pwm_dc(&drone->attributes.components.pwm[0])*1000, 
+        drone->attributes.components.pwm[1].get_pwm_dc(&drone->attributes.components.pwm[1])*1000, 
+        drone->attributes.components.pwm[2].get_pwm_dc(&drone->attributes.components.pwm[2])*1000, 
+        drone->attributes.components.pwm[3].get_pwm_dc(&drone->attributes.components.pwm[3])*1000,
         drone->attributes.components.bmi.Acc.x, drone->attributes.components.bmi.Acc.y, drone->attributes.components.bmi.Acc.z,
         drone->attributes.components.bmi.Gyro.x, drone->attributes.components.bmi.Gyro.y, drone->attributes.components.bmi.Gyro.z,
         drone->attributes.components.imu.acc.x, drone->attributes.components.imu.acc.y, drone->attributes.components.imu.acc.z,
@@ -285,62 +334,28 @@ esp_err_t print_to_serial(drone_t * drone, char* buff, size_t buff_size){
         drone->attributes.global_variables.tx_buttons.right_stick.y,
         drone->attributes.global_variables.tx_buttons.left_stick.x,
         drone->attributes.global_variables.tx_buttons.left_stick.y,
-        drone->attributes.global_variables.misc_floats[4],  // ROLL_WITH_ACC_FILTERED
-
-        // START of static variables
-        // roll gains
-        drone->attributes.components.controllers[ROLL].gain.kp,
-        drone->attributes.components.controllers[ROLL].gain.ki,
-        drone->attributes.components.controllers[ROLL].gain.kd,
-        drone->attributes.components.controllers[ROLL].gain.kb,
-        drone->attributes.components.controllers[ROLL].derivative_lpf.alpha,
-
-        drone->attributes.components.controllers[ROLL_D].gain.kp,
-        drone->attributes.components.controllers[ROLL_D].gain.ki,
-        drone->attributes.components.controllers[ROLL_D].gain.kd,
-        drone->attributes.components.controllers[ROLL_D].gain.kb,
-        drone->attributes.components.controllers[ROLL_D].derivative_lpf.alpha,
-
-        // pitch gains
-        drone->attributes.components.controllers[PITCH].gain.kp,
-        drone->attributes.components.controllers[PITCH].gain.ki,
-        drone->attributes.components.controllers[PITCH].gain.kd,
-        drone->attributes.components.controllers[PITCH].gain.kb,
-
-        drone->attributes.components.controllers[PITCH_D].gain.kp,
-        drone->attributes.components.controllers[PITCH_D].gain.ki,
-        drone->attributes.components.controllers[PITCH_D].gain.kd,
-        drone->attributes.components.controllers[PITCH_D].gain.kb,
-
-        // yaw gains
-        drone->attributes.components.controllers[YAW].gain.kp,
-        drone->attributes.components.controllers[YAW].gain.ki,
-        drone->attributes.components.controllers[YAW].gain.kd,
-        drone->attributes.components.controllers[YAW].gain.kb,
-
-        drone->attributes.components.controllers[YAW_D].gain.kp,
-        drone->attributes.components.controllers[YAW_D].gain.ki,
-        drone->attributes.components.controllers[YAW_D].gain.kd,
-        drone->attributes.components.controllers[YAW_D].gain.kb,
-
-        // EMA filter coefficients
-        drone->attributes.config.IIR_coeff_roll_dot,
-        drone->attributes.config.IIR_coeff_pitch_dot,
-        drone->attributes.config.IIR_coeff_yaw_dot,
-
-        // Misc. variables
-        drone->attributes.global_variables.misc_floats[0],  // T
-        drone->attributes.global_variables.misc_floats[1],  // Amplitude
-        drone->attributes.global_variables.misc_floats[2],  // Z_Sim
-        drone->attributes.global_variables.misc_floats[3],  // ACC_FILTER_COEFF
-
-        // Cycle time
-        drone->attributes.sm_cycle_time,
-        drone->attributes.measure_cycle_time,
-
-        // state machine current state
-        StateMachine_GetStateName(drone->attributes.state_machine.curr_state)
+        drone->attributes.global_variables.misc_floats[4]  // ROLL_WITH_ACC_FILTERED
     );
+    
+    // Step 2: Check if dynamic part fits
+    if (dynamic_written >= buff_size) {
+        printf("ERROR: Dynamic data buffer overflow! Written %d bytes, buffer size %zu\n", dynamic_written, buff_size);
+        return ESP_FAIL;
+    }
+    
+    // Step 3: Build static parameters dynamically from flash_params_arr
+    char* static_start = buff + dynamic_written;
+    size_t remaining_space = buff_size - dynamic_written;
+    
+    int static_written = build_static_params_string(drone, static_start, remaining_space);
+    
+    // Step 4: Check total size
+    int total_written = dynamic_written + static_written;
+    if (total_written >= buff_size) {
+        printf("ERROR: Total buffer overflow! Written %d bytes, buffer size %zu\n", total_written, buff_size);
+        return ESP_FAIL;
+    }
+    
     printf("%s", buff);
     
     // if (drone->attributes.components.Tx.bluetooth_connection.is_connected) {

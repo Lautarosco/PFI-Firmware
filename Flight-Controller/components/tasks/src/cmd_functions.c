@@ -74,25 +74,6 @@ static stateSpecs_t state_specs[] = {
     { .name = "yaw_d",   .index = YAW_D },
 };
 
-/**
- * @brief Retrieve state's label
- * @param stateIndex: state index ( See state_t enum defined in controllers_structs.h header file )
- * @retval State's label
- */
-static const char * GetStateName( int stateIndex ) {
-
-    for( int i = 0; i < ( ( sizeof( state_specs ) ) / ( sizeof( state_specs[ 0 ] ) ) ); i++ ) {
-
-        if( state_specs[ i ].index == stateIndex ) {
-            
-            return state_specs[ i ].name;
-        }
-    }
-
-    return "STATE NOT FOUND";
-}
-
-
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
@@ -133,71 +114,12 @@ typedef struct vars_update {
 
 
 void VarsUpdateCmdFunc(drone_t * drone, char * arr[4]) {
-    vars_update_t general_vars[] = {
-        {.name = "ema_roll",  .addr = &(drone->attributes.config.IIR_coeff_roll_dot)},
-        {.name = "ema_pitch", .addr = &(drone->attributes.config.IIR_coeff_pitch_dot)},
-        {.name = "ema_yaw",   .addr = &(drone->attributes.config.IIR_coeff_yaw_dot)},
-
-        {.name = "roll/P",       .addr = &(drone->attributes.components.controllers[ROLL].gain.kp)},
-        {.name = "roll/I",       .addr = &(drone->attributes.components.controllers[ROLL].gain.ki)},
-        {.name = "roll/D",       .addr = &(drone->attributes.components.controllers[ROLL].gain.kd)},
-        {.name = "roll/D_IIR", .addr = &(drone->attributes.components.controllers[ROLL].derivative_lpf.alpha)},
-        {.name = "roll/KB",      .addr = &(drone->attributes.components.controllers[ROLL].gain.kb)},
-
-
-        {.name = "roll_d/P",       .addr = &(drone->attributes.components.controllers[ROLL_D].gain.kp)},
-        {.name = "roll_d/I",       .addr = &(drone->attributes.components.controllers[ROLL_D].gain.ki)},
-        {.name = "roll_d/D",       .addr = &(drone->attributes.components.controllers[ROLL_D].gain.kd)},
-        {.name = "roll_d/D_IIR", .addr = &(drone->attributes.components.controllers[ROLL_D].derivative_lpf.alpha)},  // TODO: hacerlo para todos
-        {.name = "roll_d/KB",      .addr = &(drone->attributes.components.controllers[ROLL_D].gain.kb)},
-
-
-        {.name = "pitch/P",   .addr = &(drone->attributes.components.controllers[PITCH].gain.kp)},
-        {.name = "pitch/I",   .addr = &(drone->attributes.components.controllers[PITCH].gain.ki)},
-        {.name = "pitch/D",   .addr = &(drone->attributes.components.controllers[PITCH].gain.kd)},
-        {.name = "pitch/KB",  .addr = &(drone->attributes.components.controllers[PITCH].gain.kb)},
-
-
-        {.name = "pitch_d/P", .addr = &(drone->attributes.components.controllers[PITCH_D].gain.kp)},
-        {.name = "pitch_d/I", .addr = &(drone->attributes.components.controllers[PITCH_D].gain.ki)},
-        {.name = "pitch_d/D", .addr = &(drone->attributes.components.controllers[PITCH_D].gain.kd)},
-        {.name = "pitch_d/KB",.addr = &(drone->attributes.components.controllers[PITCH_D].gain.kb)},
-
-
-        {.name = "yaw/P",     .addr = &(drone->attributes.components.controllers[YAW].gain.kp)},
-        {.name = "yaw/I",     .addr = &(drone->attributes.components.controllers[YAW].gain.ki)},
-        {.name = "yaw/D",     .addr = &(drone->attributes.components.controllers[YAW].gain.kd)},
-        {.name = "yaw/KB",    .addr = &(drone->attributes.components.controllers[YAW].gain.kb)},
-
-
-        {.name = "yaw_d/P",   .addr = &(drone->attributes.components.controllers[YAW_D].gain.kp)},
-        {.name = "yaw_d/I",   .addr = &(drone->attributes.components.controllers[YAW_D].gain.ki)},
-        {.name = "yaw_d/D",   .addr = &(drone->attributes.components.controllers[YAW_D].gain.kd)},
-        {.name = "yaw_d/KB",    .addr = &(drone->attributes.components.controllers[YAW_D].gain.kb)},
-
-
-        {.name = "z/P",       .addr = &(drone->attributes.components.controllers[Z].gain.kp)},
-        {.name = "z/I",       .addr = &(drone->attributes.components.controllers[Z].gain.ki)},
-        {.name = "z/D",       .addr = &(drone->attributes.components.controllers[Z].gain.kd)},
-        {.name = "z/KB",       .addr = &(drone->attributes.components.controllers[Z].gain.kb)},
-
-        {.name = "misc/0",    .addr = &(drone->attributes.global_variables.misc_floats[0])},        // amplitude
-        {.name = "misc/1",    .addr = &(drone->attributes.global_variables.misc_floats[1])},        // period
-        {.name = "misc/2",    .addr = &(drone->attributes.global_variables.misc_floats[2])},
-        {.name = "misc/3",    .addr = &(drone->attributes.global_variables.misc_floats[3])},
-        {.name = "misc/4",    .addr = &(drone->attributes.global_variables.misc_floats[4])},
-        {.name = "misc/5",    .addr = &(drone->attributes.global_variables.misc_floats[5])},
-        {.name = "misc/6",    .addr = &(drone->attributes.global_variables.misc_floats[6])},
-        {.name = "misc/7",    .addr = &(drone->attributes.global_variables.misc_floats[7])},
-
-        {.name = NULL,        .addr = NULL}
-    };
 
     bool found = false;
-    for(int i = 0; general_vars[i].name != NULL; i++) {
+    for(int i = 0; drone->attributes.flash_params_arr[i].name != NULL; i++) {
         
-        if(!strcmp(arr[ARG2], general_vars[i].name)) {
-            *( float * ) general_vars[i].addr = (float) atof(arr[ARG3]);
+        if(!strcmp(arr[ARG2], drone->attributes.flash_params_arr[i].name)) {
+            *( float * ) drone->attributes.flash_params_arr[i].ptr = (float) atof(arr[ARG3]);
             found = true;
             return;
         }
