@@ -6,9 +6,18 @@
 #include <driver/i2c_master.h>
 #include <esp_err.h>
 #include <stdbool.h>
-
+/**
+ * @brief Masks the <n_bits> starting at <starting_bit_pos> of <reg_value> with the content of <mode>.
+ * 
+ * @param n_bits 
+ * @param starting_bit_pos Position (counting from LSB as 0)
+ * @param reg_value 
+ * @param mode 
+ * @return uint8_t 
+ */
 inline uint8_t LSM6DSO_SET_BITS(unsigned char n_bits, unsigned char starting_bit_pos, uint8_t reg_value, uint8_t mode) {
     /**
+     * 
      * i.e
      * 
      * reg = x??x xxxx
@@ -64,7 +73,7 @@ esp_err_t lsm6dso_hwl_read_reg(i2c_master_dev_handle_t i2c_lsm_handler, uint8_t 
 esp_err_t lsm6dso_hwl_write_reg(i2c_master_dev_handle_t i2c_lsm_handler, uint8_t reg_addr, uint8_t reg_value, const char *func_caller);
 esp_err_t lsm6dso_hwl_set_odr_acc(i2c_master_dev_handle_t i2c_lsm_handler, lsm6dso_odr_acc_t odr, char *msg, unsigned int msg_len);
 esp_err_t lsm6dso_hwl_set_fs_acc(i2c_master_dev_handle_t i2c_lsm_handler, lsm6dso_fs_acc_t fs, char *msg, unsigned int msg_len);
-esp_err_t lsm6dso_hwl_en_lpf2_acc(i2c_master_dev_handle_t i2c_lsm_handler, char *msg, unsigned int msg_len);
+esp_err_t lsm6dso_hwl_en_lpf2_acc(i2c_master_dev_handle_t i2c_lsm_handler, lsm6dso_lpf2_acc_t filter_mode, char *msg, unsigned int msg_len);
 esp_err_t lsm6dso_hwl_dis_lpf2_acc(i2c_master_dev_handle_t i2c_lsm_handler, char *msg, unsigned int msg_len);
 esp_err_t lsm6dso_hwl_set_odr_gyro(i2c_master_dev_handle_t i2c_lsm_handler, lsm6dso_odr_gyro_t odr, char *msg, unsigned int msg_len);
 esp_err_t lsm6dso_hwl_set_fs_gyro(i2c_master_dev_handle_t i2c_lsm_handler, lsm6dso_fs_gyro_t fs, char *msg, unsigned int msg_len);

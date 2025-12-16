@@ -256,21 +256,21 @@ static int build_static_params_string(drone_t* drone, char* buffer, size_t buffe
                     break;
                 }
                 
-                if (param->size == sizeof(float)) {
+                if (param->type == PARAM_TYPE_FLOAT) {
                     float* value = (float*)param->ptr;
                     written += snprintf(buffer + written, buffer_size - written, 
                                        "%s,%.2f|", param->name, *value);
                 } 
-                else if (param->size == sizeof(int)) {
+                else if (param->type == PARAM_TYPE_INT) {
                     int* value = (int*)param->ptr;
                     written += snprintf(buffer + written, buffer_size - written,
                                        "%s,%d|", param->name, *value);
                 }
-                else if (param->size == sizeof(double)) {
+                /*else if (param->size == sizeof(double)) {
                     double* value = (double*)param->ptr;
                     written += snprintf(buffer + written, buffer_size - written,
                                        "%s,%.2f|", param->name, *value);
-                }
+                }*/
             }
         }
     }
@@ -310,10 +310,9 @@ esp_err_t print_to_serial(drone_t * drone, char* buff, size_t buff_size){
         "dc1,%.2f|dc2,%.2f|dc3,%.2f|dc4,%.2f|"
         "acc_x,%.2f|acc_y,%.2f|acc_z,%.2f|"
         "gyro_x,%.2f|gyro_y,%.2f|gyro_z,%.2f|"
-        "lsm_acc_x,%.2f|lsm_acc_y,%.2f|lsm_acc_z,%.2f|"
-        "lsm_gyro_x,%.2f|lsm_gyro_y,%.2f|lsm_gyro_z,%.2f|"
+        "rd/P,%.2f|rd/I,%.2f|rd/D,%.2f|"
         "mma_in_roll,%.2f|mma_in_pitch,%.2f|mma_in_yaw,%.2f|"
-        "R_X,%d|R_Y,%d|L_X,%d|L_Y,%d|"
+        "prev_err,%.2f|err,%.2f|"
         "roll_acc_f,%.2f\n",  // end of dynamic values
 
         // dynamic state values
@@ -325,15 +324,13 @@ esp_err_t print_to_serial(drone_t * drone, char* buff, size_t buff_size){
         drone->attributes.components.pwm[1].get_pwm_dc(&drone->attributes.components.pwm[1])*1000, 
         drone->attributes.components.pwm[2].get_pwm_dc(&drone->attributes.components.pwm[2])*1000, 
         drone->attributes.components.pwm[3].get_pwm_dc(&drone->attributes.components.pwm[3])*1000,
-        drone->attributes.components.bmi.Acc.x, drone->attributes.components.bmi.Acc.y, drone->attributes.components.bmi.Acc.z,
-        drone->attributes.components.bmi.Gyro.x, drone->attributes.components.bmi.Gyro.y, drone->attributes.components.bmi.Gyro.z,
         drone->attributes.components.imu.acc.x, drone->attributes.components.imu.acc.y, drone->attributes.components.imu.acc.z,
         drone->attributes.components.imu.gyro.x, drone->attributes.components.imu.gyro.y, drone->attributes.components.imu.gyro.z,
+        drone->attributes.components.controllers[ROLL_D].p,
+        drone->attributes.components.controllers[ROLL_D].i,
+        drone->attributes.components.controllers[ROLL_D].d,
         drone->attributes.components.mma.input[C_ROLL], drone->attributes.components.mma.input[C_PITCH], drone->attributes.components.mma.input[C_YAW],
-        drone->attributes.global_variables.tx_buttons.right_stick.x,
-        drone->attributes.global_variables.tx_buttons.right_stick.y,
-        drone->attributes.global_variables.tx_buttons.left_stick.x,
-        drone->attributes.global_variables.tx_buttons.left_stick.y,
+        drone->attributes.global_variables.misc_floats[8],drone->attributes.global_variables.misc_floats[9],
         drone->attributes.global_variables.misc_floats[4]  // ROLL_WITH_ACC_FILTERED
     );
     

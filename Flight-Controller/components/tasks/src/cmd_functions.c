@@ -117,9 +117,22 @@ void VarsUpdateCmdFunc(drone_t * drone, char * arr[4]) {
 
     bool found = false;
     for(int i = 0; drone->attributes.flash_params_arr[i].name != NULL; i++) {
-        
         if(!strcmp(arr[ARG2], drone->attributes.flash_params_arr[i].name)) {
-            *( float * ) drone->attributes.flash_params_arr[i].ptr = (float) atof(arr[ARG3]);
+            switch (drone->attributes.flash_params_arr[i].type) {
+                case PARAM_TYPE_FLOAT:
+                    *(float *)drone->attributes.flash_params_arr[i].ptr = (float)atof(arr[ARG3]);
+                    break;
+                case PARAM_TYPE_INT:
+                    *(int *)drone->attributes.flash_params_arr[i].ptr = atoi(arr[ARG3]);
+                    break;
+                case PARAM_TYPE_STRING:
+                    strncpy((char *)drone->attributes.flash_params_arr[i].ptr, arr[ARG3], drone->attributes.flash_params_arr[i].size - 1);
+                    ((char *)drone->attributes.flash_params_arr[i].ptr)[drone->attributes.flash_params_arr[i].size - 1] = '\0';
+                    break;
+                default:
+                    // Handle unknown type
+                    break;
+            }
             found = true;
             return;
         }

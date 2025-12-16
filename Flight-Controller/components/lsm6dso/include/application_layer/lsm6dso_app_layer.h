@@ -26,6 +26,7 @@ typedef struct lsm6dso_acc_params {
     lsm6dso_odr_acc_t odr;
     lsm6dso_fs_acc_t fs;
     lsm6dso_lpf2_en_acc_t lpf2_en;
+    lsm6dso_lpf2_acc_t lpf2_mode;
     lsm6dso_acc_unit_t unit;
 } lsm6dso_acc_params_t;
 

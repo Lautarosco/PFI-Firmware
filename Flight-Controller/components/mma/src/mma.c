@@ -47,11 +47,16 @@ static float saturate(float input, float min, float max ) {
  * @return float duty cycle
  */
 static float u2pwm( mma_t * mma, float u_z, float u, float dc_min, float dc_max ) {
+    #define MAX_DC_UZ 0.0740
+    #define RANGE_DC_U 0.0168
 
-    float base_dc = dc_min + ((dc_max - dc_min) * u_z / 100.0f);
-    
-    float correction_scale = (dc_max - dc_min) / 200.0f;  // Scale for +/-100 correction range, TODO: Check if it works fine when upper band saturing
-    float final_dc = base_dc + (u * correction_scale);
+    // float base_dc = dc_min + (MAX_DC_UZ - dc_min) * (u_z / 100.0f);
+    float base_dc = 0.071;
+    // float base_dc = 0.071 + (0.01)*(u_z/100.0f);
+    float correction = (u / 100.0f) * (RANGE_DC_U / 2.0f);
+
+    float final_dc = base_dc + correction;
+
     #ifndef container_of
     #define container_of(ptr, type, member) \
         ((type *)((char *)(ptr) - offsetof(type, member)))
@@ -78,10 +83,10 @@ static void compute_obj( mma_t * mma, float dc_min, float dc_max ) {
     float pitch_correction = mma->input[C_PITCH]; 
     float yaw_correction = mma->input[C_YAW];
     
-    mma->output[U1] = u2pwm(mma, base_thrust, 0.5f * (roll_correction + pitch_correction + yaw_correction), dc_min, dc_max);
-    mma->output[U2] = u2pwm(mma, base_thrust, 0.5f * (-roll_correction + pitch_correction - yaw_correction), dc_min, dc_max);
-    mma->output[U3] = u2pwm(mma, base_thrust, 0.5f * (-roll_correction - pitch_correction + yaw_correction), dc_min, dc_max);
-    mma->output[U4] = u2pwm(mma, base_thrust, 0.5f * (roll_correction - pitch_correction - yaw_correction), dc_min, dc_max);
+    mma->output[U1] = u2pwm(mma, base_thrust, (roll_correction + pitch_correction + yaw_correction), dc_min, dc_max);
+    mma->output[U2] = u2pwm(mma, base_thrust, (-roll_correction + pitch_correction - yaw_correction), dc_min, dc_max);
+    mma->output[U3] = u2pwm(mma, base_thrust, (-roll_correction - pitch_correction + yaw_correction), dc_min, dc_max);
+    mma->output[U4] = u2pwm(mma, base_thrust, (roll_correction - pitch_correction - yaw_correction), dc_min, dc_max);
 }
 
 

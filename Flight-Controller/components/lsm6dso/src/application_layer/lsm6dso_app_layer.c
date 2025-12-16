@@ -96,7 +96,7 @@ esp_err_t lsm6dso_init(lsm6dso_t *lsm, lsm6dso_params_t lsm_params) {
     ESP_LOGI(lsm6dso_app_layer_tag, "{Function %s in line %d}: Chip ID: 0x%X", __func__, __LINE__, id);
 
     /* Set Accelerometer ODR */
-    ret = lsm6dso_hwl_set_odr_acc(lsm->i2c_lsm_handler, LSM6DSO_ACC_ODR_12P5_HZ, msg, sizeof(msg));
+    ret = lsm6dso_hwl_set_odr_acc(lsm->i2c_lsm_handler, lsm_params.acc.odr, msg, sizeof(msg));
     if(ret != ESP_OK) {
         ESP_LOGE(lsm6dso_app_layer_tag, "{Function %s in line %d}: Initialize Lsm6dso object --> FAILED", __func__, __LINE__);
         return ESP_FAIL;
@@ -134,7 +134,7 @@ esp_err_t lsm6dso_init(lsm6dso_t *lsm, lsm6dso_params_t lsm_params) {
 
     /* Enable Accelerometer LPF2 (additionally to LPF1 -> LPF1 cut off frequency is ODR/2) */
     if(lsm_params.acc.lpf2_en == LSM6DSO_ACC_LPF2_ENABLE) {
-        ret = lsm6dso_hwl_en_lpf2_acc(lsm->i2c_lsm_handler, msg, sizeof(msg));
+        ret = lsm6dso_hwl_en_lpf2_acc(lsm->i2c_lsm_handler, lsm_params.acc.lpf2_mode ,msg, sizeof(msg));
         if(ret != ESP_OK) {
             ESP_LOGE(lsm6dso_app_layer_tag, "{Function %s in line %d}: Initialize Lsm6dso object --> FAILED", __func__, __LINE__);
             return ESP_FAIL;
@@ -186,7 +186,7 @@ esp_err_t lsm6dso_init(lsm6dso_t *lsm, lsm6dso_params_t lsm_params) {
 
     /* Enable Gyroscope HPF */
     if(lsm_params.gyro.hpf_en == LSM6DSO_GYRO_HPF_ENABLE) {
-        ret = lsm6dso_hwl_en_lpf1_gyro(lsm->i2c_lsm_handler, lsm_params.gyro.hpf_mode, msg, sizeof(msg));
+        ret = lsm6dso_hwl_en_hpf_gyro(lsm->i2c_lsm_handler, lsm_params.gyro.hpf_mode, msg, sizeof(msg));
         if(ret != ESP_OK) {
             ESP_LOGE(lsm6dso_app_layer_tag, "{Function %s in line %d}: Initialize Lsm6dso object --> FAILED", __func__, __LINE__);
             return ESP_FAIL;

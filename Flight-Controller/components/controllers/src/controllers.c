@@ -12,39 +12,44 @@ const char * CONTROLLER_TAG = "CONTROLLER";
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
-float pidUpdate( pid_controller_t * obj, float pv, float sp ) {
+float pidUpdate( pid_controller_t * self, float pv, float sp ) {
 
     /* Check if PID object is initialized */
-    if( !obj->init_ok ) {
+    if( !self->init_ok ) {
 
         ESP_LOGE( CONTROLLER_TAG, "Object is not initialized!" );
         esp_restart();
     }
 
-    obj->error = sp - pv;   /* Update actual error */
+    self->error = sp - pv;   /* Update current error */
 
     /* Convert angles to radians */
-    if( obj->tag != Z ) {
+    if( self->tag != Z ) {
 
-        obj->error *= ( M_PI / 180.0f );
+        self->error *= ( M_PI / 180.0f );
     }
 
-    float pAction = obj->pFunc( obj, obj->error );  /* Compute Proportional Action */
-    float iAction = obj->iFunc( obj, obj->error );  /* Compute Integral Action */
-    float dAction = obj->dFunc( obj, obj->error );  /* Compute Derivative Action */
-
+    float pAction = self->pFunc( self, self->error );  /* Compute Proportional Action */
+    float iAction = self->iFunc( self, self->error );  /* Compute Integral Action */
+    float dAction = self->dFunc( self, self->error );  /* Compute Derivative Action */
+    
+    self->p = pAction;
+    self->i = iAction;
+    self->d = dAction;
     float pid_out = pAction + iAction + dAction;    /* Compute PID output */
 
     /* Saturate PID output */
-    if( pid_out > obj->pid_out_limits.max ) {
-        pid_out = obj->pid_out_limits.max;
+    if( pid_out > self->pid_out_limits.max ) {
+        pid_out = self->pid_out_limits.max;
 
-    } else if( pid_out < obj->pid_out_limits.min ) {
-        pid_out = obj->pid_out_limits.min;
+    } else if( pid_out < self->pid_out_limits.min ) {
+        pid_out = self->pid_out_limits.min;
 
     }
 
-    obj->prev_error = obj->error;
+    // self->prev_error = self->error;
+
+    self->out = pid_out;
 
     return pid_out;
 }
@@ -215,10 +220,18 @@ float I_BackCalc( pid_controller_t * pid, float error ) {
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
+#include "drone.h"
 
 float D_Basic( pid_controller_t * obj, float error ) {
 
-    float derivative = ( error - obj->prev_error ) / obj->ts_ms;
+    float derivative = ( error - obj->prev_error );
+    obj->prev_error = error;
+    
+    #ifndef container_of
+    #define container_of(ptr, type, member) \
+        ((type *)((char *)(ptr) - offsetof(type, member)))
+    #endif
+    drone_t *drone = container_of(obj, drone_t, attributes.components.controllers[obj->tag]);
 
     return obj->gain.kd * derivative;
 }
@@ -226,13 +239,12 @@ float D_Basic( pid_controller_t * obj, float error ) {
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
-#include "drone.h"
 float D_LPF( pid_controller_t * obj, float error ) {
 
-    float derivative = ( error - obj->prev_error ) / obj->ts_ms;
+    float derivative = ( error - obj->prev_error ) / (obj->ts_ms*0.001);
 
     /* Filtered value = ( ( 1 - α ) * New input ) + ( α * Previous output )*/
-    obj->derivative_lpf.out = FirstOrderIIR(derivative, obj->derivative_lpf.out, obj->ts_ms*0.001, obj->derivative_lpf.alpha);
+    obj->derivative_lpf.out = FirstOrderIIR(derivative, obj->derivative_lpf.out, obj->derivative_lpf.alpha);
     return obj->gain.kd * derivative;
 }
 
@@ -275,7 +287,7 @@ bool set_pid_gain(pid_gain_t *controller_gains, const char label[], float new_va
  * @param cfg: Controller configs
  * @retval none
  */
-static void pid_init( pid_controller_t * obj, states_t tag, float ts_ms, float alpha, pid_gain_t pid_gains, pid_limits_t integral_limits, pid_limits_t pid_limits ) {
+static void pid_init( pid_controller_t * obj, states_t tag, float ts_ms, pid_gain_t pid_gains, pid_limits_t integral_limits, pid_limits_t pid_limits ) {
 
     ESP_LOGI( CONTROLLER_TAG, "Initializing Pid object..." );
 

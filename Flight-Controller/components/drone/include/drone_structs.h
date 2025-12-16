@@ -20,15 +20,25 @@
 
 
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
-
+typedef enum {
+    PARAM_TYPE_FLOAT,
+    PARAM_TYPE_INT,
+    PARAM_TYPE_STRING
+} param_type_t;
 
 typedef struct {
     const char* name;
     void* ptr;
     size_t size;
+    param_type_t type;
     bool save_to_flash;
 } drone_parameter_t;
 
+typedef enum drone_control_mode {
+    CONTROL_MODE_ANGLE = 0,
+    CONTROL_MODE_RATE,
+    CONTROL_MODE_MAX  // not a real control mode!
+} drone_control_mode_t;
 /* ------------------------------------------------------------------------------------------------------------------------------------------ */
 
 
@@ -264,6 +274,9 @@ typedef struct drone_attributes {
 
     /* Drone's init flag */
     bool init_ok;
+
+    /* Drone control mode */
+    drone_control_mode_t control_mode;
 
     /* Sampling time in milliseconds */
     unsigned int ts_ms;

@@ -35,6 +35,18 @@ typedef enum lsm6dso_lpf2_en_acc {
     LSM6DSO_ACC_LPF2_ENABLE
 } lsm6dso_lpf2_en_acc_t;
 
+typedef enum lsm6dso_lpf2_acc {
+    LSM6DSO_ACC_LPF2_OFF = -1,
+    LSM6DSO_ACC_LPF2_0,  // ODR/4
+    LSM6DSO_ACC_LPF2_1,  // ODR/10
+    LSM6DSO_ACC_LPF2_2,  // ODR/20
+    LSM6DSO_ACC_LPF2_3,  // ODR/45
+    LSM6DSO_ACC_LPF2_4,  // ODR/100
+    LSM6DSO_ACC_LPF2_5,  // ODR/200
+    LSM6DSO_ACC_LPF2_6,  // ODR/400
+    LSM6DSO_ACC_LPF2_7  // ODR/800
+} lsm6dso_lpf2_acc_t;
+
 typedef struct lsm6dso_acc {
     float x;                        /* x-axis [m/s^2] */
     float y;                        /* y-axis [m/s^2] */

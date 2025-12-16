@@ -32,8 +32,8 @@ void vTaskDroneMeasure( void * pvParameters ) {
             }
 
             // TODO: Make these parameters
-            float MAX_ROLL = 5.0f;  // Maximum roll angle in degrees
-            float MAX_PITCH = 5.0f; // Maximum pitch angle in degrees
+            float MAX_ANGLE = 5.0f;  // Maximum roll angle in degrees
+            float MAX_DPS = 100.0f; //  Maximum angular speed in Degrees per Second
 
             int r_stick_x = drone->attributes.global_variables.tx_buttons.right_stick.x;
             if (r_stick_x > 100) r_stick_x = 100;
@@ -43,16 +43,49 @@ void vTaskDroneMeasure( void * pvParameters ) {
             float AMPLITUDE = drone->attributes.global_variables.misc_floats[0];
             float T         = drone->attributes.global_variables.misc_floats[1];
 
-
             float omega;
             float time_sec = (float)xTaskGetTickCount() / configTICK_RATE_HZ;
             if (T > 0) {
                 omega = 2.0f * M_PI / T;
                 drone->attributes.sp.roll_dot = AMPLITUDE * sinf(omega * time_sec);
             } else {
+                if (drone->attributes.control_mode == CONTROL_MODE_ANGLE) {
+                    static float target_roll = 0.0f;
+                    static float start_roll = 0.0f;
+                    static float ramp_start_time = 0.0f;
+                    static int ramp_active = 0;
+                    
+                    float new_target = (r_stick_x / 100.0f) * MAX_ANGLE;
+                    float current_time = (float)xTaskGetTickCount() / configTICK_RATE_HZ;
+                    
+                    if (fabsf(new_target - target_roll) > 0.1f) {
+                        // Start new ramp
+                        target_roll = new_target;
+                        start_roll = drone->attributes.sp.roll;
+                        ramp_start_time = current_time;
+                        ramp_active = 1;
+                    }
+                    
+                    if (ramp_active) {
+                        float elapsed = current_time - ramp_start_time;
+                        float ramp_duration = 2.0f; // 2 seconds
+                        
+                        if (elapsed >= ramp_duration) {
+                            drone->attributes.sp.roll = target_roll;
+                            ramp_active = 0;
+                        } else {
+                            float progress = elapsed / ramp_duration;
+                            drone->attributes.sp.roll = start_roll + (target_roll - start_roll) * progress;
+                        }
+                    }
+
+                } else if (drone->attributes.control_mode == CONTROL_MODE_RATE) {
+                    drone->attributes.sp.roll_dot = FirstOrderIIR((r_stick_x / 100.0f) * MAX_DPS, drone->attributes.sp.roll_dot, 0.6);
+                    
+                }
+
                 // If T is zero or negative, use the joystick value directly
-                drone->attributes.sp.roll = FirstOrderIIR((r_stick_x / 100.0f) * MAX_ROLL, drone->attributes.sp.roll, drone->attributes.ts_ms/1000.0, 0.95);
-                // drone->attributes.sp.roll = (r_stick_x / 100.0f) * MAX_ROLL;
+                // drone->attributes.sp.roll = (r_stick_x / 100.0f) * MAX_ANGLE;
             }
 
 
@@ -105,8 +138,8 @@ void vTaskDroneMeasure( void * pvParameters ) {
             #else
                 if (r_stick_y > 100) r_stick_y = 100;
                 if (r_stick_y < -100) r_stick_y = -100;
-                drone->attributes.sp.pitch = FirstOrderIIR((r_stick_y / 100.0f) * MAX_PITCH, drone->attributes.sp.pitch, drone->attributes.ts_ms/1000.0, 0.95);
-                // drone->attributes.sp.pitch = (r_stick_y / 100.0f) * MAX_PITCH;
+                drone->attributes.sp.pitch = FirstOrderIIR((r_stick_y / 100.0f) * MAX_ANGLE, drone->attributes.sp.pitch, 0.95);
+                // drone->attributes.sp.pitch = (r_stick_y / 100.0f) * MAX_ANGLE;
             #endif
 
             drone->attributes.sp.yaw = 0;

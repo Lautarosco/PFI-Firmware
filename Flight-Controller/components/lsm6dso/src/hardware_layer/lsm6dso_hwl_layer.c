@@ -146,7 +146,8 @@ esp_err_t lsm6dso_hwl_set_fs_acc(i2c_master_dev_handle_t i2c_lsm_handler, lsm6ds
     return ESP_OK;
 }
 
-esp_err_t lsm6dso_hwl_en_lpf2_acc(i2c_master_dev_handle_t i2c_lsm_handler, char *msg, unsigned int msg_len) {
+esp_err_t lsm6dso_hwl_en_lpf2_acc(i2c_master_dev_handle_t i2c_lsm_handler, lsm6dso_lpf2_acc_t filter_mode, char *msg, unsigned int msg_len) {
+
     uint8_t reg_addr = LSM6DSO_CTRL1_XL_REG;
     uint8_t reg_value = 0;
 
@@ -166,6 +167,26 @@ esp_err_t lsm6dso_hwl_en_lpf2_acc(i2c_master_dev_handle_t i2c_lsm_handler, char 
     }
 
     ESP_LOGI(lsm6dso_hwl_tag, "{Function %s in line %d}: Accelerometer LPF2 status --> 0x%X", __func__, __LINE__, (reg_value & (1U << 1)) >> 1);
+    
+    reg_addr = LSM6DSO_CTRL8_XL_REG;
+
+    ret = lsm6dso_hwl_read_reg(i2c_lsm_handler, &reg_addr, sizeof(reg_addr), &reg_value, sizeof(reg_value), __func__);
+    if(ret != ESP_OK) {
+        return ESP_FAIL;
+    }
+
+    ret = lsm6dso_hwl_write_reg(i2c_lsm_handler, reg_addr, LSM6DSO_SET_BITS(3, 5, reg_value, filter_mode), __func__);
+    if(ret != ESP_OK) {
+        return ESP_FAIL;
+    }
+
+    ret = lsm6dso_hwl_read_reg(i2c_lsm_handler, &reg_addr, sizeof(reg_addr), &reg_value, sizeof(reg_value), __func__);
+    if(ret != ESP_OK) {
+        return ESP_FAIL;
+    }
+
+    ESP_LOGI(lsm6dso_hwl_tag, "{Function %s in line %d}: Accelerometer LPF2 Mode --> 0x%X", __func__, __LINE__, (reg_value & 0b11100000)>>5);
+
 
     return ESP_OK;
 }
